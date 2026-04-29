@@ -3,19 +3,20 @@
 @theme {
   --color-cream: #fff9e6;
   --color-cream-50: #fffdf7;
-  --color-cream-100: #fff9e6;
+  --color-cream-100: #fff9ea;
   --color-cream-200: #ffefc0;
-  --color-cream-300: #ffe58a;
-  --color-cream-400: #ffd95a;
-  --color-cream-500: #ffc928;
-  --color-cream-600: #f5b400;
-  --color-cream-700: #c98f00;
-  --color-cream-800: #9a6d00;
-  --color-cream-900: #6b4a00;
-  --color-cream-950: #3f2a00;
+  --color-cream-300: #f7e4ac;
+  --color-cream-400: #eed898;
+  --color-cream-500: #e0c880;
+  --color-cream-600: #c9b06b;
+  --color-cream-700: #a99254;
+  --color-cream-800: #887541;
+  --color-cream-900: #68582f;
+  --color-cream-950: #3a321a;
 
   --color-brown-200: #bfa995;
-  --color-brown-400: #735a4c;
+  --color-brown-300: #735a4c;
+  --color-brown-400: #6B4A3F;
   --color-brown-600: #3a2527;
 
   --color-ivory: #e8d7b2;
@@ -23,76 +24,71 @@
   --color-pink: #f7c7a3;
 
   --color-purple: #d8c7f2;
+
+  --color-green: #6FAE8C;
+
+  --color-red: #D96A6A;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Thin.woff2") format("woff2");
   font-weight: 100;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraLight.woff2") format("woff2");
   font-weight: 200;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Light.woff2") format("woff2");
   font-weight: 300;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Regular.woff2") format("woff2");
   font-weight: 400;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Medium.woff2") format("woff2");
   font-weight: 500;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-SemiBold.woff2") format("woff2");
   font-weight: 600;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Bold.woff2") format("woff2");
   font-weight: 700;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-ExtraBold.woff2") format("woff2");
   font-weight: 800;
   font-display: swap;
 }
 
 @font-face {
   font-family: "Pretendard";
-  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2")
-    format("woff2");
+  src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/pretendard@1.0/Pretendard-Black.woff2") format("woff2");
   font-weight: 900;
   font-display: swap;
 }
