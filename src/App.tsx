@@ -1,13 +1,12 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import Welcome from "./pages/Welcome"
-import Onboarding from "./pages/Onboarding"
-import UploadPhoto from "./pages/UploadPhoto"
-import Analyzing from "./pages/Analyzing"
-import Result from "./pages/Result"
-import Recommendation from "./pages/Recommendation"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Welcome from "./pages/Welcome";
+import Onboarding from "./pages/Onboarding";
+import UploadPhoto from "./pages/UploadPhoto";
+import Analyzing from "./pages/Analyzing";
+import Result from "./pages/Result";
+import Recommendation from "./pages/Recommendation";
 
 function App() {
-
   return (
     <BrowserRouter>
       <Routes>
@@ -19,7 +18,7 @@ function App() {
         <Route path="/recommendation" element={<Recommendation />} />
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;
