@@ -1,40 +1,66 @@
-import { useEffect } from "react";
-import logo from "../../public/logo.webp";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import logo from "/logo.png";
 
 export default function Welcome() {
   const navigate = useNavigate();
-  const isNew = localStorage.getItem("isNew");
+  const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
-    // if (isNew) {
-    //   const timer = setTimeout(() => {
-    //     navigate("/onboarding");
-    //   }, 5000);
-    //   return () => clearTimeout(timer);
-    // } else {
-    //   localStorage.setItem("isNew", "true");
-    //   const timer = setTimeout(() => {
-    //     navigate("/onboarding");
-    //   }, 5000);
-    //   return () => clearTimeout(timer);
-    // }
-  }, []);
+    const hasSeenWelcome =
+      localStorage.getItem("wings_has_seen_welcome") === "true";
+
+    if (hasSeenWelcome) {
+      navigate("/onboarding", { replace: true });
+      return;
+    }
+
+    const fadeTimer = window.setTimeout(() => {
+      setIsLeaving(true);
+    }, 2400);
+
+    const navigateTimer = window.setTimeout(() => {
+      localStorage.setItem("wings_has_seen_welcome", "true");
+      navigate("/onboarding", { replace: true });
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(navigateTimer);
+    };
+  }, [navigate]);
 
   return (
-    <div className="relative bg-cream-200 w-full h-screen flex flex-col items-center justify-center">
-      <div className="relative text-center">
-        <img src={logo} className="size-76" />
-        <span className="text-lg font-medium">
-          나에게 맞는 색을 찾는 가장 쉬운 방법
-        </span>
+    <main className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-white">
+      <div
+        className="absolute left-1/2 top-[calc(50%-10px)] size-[512px] max-w-[120vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cream-100 blur-3xl"
+        aria-hidden="true"
+      />
+
+      <div className="relative flex min-h-dvh w-full max-w-[430px] flex-col items-center justify-center px-5">
+        <div
+          className={`flex w-[240px] flex-col items-center text-center opacity-80 ${
+            isLeaving ? "welcome-fade-out" : "welcome-fade-in"
+          }`}
+        >
+          <img
+            src={logo}
+            className="h-[116px] w-[118px] object-cover object-center"
+            alt="Wings"
+          />
+          <p className="mt-0 w-[222px] text-center text-base font-normal leading-[25.6px] text-[#6b4a3f]">
+            나에게 맞는 색을 찾는 
+            <br />
+           가장 쉬운 방법
+          </p>
+        </div>
       </div>
 
-      <div className="flex gap-2 absolute bottom-24">
-        <div className="rounded-full bg-brown-200 size-2"></div>
-        <div className="rounded-full bg-brown-400 size-2"></div>
-        <div className="rounded-full bg-brown-200 size-2"></div>
+      <div className="absolute bottom-16 flex gap-2" aria-hidden="true">
+        <div className="size-2 rounded-full bg-brown-600 opacity-20" />
+        <div className="size-2 rounded-full bg-brown-600 opacity-60" />
+        <div className="size-2 rounded-full bg-brown-600 opacity-20" />
       </div>
-    </div>
+    </main>
   );
 }
