@@ -3,61 +3,82 @@ import { HiArrowRight } from "react-icons/hi2";
 
 export default function Onboarding() {
   return (
-    <>
-      <div className="bg-cream w-full h-screen p-8 flex justify-center">
-        {/* card  */}
-        <div className="relative bg-cream-200/70 w-full max-w-97.5 max-h-233 h-full boreder border-ivory border rounded-[40px] flex flex-col justify-between items-center p-8 shadow-xl overflow-hidden">
-          <h1 className="text-4xl font-light">WINGS</h1>
+    <main className="flex min-h-dvh w-full items-center justify-center bg-white px-8 py-4">
+      <section className="relative flex h-[calc(100dvh-32px)] max-h-[900px] min-h-[700px] w-full max-w-[430px] flex-col items-center justify-between overflow-hidden rounded-[40px] border border-ivory/50 bg-white shadow-[0_25px_50px_-12px_rgb(107_74_63_/_0.1)]">
+        <div
+          className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-white/0"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -right-20 -top-20 size-64 rounded-full bg-[#fff6de] blur-[32px]"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute left-[-40px] top-1/3 h-48 w-48 rounded-full bg-[#fff6de] blur-[32px]"
+          aria-hidden="true"
+        />
 
-          {/* top circle */}
-          <div className="absolute -top-12 -right-12 size-64 bg-pink/20 rounded-full blur-lg" />
+        <header className="relative flex w-full justify-center px-5 pt-12">
+          <h1 className="text-[32px] font-normal leading-[38.4px] tracking-[-1.6px] text-brown-600">
+            WINGS
+          </h1>
+        </header>
 
-          {/* bottom circle */}
-          <div className="absolute top-1/3 -left-12 size-48 bg-purple/20 rounded-full blur-lg z-0" />
+        <div className="relative flex flex-1 flex-col items-center justify-center px-5 pt-10">
+          <div className="relative mb-10 size-64 shrink-0">
+            <div
+              className="absolute inset-[-20px] -rotate-6 rounded-full bg-white/60 shadow-[0_10px_40px_rgb(107_74_63_/_0.08)]"
+              aria-hidden="true"
+            />
+            <div
+              className="absolute inset-[-7px] rotate-3 rounded-[48px] bg-pink/10 shadow-[inset_0_2px_4px_rgb(0_0_0_/_0.05)]"
+              aria-hidden="true"
+            />
 
-          <div className="flex-1 flex flex-col items-center justify-center gap-8 z-10">
-            {/* illustration */}
-            <div className="relative size-64 bg-white rounded-[40px] flex items-center justify-center shadow-md z-10">
+            <div className="relative size-64 overflow-hidden rounded-[40px] border-4 border-white bg-white shadow-[0_10px_15px_-3px_rgb(107_74_63_/_0.05),0_4px_6px_-4px_rgb(107_74_63_/_0.05)]">
               <img
                 src="/illustration.png"
-                className="size-61 rounded-[40px] z-10"
+                className="size-full object-cover"
                 alt="onboarding_illustration"
               />
-
-              {/* center circle */}
-              <div className="absolute size-72 bg-white/40 rounded-full top-1/2 -translate-y-1/2 z-0"></div>
-
-              {/* left circle */}
-              <div className="absolute size-10 bg-white rounded-full -left-2 bottom-14 flex items-center justify-center z-10">
-                <div className="size-6 bg-purple/40 border border-purple/60 rounded-full"></div>
-              </div>
-
-              {/* right circle */}
-              <div className="absolute size-12 bg-white rounded-full -right-2 top-6 flex items-center justify-center z-10">
-                <div className="size-8 bg-pink/40 border border-pink/60 rounded-full"></div>
-              </div>
+              <div
+                className="absolute inset-0 bg-gradient-to-t from-brown-600/10 to-brown-600/0 mix-blend-multiply"
+                aria-hidden="true"
+              />
             </div>
 
-            <div className="flex flex-col items-center text-2xl">
-              <span>사진 한 장으로</span>
-              <span>내 퍼스널 톤을 찾아보세요</span>
+            <div className="absolute right-[-16px] top-10 flex size-12 items-center justify-center rounded-full bg-white drop-shadow-[0_1px_1px_rgb(107_74_63_/_0.1)]">
+              <div className="size-8 rounded-full border border-pink/60 bg-pink/40" />
             </div>
-
-            <div className="flex flex-col items-center">
-              <span>AI가 피부 톤을 분석하고</span>
-              <span>나에게 어울리는 화장품을 추천해드려요.</span>
+            <div className="absolute bottom-8 left-[-8px] flex size-10 items-center justify-center rounded-full bg-white drop-shadow-[0_1px_1px_rgb(107_74_63_/_0.1)]">
+              <div className="size-6 rounded-full border border-purple/60 bg-purple/40" />
             </div>
           </div>
 
+          <div className="relative flex max-w-80 flex-col items-center gap-[15px] text-center">
+            <h2 className="text-2xl font-normal leading-[30px] text-brown-600">
+              사진 한 장으로
+              <br />
+              내 퍼스널 톤을 찾아보세요
+            </h2>
+            <p className="text-base font-normal leading-[25.6px] text-[#7a625c]">
+              AI가 피부 톤을 분석하고
+              <br />
+              나에게 어울리는 화장품을 추천해드려요.
+            </p>
+          </div>
+        </div>
+
+        <footer className="relative w-full px-5 py-4">
           <Link
             to="/photo"
-            className="flex items-center justify-center bg-brown-600 text-white text-xl w-full h-14 rounded-full"
+            className="flex h-[60px] w-full items-center justify-center gap-2 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white drop-shadow-[0_8px_12px_rgb(58_37_39_/_0.15)]"
           >
             내 톤 진단하기
-            <HiArrowRight className="ml-2" />
+            <HiArrowRight className="size-[18px]" aria-hidden="true" />
           </Link>
-        </div>
-      </div>
-    </>
+        </footer>
+      </section>
+    </main>
   );
 }
