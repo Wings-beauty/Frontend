@@ -79,20 +79,20 @@ export default function Analyzing() {
   return (
     <main className="relative flex min-h-dvh w-full overflow-hidden bg-white">
       <div
-        className="absolute -right-28 top-0 h-[360px] w-[260px] rounded-full bg-purple/20 blur-[80px]"
+        className="absolute -right-28 top-0 h-96 w-72 rounded-full bg-purple/20 blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="absolute -left-24 top-[260px] h-[360px] w-[230px] rounded-full bg-pink/20 blur-[80px]"
+        className="absolute -left-24 top-56 h-96 w-60 rounded-full bg-pink/20 blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="absolute bottom-[-120px] right-[-80px] size-[340px] rounded-full bg-cream-100 blur-[70px]"
+        className="absolute -bottom-32 -right-20 size-80 rounded-full bg-cream-100 blur-3xl"
         aria-hidden="true"
       />
 
-      <section className="relative flex min-h-dvh w-full flex-col items-center px-8 pb-8 pt-[112px]">
-        <div className="relative flex size-32 items-center justify-center rounded-full bg-[#ffefd7] shadow-[0_18px_60px_rgb(255_193_130_/_0.28)]">
+      <section className="relative flex min-h-dvh w-full flex-col items-center px-8 pb-8 pt-28">
+        <div className="relative flex size-32 items-center justify-center rounded-full bg-[#ffefd7] shadow-lg">
           <div
             className="absolute inset-3 rounded-full border border-dashed border-[#f6cda9]"
             aria-hidden="true"
@@ -103,20 +103,20 @@ export default function Analyzing() {
           />
         </div>
 
-        <h1 className="mt-20 text-center text-[22px] font-normal leading-[35.2px] text-[#9a817b]">
+        <h1 className="mt-20 text-center text-lg font-normal leading-9 text-[#9a817b]">
           빛, 색감, 피부 톤 데이터를 확인하는 중 이에요.
           <br />
           잠시만 기다려주세요.
         </h1>
 
-        <div className="mt-20 w-full rounded-[24px] bg-white/90 px-6 py-8 shadow-[0_24px_70px_rgb(107_74_63_/_0.08)] backdrop-blur">
+        <div className="mt-20 w-full rounded-2xl bg-white/90 px-6 py-8 shadow-lg backdrop-blur">
           <div className="relative flex flex-col gap-8">
             <div
               className="absolute bottom-6 left-6 top-6 w-0.5 bg-[#f2d9bf]"
               aria-hidden="true"
             />
             <div
-              className="absolute left-6 top-6 h-[140px] w-0.5 bg-[#f39d86]"
+              className="absolute left-6 top-6 h-32 w-0.5 bg-[#f39d86]"
               aria-hidden="true"
             />
 
@@ -134,7 +134,7 @@ export default function Analyzing() {
                         : ""
                     } ${
                       isActive
-                        ? "bg-[#ffa58d] text-white shadow-[0_10px_24px_rgb(255_165_141_/_0.45)]"
+                        ? "bg-[#ffa58d] text-white shadow-md"
                         : ""
                     } ${isPending ? "bg-[#f1eeee] text-[#c6bebc]" : ""}`}
                   >
@@ -150,14 +150,14 @@ export default function Analyzing() {
 
                   <div className="flex min-w-0 flex-col justify-center pt-1">
                     <p
-                      className={`text-lg font-normal leading-[25.2px] ${
+                      className={`text-lg font-normal leading-7 ${
                         isPending ? "text-[#b9adaa]" : "text-[#3a2527]"
                       }`}
                     >
                       {step.title}
                     </p>
                     {step.description && (
-                      <p className="mt-1.5 max-w-[170px] text-base font-normal leading-[25.6px] text-[#7a625c]">
+                      <p className="mt-1.5 max-w-xs text-base font-normal leading-7 text-[#7a625c]">
                         {activeTextIndex === 0
                           ? step.description
                           : activeTextIndex === 1

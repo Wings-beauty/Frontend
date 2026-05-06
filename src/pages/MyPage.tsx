@@ -89,7 +89,7 @@ function ProductVisual({ type }: { type: (typeof likedProducts)[number]["visual"
     return (
       <div className="relative flex size-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#eecfae] to-[#864f30]">
         <div className="absolute -right-8 -top-5 size-28 rounded-full bg-[#ffdcae]/55 blur-md" />
-        <div className="size-24 rounded-full bg-gradient-to-br from-[#e0a097] to-[#9c5c60] shadow-[0_10px_30px_rgb(72_41_35_/_0.28),inset_0_0_16px_rgb(255_255_255_/_0.32)]" />
+        <div className="size-24 rounded-full bg-gradient-to-br from-[#e0a097] to-[#9c5c60] shadow-lg" />
         <div className="absolute bottom-4 right-5 h-10 w-16 rounded-full bg-[#2b2020]/80 blur-sm" />
       </div>
     );
@@ -98,9 +98,9 @@ function ProductVisual({ type }: { type: (typeof likedProducts)[number]["visual"
   return (
     <div className="relative flex size-full items-center justify-center overflow-hidden bg-gradient-to-br from-[#f1d0a3] to-[#c3905c]">
       <div className="absolute inset-x-0 bottom-0 h-16 bg-[#c59662]/50" />
-      <div className="absolute bottom-8 h-20 w-20 rounded-full bg-[#e8c491] shadow-[0_10px_24px_rgb(88_52_30_/_0.18)]" />
+      <div className="absolute bottom-8 size-20 rounded-full bg-[#e8c491] shadow-md" />
       <div className="absolute bottom-14 h-24 w-8 rounded-t-lg bg-gradient-to-b from-[#d1904c] to-[#8b5428]" />
-      <div className="absolute bottom-[118px] h-16 w-7 rounded-t-full bg-gradient-to-br from-[#e4c1a5] to-[#b78255]" />
+      <div className="absolute bottom-28 h-16 w-7 rounded-t-full bg-gradient-to-br from-[#e4c1a5] to-[#b78255]" />
     </div>
   );
 }
@@ -129,9 +129,9 @@ export default function MyPage() {
         <div className="size-10" aria-hidden="true" />
       </header>
 
-      <section className={`relative mt-16 rounded-[38px] bg-gradient-to-br from-white via-white px-6 pb-8 pt-12 shadow-[0_24px_70px_rgb(107_74_63_/_0.08)] ${result.accentSoftClassName}`}>
+      <section className={`relative mt-16 rounded-3xl bg-gradient-to-br from-white via-white px-6 pb-8 pt-12 shadow-lg ${result.accentSoftClassName}`}>
         <div className="flex items-center gap-5">
-          <div className={`size-[92px] shrink-0 overflow-hidden rounded-full border-[3px] border-white ${result.accentClassName} p-1 shadow-[0_6px_18px_rgb(58_37_39_/_0.12)]`}>
+          <div className={`size-24 shrink-0 overflow-hidden rounded-full border-2 border-white ${result.accentClassName} p-1 shadow-md`}>
             <img
               src={upload?.imageUrl ?? "/illustration.png"}
               className="size-full rounded-full object-cover"
@@ -141,7 +141,7 @@ export default function MyPage() {
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-[26px] font-normal leading-8 text-brown-600">
+              <h2 className="text-3xl font-normal leading-8 text-brown-600">
                 유지민
               </h2>
               <span className={`rounded-full px-5 py-1.5 text-base font-normal leading-6 text-brown-600 ${result.accentClassName}`}>
@@ -156,7 +156,7 @@ export default function MyPage() {
 
         <button
           type="button"
-          className="mt-8 flex h-16 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-[0_12px_20px_rgb(58_37_39_/_0.18)]"
+          className="mt-8 flex h-16 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-lg"
         >
           <HiPencil className="size-6" aria-hidden="true" />
           프로필 편집
@@ -165,7 +165,7 @@ export default function MyPage() {
 
       <section className="mt-14">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-[26px] font-normal leading-8 text-brown-600">
+          <h2 className="text-3xl font-normal leading-8 text-brown-600">
             나의 진단 기록
           </h2>
           <button
@@ -177,7 +177,7 @@ export default function MyPage() {
           </button>
         </div>
 
-        <article className="relative overflow-hidden rounded-[26px] bg-white px-7 py-7 shadow-[0_18px_48px_rgb(107_74_63_/_0.08)]">
+        <article className="relative overflow-hidden rounded-2xl bg-white px-7 py-7 shadow-lg">
           <div className={`absolute inset-y-8 left-0 w-1 ${result.accentClassName}`} />
           <div className={`absolute right-7 top-7 size-12 overflow-hidden rounded-full ${result.accentClassName} p-1`}>
             <img
@@ -187,17 +187,17 @@ export default function MyPage() {
             />
           </div>
           <p className="text-sm font-normal leading-5 text-[#8a716b]">최근 진단일</p>
-          <p className="mt-3 text-[25px] font-normal leading-8 text-brown-600">
+          <p className="mt-3 text-2xl font-normal leading-8 text-brown-600">
             2023년 11월 24일
           </p>
-          <p className="mt-7 pr-2 text-xl font-normal leading-8 text-brown-600">
+          <p className="mt-7 pr-2 text-lg font-normal leading-8 text-brown-600">
             {result.detailDescription} {result.description}
           </p>
         </article>
 
         <button
           type="button"
-          className="mt-6 flex h-16 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-[0_12px_20px_rgb(58_37_39_/_0.18)]"
+          className="mt-6 flex h-16 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-lg"
           onClick={() => navigate("/photo")}
         >
           <HiSparkles className="size-7" aria-hidden="true" />
@@ -207,7 +207,7 @@ export default function MyPage() {
 
       <section className="mt-14">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-[26px] font-normal leading-8 text-brown-600">
+          <h2 className="text-3xl font-normal leading-8 text-brown-600">
             찜한 제품
           </h2>
           <button

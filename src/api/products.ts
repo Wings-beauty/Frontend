@@ -1,3 +1,4 @@
+import type { PersonalColorSeason } from "../constants/personalColor";
 import { supabase } from "../lib/supabase";
 
 export type RecommendedProduct = {
@@ -10,60 +11,58 @@ export type RecommendedProduct = {
   productImageUrl: string | null;
   productUrl: string | null;
   price: number | null;
+  toneType: string;
 };
 
-type ProductToneTagRow = {
-  score: number | null;
-  products:
-    | {
-        id: number;
-        brand_name: string | null;
-        product_name: string | null;
-        product_color: string | null;
-        category: string | null;
-        color_hex: string | null;
-        product_image_url: string | null;
-        product_url: string | null;
-        price: number | null;
-        is_active: boolean | null;
-      }
-    | null;
+type ProductRow = {
+  id: number;
+  brand_name: string | null;
+  product_name: string | null;
+  product_color: string | null;
+  category: string | null;
+  color_hex: string | null;
+  product_image_url: string | null;
+  product_url: string | null;
+  price: number | null;
+  tone_type: string | null;
+  is_active: boolean | null;
 };
 
-function mapProduct(product: ProductToneTagRow["products"]): RecommendedProduct | null {
-  if (!product || product.is_active === false) {
+function mapProduct(product: ProductRow): RecommendedProduct | null {
+  if (product.is_active === false) {
     return null;
   }
 
   return {
     id: product.id,
     brandName: product.brand_name ?? "WINGS",
-    productName: product.product_name ?? "추천 제품",
+    productName: product.product_name ?? "추천 상품",
     productColor: product.product_color ?? "",
     category: product.category ?? "",
     colorHex: product.color_hex,
     productImageUrl: product.product_image_url,
     productUrl: product.product_url,
     price: product.price,
+    toneType: product.tone_type ?? "",
   };
 }
 
-export async function fetchRecommendedProducts(toneCode: string) {
+export async function fetchRecommendedProducts(season: PersonalColorSeason) {
   const { data, error } = await supabase
-    .from("product_tone_tags")
+    .from("products")
     .select(
-      "score, products (id, brand_name, product_name, product_color, category, color_hex, product_image_url, product_url, price, is_active)",
+      "id, brand_name, product_name, product_color, category, color_hex, product_image_url, product_url, price, tone_type, is_active",
     )
-    .eq("tone_code", toneCode)
-    .order("score", { ascending: false })
+    .ilike("tone_type", `%${season}%`)
+    .order("updated_at", { ascending: false })
     .limit(12)
-    .returns<ProductToneTagRow[]>();
+    .returns<ProductRow[]>();
 
   if (error || !data) {
     return [];
   }
 
   return data
-    .map((tag) => mapProduct(tag.products))
+    .map(mapProduct)
     .filter((product): product is RecommendedProduct => Boolean(product));
 }

@@ -7,6 +7,7 @@ import {
   HiStar,
 } from "react-icons/hi2";
 import type { MockUploadResponse } from "../api/mockUploadPhoto";
+import { addToLaunchWaitlist } from "../api/waitlist";
 
 const lifeItems = [
   {
@@ -64,23 +65,23 @@ function getStoredUpload(): MockUploadResponse | null {
 function LifeItemVisual({ type }: { type: (typeof lifeItems)[number]["visual"] }) {
   if (type === "lip") {
     return (
-      <div className="relative size-full overflow-hidden rounded-[18px] bg-[#161819]">
+      <div className="relative size-full overflow-hidden rounded-3xl bg-[#161819]">
         <div className="absolute bottom-4 left-1/2 h-20 w-8 -translate-x-1/2 rounded-b-lg bg-gradient-to-r from-[#111] via-[#5b5b5b] to-[#111]" />
-        <div className="absolute bottom-[84px] left-1/2 h-16 w-7 -translate-x-1/2 rounded-t-full bg-gradient-to-br from-[#db5053] to-[#9d2b38]" />
+        <div className="absolute bottom-20 left-1/2 h-16 w-7 -translate-x-1/2 rounded-t-full bg-gradient-to-br from-[#db5053] to-[#9d2b38]" />
       </div>
     );
   }
 
   if (type === "blush") {
     return (
-      <div className="relative size-full overflow-hidden rounded-[18px] bg-gradient-to-br from-[#ffd7dc] to-[#ff777f]">
+      <div className="relative size-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#ffd7dc] to-[#ff777f]">
         <div className="absolute left-1/2 top-1/2 size-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffb3bd] blur-sm" />
       </div>
     );
   }
 
   return (
-    <div className="relative size-full overflow-hidden rounded-[18px] bg-[#f1c8ad]">
+    <div className="relative size-full overflow-hidden rounded-3xl bg-[#f1c8ad]">
       <div className="absolute inset-x-4 top-8 h-20 rounded-full bg-[#5f3b31] blur-sm" />
       <div className="absolute left-1/2 top-1/2 size-12 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#6f8f8f]" />
       <div className="absolute left-1/2 top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2c2424]" />
@@ -93,6 +94,18 @@ export default function Home() {
   const upload = getStoredUpload();
   const isLoggedIn = Boolean(upload);
   const [isPreparingModalOpen, setIsPreparingModalOpen] = useState(false);
+  const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
+
+  const handleLaunchWaitlist = async () => {
+    setIsSubmittingWaitlist(true);
+
+    try {
+      await addToLaunchWaitlist("home_preparing_modal");
+      setIsPreparingModalOpen(false);
+    } finally {
+      setIsSubmittingWaitlist(false);
+    }
+  };
 
   return (
     <main className="relative min-h-dvh w-full overflow-hidden bg-white px-5 pb-10 pt-6">
@@ -124,23 +137,23 @@ export default function Home() {
         </button>
       </header>
 
-      <section className="relative mt-16 overflow-hidden rounded-[42px] bg-gradient-to-br from-white via-cream-50 to-cream-100 px-6 py-8 shadow-[0_24px_70px_rgb(107_74_63_/_0.08)]">
-        <div className="mb-8 inline-flex h-11 items-center rounded-full bg-white/85 px-5 text-base font-normal leading-6 text-[#7a625c] shadow-[0_4px_12px_rgb(107_74_63_/_0.06)]">
+      <section className="relative mt-16 overflow-hidden rounded-3xl bg-gradient-to-br from-white via-cream-50 to-cream-100 px-6 py-8 shadow-lg">
+        <div className="mb-8 inline-flex h-11 items-center rounded-full bg-white/85 px-5 text-base font-normal leading-6 text-[#7a625c] shadow-sm">
           AI Personal Color
         </div>
 
-        <h2 className="text-[28px] font-normal leading-[39px] tracking-[-0.5px] text-brown-600">
+        <h2 className="text-4xl font-normal leading-10 tracking-tight text-brown-600">
           오늘의 내 톤은?
           <br />
           사진 한 장으로 바로 확인해보세요.
         </h2>
-        <p className="mt-7 text-base font-normal leading-[27px] text-[#7a625c]">
+        <p className="mt-7 text-base font-normal leading-7 text-[#7a625c]">
           간단한 셀카 촬영으로 나에게 가장 잘 어울리는 컬러와 메이크업을 찾아드려요.
         </p>
 
         <button
           type="button"
-          className="mt-10 flex h-16 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-[0_14px_24px_rgb(58_37_39_/_0.2)]"
+          className="mt-10 flex h-16 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-lg"
           onClick={() => navigate("/photo")}
         >
           <HiSparkles className="size-7" aria-hidden="true" />
@@ -169,9 +182,9 @@ export default function Home() {
               <div className="flex gap-4 overflow-x-auto pb-3">
                 {lifeItems.map((item) => (
                   <article key={item.name} className="w-36 shrink-0">
-                    <div className="relative aspect-square overflow-hidden rounded-[18px] bg-cream-50 shadow-[0_8px_24px_rgb(107_74_63_/_0.08)]">
+                    <div className="relative aspect-square overflow-hidden rounded-3xl bg-cream-50 shadow-md">
                       <LifeItemVisual type={item.visual} />
-                      <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1 text-[11px] font-normal text-[#df7e8b]">
+                      <span className="absolute right-2 top-2 rounded-full bg-white/90 px-2 py-1 text-xs font-normal text-[#df7e8b]">
                         {item.tag}
                       </span>
                     </div>
@@ -205,7 +218,7 @@ export default function Home() {
               {reviews.map((review) => (
                 <article
                   key={review.name}
-                  className={`rounded-[22px] bg-white p-5 shadow-[0_10px_28px_rgb(107_74_63_/_0.08)] ${
+                  className={`rounded-2xl bg-white p-5 shadow-md ${
                     review.layout === "wide" ? "col-span-2 flex gap-4" : ""
                   }`}
                 >
@@ -234,7 +247,7 @@ export default function Home() {
                     <p className="mb-2 text-xs font-normal leading-4 text-[#df7e8b]">
                       {review.tone}
                     </p>
-                    <p className="text-sm font-normal leading-[22px] text-[#7a625c]">
+                    <p className="text-sm font-normal leading-6 text-[#7a625c]">
                       {review.text}
                     </p>
                   </div>
@@ -290,9 +303,10 @@ export default function Home() {
               <button
                 type="button"
                 className="flex h-12 items-center justify-center rounded-full bg-[#ecad43] text-base font-normal leading-6 text-white"
-                onClick={() => setIsPreparingModalOpen(false)}
+                disabled={isSubmittingWaitlist}
+                onClick={handleLaunchWaitlist}
               >
-                알림 받기
+                {isSubmittingWaitlist ? "신청 중" : "알림 받기"}
               </button>
             </div>
           </div>

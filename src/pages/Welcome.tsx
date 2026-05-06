@@ -33,22 +33,22 @@ export default function Welcome() {
   return (
     <main className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-white">
       <div
-        className="absolute left-1/2 top-[calc(50%-10px)] size-[512px] max-w-[120vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cream-100 blur-3xl"
+        className="absolute left-1/2 top-1/2 size-screen -translate-x-1/2 -translate-y-1/2 rounded-full bg-cream-100 blur-3xl"
         aria-hidden="true"
       />
 
-      <div className="relative flex min-h-dvh w-full max-w-[430px] flex-col items-center justify-center px-5">
+      <div className="relative flex min-h-dvh w-full max-w-md flex-col items-center justify-center px-5">
         <div
-          className={`flex w-[240px] flex-col items-center text-center opacity-80 ${
+          className={`flex flex-col items-center text-center opacity-80 ${
             isLeaving ? "welcome-fade-out" : "welcome-fade-in"
           }`}
         >
           <img
             src={logo}
-            className="h-[116px] w-[118px] object-cover object-center"
+            className="h-28 w-28 object-cover object-center"
             alt="Wings"
           />
-          <p className="mt-0 w-[222px] text-center text-base font-normal leading-[25.6px] text-[#6b4a3f]">
+          <p className="mt-0 max-w-xs text-center text-base font-normal leading-7 text-[#6b4a3f]">
             나에게 맞는 색을 찾는 
             <br />
            가장 쉬운 방법

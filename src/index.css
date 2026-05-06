@@ -99,7 +99,10 @@
 
 @layer base {
   :root {
+    --app-font-size: clamp(13px, calc(9px + 0.26vw + 0.34vh), 18px);
+    --app-frame-width: clamp(19rem, min(90vw, calc(100dvh * 0.54)), 32rem);
     font-family: "Pretendard";
+    font-size: var(--app-font-size);
     color: #111827;
     background-color: #ffffff;
     font-synthesis: none;
@@ -119,14 +122,36 @@
     justify-content: center;
     min-height: 100%;
     margin: 0;
+    padding-inline: clamp(0.5rem, 1.4vw, 1rem);
     color: #111827;
   }
 
   #root {
     width: 100%;
-    max-width: 480px;
+    max-width: var(--app-frame-width);
     min-height: 100vh;
     background-color: #ffffff;  
+  }
+
+  @media (max-width: 360px), (max-height: 720px) {
+    :root {
+      --app-font-size: clamp(13px, calc(9px + 0.45vw + 0.36vh), 16px);
+      --app-frame-width: min(100%, 100vw);
+    }
+  }
+
+  @media (min-width: 768px) and (min-height: 900px) {
+    :root {
+      --app-font-size: clamp(14px, calc(9px + 0.2vw + 0.34vh), 18px);
+      --app-frame-width: clamp(22rem, min(76vw, calc(100dvh * 0.56)), 34rem);
+    }
+  }
+
+  @media (min-width: 1200px) and (min-height: 800px) {
+    :root {
+      --app-font-size: clamp(13px, calc(8px + 0.16vw + 0.24vh), 16px);
+      --app-frame-width: clamp(21rem, min(68vw, calc(100dvh * 0.5)), 30rem);
+    }
   }
 
   button {
@@ -199,4 +224,4 @@
     transform: translateY(-8px);
   }
 }
-}
+

@@ -71,11 +71,11 @@ export default function Login() {
   return (
     <main className="relative min-h-dvh w-full overflow-hidden bg-white px-5 pb-8 pt-6">
       <div
-        className="absolute -right-28 top-16 size-72 rounded-full bg-tone-summer/35 blur-[70px]"
+        className="absolute -right-28 top-4 size-72 rounded-full bg-tone-summer/35 blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="absolute -left-24 bottom-12 size-72 rounded-full bg-tone-spring/25 blur-[80px]"
+        className="absolute -left-24 bottom-12 size-72 rounded-full bg-tone-spring/25 blur-3xl"
         aria-hidden="true"
       />
 
@@ -102,18 +102,18 @@ export default function Login() {
           결과 저장하기
         </div>
 
-        <h2 className="text-[30px] font-normal leading-[42px] tracking-[-0.4px] text-brown-600">
+        <h2 className="text-3xl font-normal leading-10 tracking-tight text-brown-600">
           로그인하고
           <br />
           내 퍼스널 컬러 결과를 저장하세요
         </h2>
-        <p className="mt-6 text-base font-normal leading-[27px] text-[#7a625c]">
+        <p className="mt-6 text-base font-normal leading-7 text-[#7a625c]">
           구글 계정으로 간편하게 시작할 수 있어요.
           <br />
           저장한 진단 기록과 찜한 제품은 마이페이지에서 다시 확인할 수 있습니다.
         </p>
 
-        <div className="mt-12 rounded-[28px] bg-white px-5 py-6 shadow-[0_22px_55px_rgb(107_74_63_/_0.08)]">
+        <div className="mt-12 rounded-2xl bg-white px-5 py-6 shadow-lg">
           <button
             type="button"
             className="flex h-16 w-full items-center justify-center gap-3 rounded-full border border-cream-200 bg-white text-lg font-normal leading-7 text-brown-600 shadow-[0_8px_22px_rgb(107_74_63_/_0.08)] disabled:opacity-60"
