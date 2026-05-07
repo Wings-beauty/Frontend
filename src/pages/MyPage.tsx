@@ -96,7 +96,9 @@ export default function MyPage() {
   const [profileError, setProfileError] = useState("");
   const latestDiagnosis = diagnosisHistory[0] ?? null;
   const result =
-    personalColorResults[latestDiagnosis?.season ?? getStoredPersonalColorSeason()];
+    personalColorResults[
+      latestDiagnosis?.season ?? getStoredPersonalColorSeason()
+    ];
 
   useEffect(() => {
     let isMounted = true;
@@ -169,7 +171,9 @@ export default function MyPage() {
         nickname: updatedProfile.nickname ?? nicknameDraft.trim(),
         email: currentProfile?.email ?? "",
         profileImageUrl:
-          updatedProfile.profile_image_url ?? currentProfile?.profileImageUrl ?? null,
+          updatedProfile.profile_image_url ??
+          currentProfile?.profileImageUrl ??
+          null,
       }));
       setIsProfileModalOpen(false);
     } catch (error) {
@@ -219,11 +223,19 @@ export default function MyPage() {
         </section>
       ) : null}
 
-      <section className={`relative mt-16 rounded-3xl bg-linear-to-br from-white via-white px-6 pb-8 pt-12 shadow-lg ${result.accentSoftClassName}`}>
+      <section
+        className={`relative mt-16 rounded-3xl bg-linear-to-br from-white via-white px-6 pb-8 pt-12 shadow-lg ${result.accentSoftClassName}`}
+      >
         <div className="flex items-center gap-5">
-          <div className={`size-24 shrink-0 overflow-hidden rounded-full border-2 border-white ${result.accentClassName} p-1 shadow-md`}>
+          <div
+            className={`size-24 shrink-0 overflow-hidden rounded-full border-2 border-white ${result.accentClassName} p-1 shadow-md`}
+          >
             <img
-              src={profile?.profileImageUrl ?? upload?.imageUrl ?? "/illustration.png"}
+              src={
+                profile?.profileImageUrl ??
+                upload?.imageUrl ??
+                "/illustration.png"
+              }
               className="size-full rounded-full object-cover"
               alt="프로필"
             />
@@ -232,10 +244,14 @@ export default function MyPage() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-3xl font-normal leading-8 text-brown-600">
-                {isLoading ? "불러오는 중" : profile?.nickname ?? "WINGS 사용자"}
+                {isLoading
+                  ? "불러오는 중"
+                  : (profile?.nickname ?? "WINGS 사용자")}
               </h2>
               {latestDiagnosis ? (
-                <span className={`rounded-full px-5 py-1.5 text-base font-normal leading-6 text-brown-600 ${result.accentClassName}`}>
+                <span
+                  className={`rounded-full px-5 py-1.5 text-base font-normal leading-6 text-brown-600 ${result.accentClassName}`}
+                >
                   {latestDiagnosis.toneLabel}
                 </span>
               ) : null}
@@ -283,15 +299,21 @@ export default function MyPage() {
           </article>
         ) : latestDiagnosis ? (
           <article className="relative overflow-hidden rounded-2xl bg-white px-7 py-7 shadow-lg">
-            <div className={`absolute inset-y-8 left-0 w-1 ${result.accentClassName}`} />
-            <div className={`absolute right-7 top-7 size-12 overflow-hidden rounded-full ${result.accentClassName} p-1`}>
+            <div
+              className={`absolute inset-y-8 left-0 w-1 ${result.accentClassName}`}
+            />
+            <div
+              className={`absolute right-7 top-7 size-12 overflow-hidden rounded-full ${result.accentClassName} p-1`}
+            >
               <img
                 src={result.imageUrl}
                 className="size-full rounded-full object-cover"
                 alt=""
               />
             </div>
-            <p className="text-sm font-normal leading-5 text-[#8a716b]">최근 진단일</p>
+            <p className="text-sm font-normal leading-5 text-[#8a716b]">
+              최근 진단일
+            </p>
             <p className="mt-3 text-2xl font-normal leading-8 text-brown-600">
               {formatDate(latestDiagnosis.createdAt)}
             </p>
@@ -367,7 +389,9 @@ export default function MyPage() {
                       ) : (
                         <div
                           className="size-full"
-                          style={{ backgroundColor: product.colorHex ?? "#fff9e6" }}
+                          style={{
+                            backgroundColor: product.colorHex ?? "#fff9e6",
+                          }}
                         />
                       )}
                       <button
@@ -407,9 +431,17 @@ export default function MyPage() {
               type="button"
               className="flex h-20 w-full items-center border-b border-cream-200 text-brown-600"
             >
-              <Icon className="ml-5 size-6 shrink-0 text-[#8a716b]" aria-hidden="true" />
-              <span className="ml-5 text-xl font-normal leading-7">{item.label}</span>
-              <HiChevronRight className="ml-auto mr-5 size-6 text-[#8a716b]" aria-hidden="true" />
+              <Icon
+                className="ml-5 size-6 shrink-0 text-[#8a716b]"
+                aria-hidden="true"
+              />
+              <span className="ml-5 text-xl font-normal leading-7">
+                {item.label}
+              </span>
+              <HiChevronRight
+                className="ml-auto mr-5 size-6 text-[#8a716b]"
+                aria-hidden="true"
+              />
             </button>
           );
         })}
@@ -419,7 +451,10 @@ export default function MyPage() {
           className="flex h-20 w-full items-center text-[#f08c8c]"
           onClick={handleSignOut}
         >
-          <HiArrowRightOnRectangle className="ml-5 size-6 shrink-0" aria-hidden="true" />
+          <HiArrowRightOnRectangle
+            className="ml-5 size-6 shrink-0"
+            aria-hidden="true"
+          />
           <span className="ml-5 text-xl font-normal leading-7">로그아웃</span>
         </button>
       </nav>
