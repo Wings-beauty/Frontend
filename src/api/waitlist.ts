@@ -13,6 +13,10 @@ export async function addToLaunchWaitlist(source: string) {
   });
 
   if (error) {
+    if (error.code === "23505") {
+      return;
+    }
+
     throw new Error(error.message || "알림 신청 저장에 실패했습니다.");
   }
 }

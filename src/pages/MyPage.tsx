@@ -7,6 +7,7 @@ import {
   HiHeart,
   HiHome,
   HiMegaphone,
+  HiMiniUser,
   HiPencil,
   HiQuestionMarkCircle,
   HiSparkles,
@@ -21,7 +22,6 @@ import {
   fetchDiagnosisHistoryForUser,
   type DiagnosisHistoryItem,
 } from "../api/diagnosis";
-import type { MockUploadResponse } from "../api/mockUploadPhoto";
 import {
   fetchSavedProductsForUser,
   removeSavedProduct,
@@ -53,20 +53,6 @@ const menuItems = [
   },
 ] as const;
 
-function getStoredUpload(): MockUploadResponse | null {
-  const storedUpload = sessionStorage.getItem("wings_uploaded_photo");
-
-  if (!storedUpload) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUpload) as MockUploadResponse;
-  } catch {
-    return null;
-  }
-}
-
 function formatDate(value: string | null) {
   if (!value) {
     return "날짜 정보 없음";
@@ -81,7 +67,6 @@ function formatDate(value: string | null) {
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const upload = getStoredUpload();
   const [userId, setUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileView | null>(null);
@@ -228,17 +213,17 @@ export default function MyPage() {
       >
         <div className="flex items-center gap-5">
           <div
-            className={`size-24 shrink-0 overflow-hidden rounded-full border-2 border-white ${result.accentClassName} p-1 shadow-md`}
+            className={`flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white ${result.accentClassName} p-1 shadow-md`}
           >
-            <img
-              src={
-                profile?.profileImageUrl ??
-                upload?.imageUrl ??
-                "/illustration.png"
-              }
-              className="size-full rounded-full object-cover"
-              alt="프로필"
-            />
+            {profile?.profileImageUrl ? (
+              <img
+                src={profile.profileImageUrl}
+                className="size-full rounded-full object-cover"
+                alt="프로필"
+              />
+            ) : (
+              <HiMiniUser className="size-14 text-brown-400" aria-hidden="true" />
+            )}
           </div>
 
           <div className="min-w-0">

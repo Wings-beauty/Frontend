@@ -4,10 +4,11 @@ import {
   HiBell,
   HiHeart,
   HiHome,
+  HiMiniUser,
   HiPaintBrush,
 } from "react-icons/hi2";
-import type { MockUploadResponse } from "../api/mockUploadPhoto";
 import {
+  fetchProfile,
   getCurrentUser,
   saveCurrentDiagnosisToUser,
 } from "../api/auth";
@@ -24,19 +25,9 @@ import {
   personalColorResults,
 } from "../constants/personalColor";
 
-function getStoredUpload(): MockUploadResponse | null {
-  const storedUpload = sessionStorage.getItem("wings_uploaded_photo");
-
-  if (!storedUpload) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUpload) as MockUploadResponse;
-  } catch {
-    return null;
-  }
-}
+type ProfileView = {
+  profileImageUrl: string | null;
+};
 
 function ProductCard({
   product,
@@ -133,7 +124,6 @@ function ProductCard({
 
 export default function Recommendation() {
   const navigate = useNavigate();
-  const upload = getStoredUpload();
   const season = getStoredPersonalColorSeason();
   const result = personalColorResults[season];
   const [recommendedProducts, setRecommendedProducts] = useState<
@@ -148,6 +138,7 @@ export default function Recommendation() {
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
   const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
+  const [profile, setProfile] = useState<ProfileView | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -166,10 +157,16 @@ export default function Recommendation() {
         
         if (user) {
           setUserId(user.id);
-          const savedProducts = await fetchSavedProductsForUser(user.id);
+          const [savedProducts, profileFromDb] = await Promise.all([
+            fetchSavedProductsForUser(user.id),
+            fetchProfile(user),
+          ]);
           if (isMounted) {
             setSavedProductIds(new Set(savedProducts.map((p) => p.id)));
+            setProfile({ profileImageUrl: profileFromDb.profileImageUrl });
           }
+        } else {
+          setProfile(null);
         }
       } catch (error) {
         console.error("Failed to load recommendation data:", error);
@@ -293,12 +290,16 @@ export default function Recommendation() {
           WINGS
         </h1>
 
-        <div className="size-10 overflow-hidden rounded-full border-2 border-cream-200 bg-cream-50 shadow-sm">
-          <img
-            src={upload?.imageUrl ?? "/illustration.png"}
-            className="size-full object-cover"
-            alt="분석 프로필"
-          />
+        <div className="flex size-10 items-center justify-center overflow-hidden rounded-full border-2 border-cream-200 bg-cream-50 shadow-sm">
+          {profile?.profileImageUrl ? (
+            <img
+              src={profile.profileImageUrl}
+              className="size-full object-cover"
+              alt="프로필"
+            />
+          ) : (
+            <HiMiniUser className="size-7 text-brown-400" aria-hidden="true" />
+          )}
         </div>
       </header>
 

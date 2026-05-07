@@ -9,7 +9,6 @@ import {
 } from "react-icons/hi2";
 import { fetchProfile, getCurrentUser } from "../api/auth";
 import { fetchLatestDiagnosisSeasonForUser } from "../api/diagnosis";
-import type { MockUploadResponse } from "../api/mockUploadPhoto";
 import {
   fetchRecommendedProducts,
   fetchSavedProductsForUser,
@@ -24,6 +23,12 @@ import {
   personalColorResults,
   type PersonalColorSeason,
 } from "../constants/personalColor";
+
+type ProfileView = {
+  nickname: string;
+  email: string;
+  profileImageUrl: string | null;
+};
 
 const reviews = [
   {
@@ -46,20 +51,6 @@ const reviews = [
   },
 ] as const;
 
-function getStoredUpload(): MockUploadResponse | null {
-  const storedUpload = sessionStorage.getItem("wings_uploaded_photo");
-
-  if (!storedUpload) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUpload) as MockUploadResponse;
-  } catch {
-    return null;
-  }
-}
-
 function hasStoredPersonalColorResult() {
   return Boolean(
     sessionStorage.getItem("wings_personal_color_season") ??
@@ -69,7 +60,6 @@ function hasStoredPersonalColorResult() {
 
 export default function Home() {
   const navigate = useNavigate();
-  const upload = getStoredUpload();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>(
@@ -85,7 +75,7 @@ export default function Home() {
   const [isPreparingModalOpen, setIsPreparingModalOpen] = useState(false);
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<ProfileView | null>(null);
   const result = personalColorResults[personalSeason];
 
   useEffect(() => {
@@ -98,15 +88,16 @@ export default function Home() {
           return;
         }
 
-        const fetchProfileData = await fetchProfile(user);
-        setProfile(fetchProfileData);
         setIsLoggedIn(Boolean(user));
 
         if (!user) {
+          setProfile(null);
           setLifeProducts([]);
           return;
         }
 
+        const fetchProfileData = await fetchProfile(user);
+        setProfile(fetchProfileData);
         setIsLoadingLifeProducts(true);
 
         const storedSeason = hasStoredPersonalColorResult()
@@ -228,9 +219,9 @@ export default function Home() {
           aria-label="마이페이지로 이동"
           onClick={() => navigate("/mypage")}
         >
-          {upload ? (
+          {profile?.profileImageUrl ? (
             <img
-              src={profile?.profileImageUrl ?? "/illustration.png"}
+              src={profile.profileImageUrl}
               className="size-full object-cover"
               alt="프로필"
             />

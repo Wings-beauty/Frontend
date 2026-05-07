@@ -18,7 +18,7 @@ export const personalColorResults: Record<
 > = {
   spring: {
     seasonLabel: "봄",
-    toneCode: "spring_mock",
+    toneCode: "spring",
     toneLabel: "봄 웜 라이트",
     title: "봄 웜 라이트에 가까워요",
     description: "맑은 코랄, 피치, 아이보리 컬러가 잘 어울려요.",
@@ -31,7 +31,7 @@ export const personalColorResults: Record<
   },
   summer: {
     seasonLabel: "여름",
-    toneCode: "summer_mock",
+    toneCode: "summer",
     toneLabel: "여름 쿨 뮤트",
     title: "여름 쿨 뮤트에 가까워요",
     description: "차분한 핑크, 로즈, 라벤더 컬러가 잘 어울려요.",
@@ -44,7 +44,7 @@ export const personalColorResults: Record<
   },
   autumn: {
     seasonLabel: "가을",
-    toneCode: "autumn_mock",
+    toneCode: "autumn",
     toneLabel: "가을 웜 뮤트",
     title: "가을 웜 뮤트에 가까워요",
     description: "카멜, 테라코타, 브라운 로즈 컬러가 잘 어울려요.",
@@ -57,7 +57,7 @@ export const personalColorResults: Record<
   },
   winter: {
     seasonLabel: "겨울",
-    toneCode: "winter_mock",
+    toneCode: "winter",
     toneLabel: "겨울 쿨 브라이트",
     title: "겨울 쿨 브라이트에 가까워요",
     description: "선명한 핑크, 버건디, 아이시 라벤더 컬러가 잘 어울려요.",

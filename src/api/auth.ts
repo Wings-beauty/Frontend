@@ -1,22 +1,8 @@
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import type { MockUploadResponse } from "./mockUploadPhoto";
+import { getStoredDiagnosisUpload } from "./diagnosisUpload";
 
 const AUTH_RETURN_TO = "/home";
-
-function getStoredUpload(): MockUploadResponse | null {
-  const storedUpload = sessionStorage.getItem("wings_uploaded_photo");
-
-  if (!storedUpload) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUpload) as MockUploadResponse;
-  } catch {
-    return null;
-  }
-}
 
 export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser();
@@ -126,7 +112,7 @@ export async function updateProfileNickname(userId: string, nickname: string) {
 }
 
 export async function saveCurrentDiagnosisToUser(user: User) {
-  const upload = getStoredUpload();
+  const upload = getStoredDiagnosisUpload();
 
   if (!upload) {
     return;

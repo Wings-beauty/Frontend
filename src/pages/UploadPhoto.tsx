@@ -9,6 +9,10 @@ import {
   HiXMark,
 } from "react-icons/hi2";
 import { uploadDiagnosisPhoto } from "../api/diagnosis";
+import {
+  clearStoredDiagnosis,
+  setStoredDiagnosisUpload,
+} from "../api/diagnosisUpload";
 
 export default function UploadPhoto() {
   const navigate = useNavigate();
@@ -35,14 +39,12 @@ export default function UploadPhoto() {
 
     setIsUploading(true);
     setUploadError("");
+    clearStoredDiagnosis();
 
     try {
       const uploadResult = await uploadDiagnosisPhoto(file);
 
-      sessionStorage.setItem(
-        "wings_uploaded_photo",
-        JSON.stringify(uploadResult),
-      );
+      setStoredDiagnosisUpload(uploadResult);
       navigate("/analyzing", { state: uploadResult });
     } catch (error) {
       setUploadError(

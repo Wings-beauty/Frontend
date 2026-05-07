@@ -1,29 +1,44 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HiArrowRight, HiHome } from "react-icons/hi2";
-import type { MockUploadResponse } from "../api/mockUploadPhoto";
+import { HiArrowRight, HiHome, HiMiniUser } from "react-icons/hi2";
+import { fetchProfile, getCurrentUser } from "../api/auth";
 import {
   getStoredPersonalColorSeason,
   personalColorResults,
 } from "../constants/personalColor";
 
-function getStoredUpload(): MockUploadResponse | null {
-  const storedUpload = sessionStorage.getItem("wings_uploaded_photo");
-
-  if (!storedUpload) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUpload) as MockUploadResponse;
-  } catch {
-    return null;
-  }
-}
+type ProfileView = {
+  profileImageUrl: string | null;
+};
 
 export default function Result() {
   const navigate = useNavigate();
-  const upload = getStoredUpload();
+  const [profile, setProfile] = useState<ProfileView | null>(null);
   const result = personalColorResults[getStoredPersonalColorSeason()];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProfile = async () => {
+      const user = await getCurrentUser();
+
+      if (!user) {
+        return;
+      }
+
+      const profileFromDb = await fetchProfile(user);
+
+      if (isMounted) {
+        setProfile({ profileImageUrl: profileFromDb.profileImageUrl });
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-white px-5 pb-6 pt-5">
@@ -41,21 +56,25 @@ export default function Result() {
           type="button"
           className="flex size-10 items-center justify-center text-brown-600"
           aria-label="홈으로 이동"
-          onClick={() => navigate("/onboarding")}
+          onClick={() => navigate("/home")}
         >
           <HiHome className="size-7" aria-hidden="true" />
         </button>
 
-        <h1 className="text-2xl font-normal leading-[30px] text-[#1f1b1b]">
+        <h1 className="text-2xl font-normal leading-7.5 text-[#1f1b1b]">
           WINGS
         </h1>
 
-        <div className="size-10 overflow-hidden rounded-full border-2 border-cream-200 bg-cream-50 shadow-[0_4px_14px_rgb(58_37_39_/_0.12)]">
-          <img
-            src={upload?.imageUrl ?? "/illustration.png"}
-            className="size-full object-cover"
-            alt="분석 프로필"
-          />
+        <div className="flex size-10 items-center justify-center overflow-hidden rounded-full border-2 border-cream-200 bg-cream-50 shadow-[0_4px_14px_rgb(58_37_39/0.12)]">
+          {profile?.profileImageUrl ? (
+            <img
+              src={profile.profileImageUrl}
+              className="size-full object-cover"
+              alt="프로필"
+            />
+          ) : (
+            <HiMiniUser className="size-7 text-brown-400" aria-hidden="true" />
+          )}
         </div>
       </header>
 

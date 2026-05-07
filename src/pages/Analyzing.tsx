@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HiArrowPath, HiCheck, HiSparkles } from "react-icons/hi2";
-import type { MockUploadResponse } from "../api/mockUploadPhoto";
 import { completeDiagnosis } from "../api/diagnosis";
+import {
+  clearStoredDiagnosis,
+  getStoredDiagnosisUpload,
+  type DiagnosisUpload,
+} from "../api/diagnosisUpload";
 
 const timelineSteps = [
   {
@@ -27,25 +31,12 @@ const timelineSteps = [
   },
 ] as const;
 
-function getStoredUpload(): MockUploadResponse | null {
-  const storedUpload = sessionStorage.getItem("wings_uploaded_photo");
-
-  if (!storedUpload) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedUpload) as MockUploadResponse;
-  } catch {
-    return null;
-  }
-}
-
 export default function Analyzing() {
   const navigate = useNavigate();
   const location = useLocation();
   const upload = useMemo(
-    () => (location.state as MockUploadResponse | null) ?? getStoredUpload(),
+    () =>
+      (location.state as DiagnosisUpload | null) ?? getStoredDiagnosisUpload(),
     [location.state],
   );
   const [activeTextIndex, setActiveTextIndex] = useState(0);
@@ -61,8 +52,14 @@ export default function Analyzing() {
     }, 1200);
 
     const resultTimer = window.setTimeout(() => {
-      void completeDiagnosis(upload).finally(() => {
-        navigate("/result", { replace: true });
+      void completeDiagnosis(upload).then((result) => {
+        if (result) {
+          navigate("/result", { replace: true });
+          return;
+        }
+
+        clearStoredDiagnosis();
+        navigate("/photo", { replace: true });
       });
     }, 4200);
 
