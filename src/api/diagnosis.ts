@@ -1,7 +1,10 @@
 import type { MockUploadResponse } from "./mockUploadPhoto";
 import { supabase } from "../lib/supabase";
 import type { PersonalColorSeason } from "../constants/personalColor";
-import { personalColorResults } from "../constants/personalColor";
+import {
+  getPersonalColorSeasonFromValue,
+  personalColorResults,
+} from "../constants/personalColor";
 
 const STORAGE_BUCKET = "diagnosis-images";
 
@@ -10,6 +13,15 @@ type DiagnosisResultRow = {
   tone_code: string | null;
   tone_label: string | null;
   confidence: number | null;
+  created_at?: string | null;
+};
+
+export type DiagnosisHistoryItem = {
+  id: number;
+  season: PersonalColorSeason;
+  toneLabel: string;
+  confidence: number | null;
+  createdAt: string | null;
 };
 
 function getSeasonFromToneCode(toneCode: string | null): PersonalColorSeason {
@@ -26,6 +38,58 @@ function getSeasonFromToneCode(toneCode: string | null): PersonalColorSeason {
   }
 
   return "summer";
+}
+
+export async function fetchLatestDiagnosisSeasonForUser(userId: string) {
+  const { data, error } = await supabase
+    .from("diagnosis_results")
+    .select("tone_code, tone_label")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<Pick<DiagnosisResultRow, "tone_code" | "tone_label">>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const season = getPersonalColorSeasonFromValue(data.tone_code ?? data.tone_label);
+
+  sessionStorage.setItem("wings_personal_color_season", season);
+
+  if (data.tone_label) {
+    sessionStorage.setItem("wings_personal_color_result", data.tone_label);
+  }
+
+  return season;
+}
+
+export async function fetchDiagnosisHistoryForUser(userId: string) {
+  const { data, error } = await supabase
+    .from("diagnosis_results")
+    .select("id, tone_code, tone_label, confidence, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(10)
+    .returns<DiagnosisResultRow[]>();
+
+  if (error || !data) {
+    return [];
+  }
+
+  return data.map((item) => {
+    const season = getPersonalColorSeasonFromValue(
+      item.tone_code ?? item.tone_label,
+    );
+
+    return {
+      id: item.id,
+      season,
+      toneLabel: item.tone_label ?? personalColorResults[season].toneLabel,
+      confidence: item.confidence,
+      createdAt: item.created_at ?? null,
+    };
+  });
 }
 
 function getMockSeason(seed: number): PersonalColorSeason {

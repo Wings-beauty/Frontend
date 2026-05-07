@@ -70,11 +70,10 @@ export const personalColorResults: Record<
   },
 };
 
-export function getStoredPersonalColorSeason(): PersonalColorSeason {
-  const storedResult =
-    sessionStorage.getItem("wings_personal_color_season") ??
-    sessionStorage.getItem("wings_personal_color_result") ??
-    "";
+export function getPersonalColorSeasonFromValue(
+  value: string | null | undefined,
+): PersonalColorSeason {
+  const storedResult = value ?? "";
   const normalizedResult = storedResult.toLowerCase();
 
   if (normalizedResult.includes("spring") || storedResult.includes("봄")) {
@@ -90,4 +89,13 @@ export function getStoredPersonalColorSeason(): PersonalColorSeason {
   }
 
   return "summer";
+}
+
+export function getStoredPersonalColorSeason(): PersonalColorSeason {
+  const storedResult =
+    sessionStorage.getItem("wings_personal_color_season") ??
+    sessionStorage.getItem("wings_personal_color_result") ??
+    "";
+
+  return getPersonalColorSeasonFromValue(storedResult);
 }

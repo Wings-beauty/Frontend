@@ -11,7 +11,7 @@ export default function Welcome() {
       localStorage.getItem("wings_has_seen_welcome") === "true";
 
     if (hasSeenWelcome) {
-      navigate("/onboarding", { replace: true });
+      navigate("/home", { replace: true });
       return;
     }
 
@@ -49,9 +49,9 @@ export default function Welcome() {
             alt="Wings"
           />
           <p className="mt-0 max-w-xs text-center text-base font-normal leading-7 text-[#6b4a3f]">
-            나에게 맞는 색을 찾는 
+            나에게 맞는 색을 찾는
             <br />
-           가장 쉬운 방법
+            가장 쉬운 방법
           </p>
         </div>
       </div>

@@ -8,6 +8,8 @@ import Recommendation from "./pages/Recommendation";
 import Home from "./pages/Home";
 import MyPage from "./pages/MyPage";
 import Login from "./pages/Login";
+import ToneProducts from "./pages/ToneProducts";
+import SavedProducts from "./pages/SavedProducts";
 
 function App() {
   return (
@@ -22,6 +24,8 @@ function App() {
         <Route path="/analyzing" element={<Analyzing />} />
         <Route path="/result" element={<Result />} />
         <Route path="/recommendation" element={<Recommendation />} />
+        <Route path="/tone-products" element={<ToneProducts />} />
+        <Route path="/saved-products" element={<SavedProducts />} />
       </Routes>
     </BrowserRouter>
   );
