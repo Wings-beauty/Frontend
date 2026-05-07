@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   HiArrowRightOnRectangle,
-  HiBell,
   HiChevronRight,
   HiHeart,
   HiHome,
@@ -10,6 +9,7 @@ import {
   HiMiniUser,
   HiPencil,
   HiQuestionMarkCircle,
+  HiShieldCheck,
   HiSparkles,
 } from "react-icons/hi2";
 import {
@@ -31,27 +31,48 @@ import {
   getStoredPersonalColorSeason,
   personalColorResults,
 } from "../constants/personalColor";
+import type { ProfileRole } from "../constants/inquiries";
 
 type ProfileView = {
   nickname: string;
   email: string;
   profileImageUrl: string | null;
+  role: ProfileRole;
 };
 
-const menuItems = [
+const baseMenuItems = [
   {
     label: "공지사항",
     icon: HiMegaphone,
+    path: null,
   },
-  {
-    label: "1:1 문의",
-    icon: HiQuestionMarkCircle,
-  },
+] as const;
+
+const userSupportMenuItem = {
+  label: "1:1 문의",
+  icon: HiQuestionMarkCircle,
+  path: "/inquiries",
+} as const;
+
+const adminMenuItem = {
+  label: "관리자 화면",
+  icon: HiShieldCheck,
+  path: "/admin",
+} as const;
+
+function getMenuItems(role: ProfileRole | undefined) {
+  return [
+    ...baseMenuItems,
+    role === "admin" ? adminMenuItem : userSupportMenuItem,
+  ];
+}
+
+/*
   {
     label: "알림 설정",
     icon: HiBell,
   },
-] as const;
+*/
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -80,6 +101,7 @@ export default function MyPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
   const latestDiagnosis = diagnosisHistory[0] ?? null;
+  const menuItems = getMenuItems(profile?.role);
   const result =
     personalColorResults[
       latestDiagnosis?.season ?? getStoredPersonalColorSeason()
@@ -110,7 +132,10 @@ export default function MyPage() {
           return;
         }
 
-        setProfile(profileFromDb);
+        setProfile({
+          ...profileFromDb,
+          role: profileFromDb.role === "admin" ? "admin" : "user",
+        });
         setNicknameDraft(profileFromDb.nickname);
         setDiagnosisHistory(historyFromDb);
         setSavedProducts(savedProductsFromDb);
@@ -159,6 +184,7 @@ export default function MyPage() {
           updatedProfile.profile_image_url ??
           currentProfile?.profileImageUrl ??
           null,
+        role: currentProfile?.role ?? "user",
       }));
       setIsProfileModalOpen(false);
     } catch (error) {
@@ -412,6 +438,11 @@ export default function MyPage() {
 
           return (
             <button
+              onClick={() => {
+                if (item.path) {
+                  navigate(item.path);
+                }
+              }}
               key={item.label}
               type="button"
               className="flex h-20 w-full items-center border-b border-cream-200 text-brown-600"

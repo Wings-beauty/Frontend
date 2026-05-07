@@ -1,13 +1,63 @@
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getStoredDiagnosisUpload } from "./diagnosisUpload";
+import type { ProfileRole } from "../constants/inquiries";
 
 const AUTH_RETURN_TO = "/home";
+const AUTH_RETURN_TO_KEY = "wings_auth_return_to";
 
 export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser();
 
   return data.user;
+}
+
+export type CurrentUserProfile = {
+  id: string;
+  nickname: string | null;
+  profileImageUrl: string | null;
+  role: ProfileRole;
+};
+
+export async function getCurrentUserProfile() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, nickname, profile_image_url, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    nickname: data.nickname,
+    profileImageUrl: data.profile_image_url,
+    role: data.role === "admin" ? "admin" : "user",
+  } satisfies CurrentUserProfile;
+}
+
+export async function isAdminUser() {
+  const profile = await getCurrentUserProfile();
+
+  return profile?.role === "admin";
+}
+
+export async function requireAdmin() {
+  const profile = await getCurrentUserProfile();
+
+  if (profile?.role !== "admin") {
+    throw new Error("관리자 권한이 필요합니다.");
+  }
+
+  return profile;
 }
 
 export async function signOut() {
@@ -32,7 +82,15 @@ export async function signInWithGoogle() {
 }
 
 export function consumeAuthReturnTo() {
-  return AUTH_RETURN_TO;
+  const returnTo = sessionStorage.getItem(AUTH_RETURN_TO_KEY) ?? AUTH_RETURN_TO;
+
+  sessionStorage.removeItem(AUTH_RETURN_TO_KEY);
+
+  return returnTo;
+}
+
+export function setAuthReturnTo(path: string) {
+  sessionStorage.setItem(AUTH_RETURN_TO_KEY, path);
 }
 
 export async function ensureProfile(user: User) {
@@ -58,6 +116,7 @@ export async function ensureProfile(user: User) {
     id: user.id,
     nickname,
     profile_image_url: profileImageUrl,
+    role: "user",
     updated_at: new Date().toISOString(),
   });
 }
@@ -67,7 +126,7 @@ export async function fetchProfile(user: User) {
 
   const { data } = await supabase
     .from("profiles")
-    .select("nickname, profile_image_url")
+    .select("nickname, profile_image_url, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -84,6 +143,7 @@ export async function fetchProfile(user: User) {
       user.user_metadata.avatar_url ??
       user.user_metadata.picture ??
       null,
+    role: (data?.role === "admin" ? "admin" : "user") satisfies ProfileRole,
   };
 }
 

@@ -97,6 +97,7 @@ export type Database = {
       launch_waitlist: {
         Row: {
           id: number;
+          user_id: string | null;
           email: string | null;
           source: string | null;
           tone_code: string | null;
@@ -104,15 +105,59 @@ export type Database = {
         };
         Insert: {
           id?: never;
+          user_id?: string | null;
           email?: string | null;
           source?: string | null;
           tone_code?: string | null;
           created_at?: string | null;
         };
         Update: {
+          user_id?: string | null;
           email?: string | null;
           source?: string | null;
           tone_code?: string | null;
+        };
+        Relationships: [];
+      };
+      inquiries: {
+        Row: {
+          id: string;
+          user_id: string;
+          category: string;
+          title: string;
+          content: string;
+          status: string;
+          admin_reply: string | null;
+          replied_by: string | null;
+          replied_at: string | null;
+          is_deleted: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          category: string;
+          title: string;
+          content: string;
+          status?: string;
+          admin_reply?: string | null;
+          replied_by?: string | null;
+          replied_at?: string | null;
+          is_deleted?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          title?: string;
+          content?: string;
+          status?: string;
+          admin_reply?: string | null;
+          replied_by?: string | null;
+          replied_at?: string | null;
+          is_deleted?: boolean;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -208,27 +253,33 @@ export type Database = {
       profiles: {
         Row: {
           id: string;
+          email: string | null;
           nickname: string | null;
           profile_image_url: string | null;
           birth_year: number | null;
           skin_note: string | null;
+          role: string;
           created_at: string | null;
           updated_at: string | null;
         };
         Insert: {
           id: string;
+          email?: string | null;
           nickname?: string | null;
           profile_image_url?: string | null;
           birth_year?: number | null;
           skin_note?: string | null;
+          role?: string;
           created_at?: string | null;
           updated_at?: string | null;
         };
         Update: {
+          email?: string | null;
           nickname?: string | null;
           profile_image_url?: string | null;
           birth_year?: number | null;
           skin_note?: string | null;
+          role?: string;
           updated_at?: string | null;
         };
         Relationships: [];

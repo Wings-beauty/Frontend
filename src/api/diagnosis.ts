@@ -40,6 +40,8 @@ export type DiagnosisHistoryItem = {
   createdAt: string | null;
 };
 
+export type LatestDiagnosis = DiagnosisHistoryItem;
+
 function getSeasonFromToneCode(toneCode: string | null): PersonalColorSeason {
   return getPersonalColorSeasonFromValue(toneCode);
 }
@@ -145,6 +147,38 @@ export async function fetchLatestDiagnosisSeasonForUser(userId: string) {
   }
 
   return season;
+}
+
+export async function fetchLatestDiagnosisForUser(userId: string) {
+  const { data, error } = await supabase
+    .from("diagnosis_results")
+    .select("id, tone_code, tone_label, confidence, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<DiagnosisResultRow>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const season = getPersonalColorSeasonFromValue(
+    data.tone_code ?? data.tone_label,
+  );
+
+  sessionStorage.setItem("wings_personal_color_season", season);
+
+  if (data.tone_label) {
+    sessionStorage.setItem("wings_personal_color_result", data.tone_label);
+  }
+
+  return {
+    id: data.id,
+    season,
+    toneLabel: data.tone_label ?? personalColorResults[season].toneLabel,
+    confidence: data.confidence,
+    createdAt: data.created_at ?? null,
+  };
 }
 
 export async function fetchDiagnosisHistoryForUser(userId: string) {

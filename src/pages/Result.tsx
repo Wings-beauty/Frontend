@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { HiArrowRight, HiHome, HiMiniUser } from "react-icons/hi2";
-import { fetchProfile, getCurrentUser } from "../api/auth";
+import {
+  fetchProfile,
+  getCurrentUser,
+  setAuthReturnTo,
+} from "../api/auth";
 import {
   getStoredPersonalColorSeason,
   personalColorResults,
@@ -14,6 +18,7 @@ type ProfileView = {
 export default function Result() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileView | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const result = personalColorResults[getStoredPersonalColorSeason()];
 
   useEffect(() => {
@@ -21,6 +26,7 @@ export default function Result() {
 
     const loadProfile = async () => {
       const user = await getCurrentUser();
+      setIsLoggedIn(Boolean(user));
 
       if (!user) {
         return;
@@ -40,6 +46,21 @@ export default function Result() {
     };
   }, []);
 
+  const goToLoginForSave = () => {
+    setAuthReturnTo("/recommendation");
+    navigate("/login");
+  };
+
+  const handleHomeClick = () => {
+    if (!isLoggedIn) {
+      setAuthReturnTo("/home");
+      navigate("/login");
+      return;
+    }
+
+    navigate("/home");
+  };
+
   return (
     <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-white px-5 pb-6 pt-5">
       <div
@@ -56,7 +77,7 @@ export default function Result() {
           type="button"
           className="flex size-10 items-center justify-center text-brown-600"
           aria-label="홈으로 이동"
-          onClick={() => navigate("/home")}
+          onClick={handleHomeClick}
         >
           <HiHome className="size-7" aria-hidden="true" />
         </button>
@@ -131,13 +152,16 @@ export default function Result() {
         </section>
 
         <footer className="pt-2">
-          <Link
-            to="/recommendation"
+          <button
+            type="button"
+            onClick={isLoggedIn ? () => navigate("/recommendation") : goToLoginForSave}
             className="flex h-14 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-lg font-normal leading-7 text-white shadow-lg"
           >
-            나에게 맞는 제품 보기
+            {isLoggedIn
+              ? "나에게 맞는 제품 보기"
+              : "로그인하고 진단결과 저장하기"}
             <HiArrowRight className="size-5" aria-hidden="true" />
-          </Link>
+          </button>
         </footer>
       </div>
     </main>

@@ -6,9 +6,13 @@ import {
   HiSparkles,
   HiStar,
   HiMiniUser,
+  HiChatBubbleBottomCenterText,
 } from "react-icons/hi2";
-import { fetchProfile, getCurrentUser } from "../api/auth";
-import { fetchLatestDiagnosisSeasonForUser } from "../api/diagnosis";
+import { fetchProfile, getCurrentUser, setAuthReturnTo } from "../api/auth";
+import {
+  fetchLatestDiagnosisForUser,
+  type LatestDiagnosis,
+} from "../api/diagnosis";
 import {
   fetchRecommendedProducts,
   fetchSavedProductsForUser,
@@ -70,12 +74,16 @@ export default function Home() {
   );
   const [lifeProducts, setLifeProducts] = useState<RecommendedProduct[]>([]);
   const [isLoadingLifeProducts, setIsLoadingLifeProducts] = useState(false);
-  const [savedProductIds, setSavedProductIds] = useState<Set<number>>(new Set());
+  const [savedProductIds, setSavedProductIds] = useState<Set<number>>(
+    new Set(),
+  );
   const [userId, setUserId] = useState<string | null>(null);
   const [isPreparingModalOpen, setIsPreparingModalOpen] = useState(false);
   const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
   const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
   const [profile, setProfile] = useState<ProfileView | null>(null);
+  const [latestDiagnosis, setLatestDiagnosis] =
+    useState<LatestDiagnosis | null>(null);
   const result = personalColorResults[personalSeason];
 
   useEffect(() => {
@@ -93,6 +101,8 @@ export default function Home() {
         if (!user) {
           setProfile(null);
           setLifeProducts([]);
+          setAuthReturnTo("/home");
+          navigate("/login", { replace: true });
           return;
         }
 
@@ -103,8 +113,10 @@ export default function Home() {
         const storedSeason = hasStoredPersonalColorResult()
           ? getStoredPersonalColorSeason()
           : null;
-        const latestSeason =
-          (await fetchLatestDiagnosisSeasonForUser(user.id)) ?? storedSeason;
+        const latestDiagnosisFromDb = await fetchLatestDiagnosisForUser(
+          user.id,
+        );
+        const latestSeason = latestDiagnosisFromDb?.season ?? storedSeason;
 
         if (!isMounted) {
           return;
@@ -118,6 +130,7 @@ export default function Home() {
 
         setHasPersonalTone(true);
         setPersonalSeason(latestSeason);
+        setLatestDiagnosis(latestDiagnosisFromDb);
 
         const [products, savedProducts] = await Promise.all([
           fetchRecommendedProducts(latestSeason),
@@ -147,7 +160,7 @@ export default function Home() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [navigate]);
 
   const handleLaunchWaitlist = async () => {
     setIsSubmittingWaitlist(true);
@@ -264,6 +277,38 @@ export default function Home() {
             isLoggedIn ? "" : "pointer-events-none select-none blur-[6px]"
           }
         >
+          {latestDiagnosis ? (
+            <section
+              className={`mb-10 rounded-3xl px-6 py-6 shadow-lg mt-8 ${result.accentSoftClassName}`}
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm">
+                  <HiChatBubbleBottomCenterText
+                    className="size-6"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-normal leading-5 text-[#7a625c]">
+                    최근 진단 결과 피드백
+                  </p>
+                  <h3 className="mt-2 text-xl font-normal leading-7 text-brown-600">
+                    {latestDiagnosis.toneLabel} 결과가 잘 맞았나요?
+                  </h3>
+                  <p className="mt-2 text-sm font-normal leading-6 text-[#7a625c]">
+                    짧은 설문으로 추천 정확도를 함께 높여주세요.
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                className="mt-5 flex h-13 w-full items-center justify-center rounded-full bg-brown-600 text-base font-normal leading-6 text-white shadow-md"
+                onClick={() => navigate("/feedback")}
+              >
+                피드백 남기기
+              </button>
+            </section>
+          ) : null}
           <section className="relative mt-12">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-normal leading-7.5 text-brown-600">
