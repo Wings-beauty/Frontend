@@ -16,8 +16,11 @@ export type Database = {
           image_url: string | null;
           status: "pending" | "success" | "failed" | null;
           requested_at: string | null;
+          requested_date: string | null;
           completed_at: string | null;
           error_message: string | null;
+          requester_type: "user" | "guest" | null;
+          guest_token_hash: string | null;
         };
         Insert: {
           id?: never;
@@ -25,8 +28,11 @@ export type Database = {
           image_url?: string | null;
           status?: "pending" | "success" | "failed" | null;
           requested_at?: string | null;
+          requested_date?: string | null;
           completed_at?: string | null;
           error_message?: string | null;
+          requester_type?: "user" | "guest" | null;
+          guest_token_hash?: string | null;
         };
         Update: {
           user_id?: string | null;
@@ -34,6 +40,10 @@ export type Database = {
           status?: "pending" | "success" | "failed" | null;
           completed_at?: string | null;
           error_message?: string | null;
+          requester_type?: "user" | "guest" | null;
+          guest_token_hash?: string | null;
+          requested_date?: string | null;
+          requested_at?: string | null;
         };
         Relationships: [];
       };

@@ -1,3 +1,4 @@
+import type { User } from "@supabase/supabase-js";
 import {
   setStoredDiagnosisUpload,
   type DiagnosisUpload,
@@ -8,6 +9,7 @@ import {
   getPersonalColorSeasonFromValue,
   personalColorResults,
 } from "../constants/personalColor";
+import { getCurrentUser, ensureProfile as ensureUserProfile } from "./auth";
 
 const AI_DIAGNOSIS_ENDPOINT = import.meta.env
   .REACT_APP_AI_DIAGNOSIS_KEY as string | undefined;
@@ -18,6 +20,13 @@ type DiagnosisResultRow = {
   tone_label: string | null;
   confidence: number | null;
   created_at?: string | null;
+};
+
+type DiagnosisRequestRow = {
+  id: number;
+  user_id: string | null;
+  requester_type: "user" | "guest" | null;
+  guest_token_hash: string | null;
 };
 
 type AiDiagnosisResponse = {
@@ -84,10 +93,53 @@ function parseAiDiagnosisResponse(data: unknown): AiDiagnosisResponse {
   };
 }
 
-async function getCurrentUserId() {
-  const { data } = await supabase.auth.getUser();
+function getOrCreateGuestId() {
+  const STORAGE_KEY = "wings_guest_id";
+  const existingGuestId = localStorage.getItem(STORAGE_KEY);
 
-  return data.user?.id ?? null;
+  if (existingGuestId) {
+    return existingGuestId;
+  }
+
+  const nextGuestId = crypto.randomUUID();
+  localStorage.setItem(STORAGE_KEY, nextGuestId);
+
+  return nextGuestId;
+}
+
+async function sha256(value: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(value);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function isUniqueConstraintError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const message = (error as { message?: string }).message;
+  const code = (error as { code?: string }).code;
+
+  return (
+    code === "23505" ||
+    typeof message === "string" &&
+      (message.includes("duplicate key") || message.includes("unique constraint") || message.includes("already exists"))
+  );
+}
+
+function getFriendlyRequestError(isUser: boolean) {
+  return isUser
+    ? new Error("오늘의 진단 기회를 이미 사용했어요. 내일 다시 이용해주세요.")
+    : new Error(
+        "비로그인 체험 진단은 1회만 이용할 수 있어요. 로그인하면 하루에 한 번 진단할 수 있습니다.",
+      );
+}
+
+function getGenericDiagnosisError() {
+  return new Error("진단 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
 }
 
 async function requestAiDiagnosis(file: File) {
@@ -124,6 +176,87 @@ function storeDiagnosisResult(upload: DiagnosisUpload, result: DiagnosisResultRo
     result.tone_label ?? personalColorResults[storedSeason].toneLabel,
   );
 }
+
+async function createDiagnosisRequest({
+  user,
+  guestTokenHash,
+}: {
+  user: User | null;
+  guestTokenHash: string | null;
+}) {
+  const requestedAt = new Date().toISOString();
+  const requestedDate = requestedAt.slice(0, 10);
+  const isUser = Boolean(user);
+
+  const { data: request, error } = await supabase
+    .from("diagnosis_requests")
+    .insert({
+      user_id: user?.id ?? null,
+      requester_type: isUser ? "user" : "guest",
+      guest_token_hash: guestTokenHash,
+      status: "pending",
+      image_url: null,
+      requested_at: requestedAt,
+      requested_date: requestedDate,
+    })
+    .select("id")
+    .single<DiagnosisRequestRow>();
+
+  if (error || !request) {
+    if (isUniqueConstraintError(error)) {
+      throw getFriendlyRequestError(isUser);
+    }
+
+    throw getGenericDiagnosisError();
+  }
+
+  return request;
+}
+
+async function saveDiagnosisResult(
+  requestId: number,
+  userId: string | null,
+  aiResult: AiDiagnosisResponse,
+) {
+  const { data, error } = await supabase
+    .from("diagnosis_results")
+    .insert({
+      request_id: requestId,
+      user_id: userId,
+      tone_code: aiResult.season,
+      tone_label: aiResult.season_kr,
+      confidence: normalizeConfidence(aiResult.confidence),
+      raw_result: {
+        source: "ai_diagnosis_api",
+        ...aiResult,
+      },
+    })
+    .select("id, tone_code, tone_label, confidence")
+    .single<DiagnosisResultRow>();
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "진단 결과 저장에 실패했어요.");
+  }
+
+  return data;
+}
+
+async function updateDiagnosisRequestStatus(
+  requestId: number,
+  status: "success" | "failed",
+  errorMessage: string | null = null,
+) {
+  await supabase
+    .from("diagnosis_requests")
+    .update({
+      status,
+      completed_at: new Date().toISOString(),
+      error_message: errorMessage,
+    })
+    .eq("id", requestId);
+}
+
+export { ensureUserProfile };
 
 export async function fetchLatestDiagnosisSeasonForUser(userId: string) {
   const { data, error } = await supabase
@@ -214,53 +347,28 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
     throw new Error("이미지 파일만 업로드할 수 있어요.");
   }
 
-  const userId = await getCurrentUserId();
+  const user = await getCurrentUser();
+  const guestId = user ? null : getOrCreateGuestId();
+  const guestTokenHash = guestId ? await sha256(guestId) : null;
   const requestedAt = new Date().toISOString();
 
-  const { data: request, error: requestError } = await supabase
-    .from("diagnosis_requests")
-    .insert({
-      user_id: userId,
-      image_url: null,
-      status: "pending",
-    })
-    .select("id")
-    .single();
-
-  if (requestError || !request) {
-    throw new Error(requestError?.message || "진단 요청을 저장하지 못했어요.");
+  if (user) {
+    await ensureUserProfile(user);
   }
 
+  let requestId: number | null = null;
+
   try {
+    const request = await createDiagnosisRequest({ user, guestTokenHash });
+    requestId = request.id;
     const aiResult = await requestAiDiagnosis(file);
-    const { data: result, error: resultError } = await supabase
-      .from("diagnosis_results")
-      .insert({
-        request_id: request.id,
-        user_id: userId,
-        tone_code: aiResult.season,
-        tone_label: aiResult.season_kr,
-        confidence: normalizeConfidence(aiResult.confidence),
-        raw_result: {
-          source: "ai_diagnosis_api",
-          ...aiResult,
-        },
-      })
-      .select("id, tone_code, tone_label, confidence")
-      .single<DiagnosisResultRow>();
+    const result = await saveDiagnosisResult(
+      request.id,
+      user?.id ?? null,
+      aiResult,
+    );
 
-    if (resultError || !result) {
-      throw new Error(resultError?.message || "진단 결과 저장에 실패했어요.");
-    }
-
-    await supabase
-      .from("diagnosis_requests")
-      .update({
-        status: "success",
-        completed_at: new Date().toISOString(),
-        error_message: null,
-      })
-      .eq("id", request.id);
+    await updateDiagnosisRequestStatus(request.id, "success", null);
 
     const upload = {
       uploadId: String(request.id),
@@ -274,19 +382,28 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
 
     return upload;
   } catch (error) {
-    await supabase
-      .from("diagnosis_requests")
-      .update({
-        status: "failed",
-        completed_at: new Date().toISOString(),
-        error_message:
-          error instanceof Error ? error.message : "진단 API 요청에 실패했어요.",
-      })
-      .eq("id", request.id);
+    if (requestId) {
+      await updateDiagnosisRequestStatus(
+        requestId,
+        "failed",
+        error instanceof Error ? error.message : null,
+      );
+    }
 
-    throw error instanceof Error
-      ? error
-      : new Error("진단 API 요청에 실패했어요.");
+    if (error instanceof Error) {
+      const knownMessages = [
+        getFriendlyRequestError(Boolean(user)).message,
+        getGenericDiagnosisError().message,
+        "이미지를 먼저 선택해주세요.",
+        "이미지 파일만 업로드할 수 있어요.",
+      ];
+
+      if (knownMessages.includes(error.message)) {
+        throw error;
+      }
+    }
+
+    throw getGenericDiagnosisError();
   }
 }
 
