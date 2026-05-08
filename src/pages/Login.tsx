@@ -14,6 +14,8 @@ export default function Login() {
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState("");
+  const isInitialDiagnosisLogin =
+    sessionStorage.getItem("wings_auth_return_to") === "/photo";
 
   useEffect(() => {
     let isMounted = true;
@@ -80,14 +82,18 @@ export default function Login() {
       />
 
       <header className="relative flex items-center justify-between">
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center text-brown-600"
-          aria-label="이전 페이지로 이동"
-          onClick={() => navigate(-1)}
-        >
-          <HiArrowLeft className="size-6" aria-hidden="true" />
-        </button>
+        {isInitialDiagnosisLogin ? (
+          <div className="size-10" aria-hidden="true" />
+        ) : (
+          <button
+            type="button"
+            className="flex size-10 items-center justify-center text-brown-600"
+            aria-label="이전 페이지로 이동"
+            onClick={() => navigate(-1)}
+          >
+            <HiArrowLeft className="size-6" aria-hidden="true" />
+          </button>
+        )}
 
         <h1 className="text-2xl font-normal leading-[30px] text-[#1f1b1b]">
           WINGS

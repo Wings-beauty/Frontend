@@ -14,6 +14,7 @@ import {
   clearStoredDiagnosis,
   setStoredDiagnosisUpload,
 } from "../api/diagnosisUpload";
+import { supabase } from "../lib/supabase";
 
 export default function UploadPhoto() {
   const navigate = useNavigate();
@@ -33,17 +34,44 @@ export default function UploadPhoto() {
     };
   }, [previewUrl]);
 
+
+
   useEffect(() => {
     let isMounted = true;
 
-    getCurrentUser().then((user) => {
-      if (!isMounted || user) {
+    const checkUserDiagnosisResult = async () => {
+      const user = await getCurrentUser();
+
+      if (!isMounted) {
         return;
       }
 
-      setAuthReturnTo("/photo");
-      navigate("/login", { replace: true });
-    });
+      if (!user) {
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("diagnosis_results")
+        .select("id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!isMounted) {
+        return;
+      }
+
+      if (error) {
+        return;
+      }
+
+      if (data) {
+        navigate("/home", { replace: true });
+      }
+    };
+
+    void checkUserDiagnosisResult();
 
     return () => {
       isMounted = false;
