@@ -14,7 +14,6 @@ import {
   clearStoredDiagnosis,
   setStoredDiagnosisUpload,
 } from "../api/diagnosisUpload";
-import { supabase } from "../lib/supabase";
 
 export default function UploadPhoto() {
   const navigate = useNavigate();
@@ -26,57 +25,20 @@ export default function UploadPhoto() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
+
   useEffect(() => {
+    getCurrentUser().then((user) => {
+      if (!user) {
+        navigate("/login");
+      }
+    });
+
     return () => {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
     };
   }, [previewUrl]);
-
-
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkUserDiagnosisResult = async () => {
-      const user = await getCurrentUser();
-
-      if (!isMounted) {
-        return;
-      }
-
-      if (!user) {
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("diagnosis_results")
-        .select("id")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!isMounted) {
-        return;
-      }
-
-      if (error) {
-        return;
-      }
-
-      if (data) {
-        navigate("/home", { replace: true });
-      }
-    };
-
-    void checkUserDiagnosisResult();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate]);
 
   const uploadAndNavigate = async (file: File) => {
     if (isUploading) {

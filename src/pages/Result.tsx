@@ -24,6 +24,12 @@ export default function Result() {
   useEffect(() => {
     let isMounted = true;
 
+    getCurrentUser().then((user) => {
+      if (!user) {
+        navigate("/login");
+      }
+    });
+
     const loadProfile = async () => {
       const user = await getCurrentUser();
       setIsLoggedIn(Boolean(user));

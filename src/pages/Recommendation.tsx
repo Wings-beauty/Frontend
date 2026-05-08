@@ -72,9 +72,8 @@ function ProductCard({
       onKeyDown={handleProductKeyDown}
       role={hasProductUrl ? "button" : undefined}
       tabIndex={hasProductUrl ? 0 : undefined}
-      className={`overflow-hidden rounded-2xl border border-cream-200 bg-white p-3 shadow-sm ${
-        hasProductUrl ? "cursor-pointer transition hover:-translate-y-1 hover:shadow-md" : ""
-      }`}
+      className={`overflow-hidden rounded-2xl border border-cream-200 bg-white p-3 shadow-sm ${hasProductUrl ? "cursor-pointer transition hover:-translate-y-1 hover:shadow-md" : ""
+        }`}
     >
       <div className="relative aspect-square overflow-hidden rounded-xl bg-cream-50">
         {product.productImageUrl ? (
@@ -92,9 +91,8 @@ function ProductCard({
 
         <button
           type="button"
-          className={`absolute right-2 top-2 flex size-10 items-center justify-center rounded-full shadow-sm transition-colors ${
-            isLiked ? "bg-[#df7e8b] text-white" : "bg-white/90 text-brown-600 hover:text-[#df7e8b]"
-          }`}
+          className={`absolute right-2 top-2 flex size-10 items-center justify-center rounded-full shadow-sm transition-colors ${isLiked ? "bg-[#df7e8b] text-white" : "bg-white/90 text-brown-600 hover:text-[#df7e8b]"
+            }`}
           aria-label={`${product.productName} 찜하기`}
           onClick={(event) => {
             event.stopPropagation();
@@ -143,6 +141,12 @@ export default function Recommendation() {
   useEffect(() => {
     let isMounted = true;
 
+    getCurrentUser().then((user) => {
+      if (!user) {
+        navigate("/login");
+      }
+    });
+
     const loadData = async () => {
       try {
         const [productsFromDb, user] = await Promise.all([
@@ -154,7 +158,7 @@ export default function Recommendation() {
 
         setRecommendedProducts(productsFromDb);
         setIsLoggedIn(Boolean(user));
-        
+
         if (user) {
           setUserId(user.id);
           const [savedProducts, profileFromDb] = await Promise.all([
@@ -325,8 +329,8 @@ export default function Recommendation() {
             : resultSaveError
               ? resultSaveError
               : isLoggedIn
-              ? "진단 결과가 계정에 자동으로 저장되었습니다."
-              : "로그인하면 진단 결과와 추천 상품을 다시 확인할 수 있습니다."}
+                ? "진단 결과가 계정에 자동으로 저장되었습니다."
+                : "로그인하면 진단 결과와 추천 상품을 다시 확인할 수 있습니다."}
         </p>
         <button
           type="button"

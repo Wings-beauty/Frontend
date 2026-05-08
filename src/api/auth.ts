@@ -8,7 +8,7 @@ const AUTH_RETURN_TO_KEY = "wings_auth_return_to";
 
 export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser();
-
+  console.log("getCurrentUser data:", data);
   return data.user;
 }
 

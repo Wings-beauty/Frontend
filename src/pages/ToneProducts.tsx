@@ -37,9 +37,8 @@ function ProductCard({
   return (
     <article
       onClick={handleProductClick}
-      className={`group relative overflow-hidden rounded-[32px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] ${
-        hasProductUrl ? "cursor-pointer" : ""
-      }`}
+      className={`group relative overflow-hidden rounded-[32px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] ${hasProductUrl ? "cursor-pointer" : ""
+        }`}
     >
       <div className="relative aspect-square overflow-hidden rounded-[24px] bg-cream-50">
         {product.productImageUrl ? (
@@ -56,11 +55,10 @@ function ProductCard({
         )}
         <button
           type="button"
-          className={`absolute right-3 top-3 flex size-10 items-center justify-center rounded-full shadow-sm backdrop-blur-md transition-all ${
-            isLiked
+          className={`absolute right-3 top-3 flex size-10 items-center justify-center rounded-full shadow-sm backdrop-blur-md transition-all ${isLiked
               ? "bg-[#df7e8b] text-white"
               : "bg-white/80 text-brown-600 hover:bg-white hover:text-[#df7e8b]"
-          }`}
+            }`}
           onClick={(e) => {
             e.stopPropagation();
             onToggleLike(product.id);
@@ -98,6 +96,13 @@ export default function ToneProducts() {
 
   useEffect(() => {
     let isMounted = true;
+
+    getCurrentUser().then((user) => {
+      if (!user) {
+        navigate("/login");
+      }
+    });
+
 
     const loadData = async () => {
       try {
