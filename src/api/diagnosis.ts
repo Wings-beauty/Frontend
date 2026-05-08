@@ -177,6 +177,14 @@ function storeDiagnosisResult(upload: DiagnosisUpload, result: DiagnosisResultRo
   );
 }
 
+type DiagnosisRequestInsertPayload = {
+  requester_type: "user" | "guest";
+  user_id: string | null;
+  image_url: null;
+  status: "pending";
+  guest_token_hash: string | null;
+};
+
 async function createDiagnosisRequest({
   user,
   guestTokenHash,
@@ -184,21 +192,32 @@ async function createDiagnosisRequest({
   user: User | null;
   guestTokenHash: string | null;
 }) {
-  const requestedAt = new Date().toISOString();
-  const requestedDate = requestedAt.slice(0, 10);
   const isUser = Boolean(user);
+  const normalizedGuestTokenHash = guestTokenHash?.trim() ?? "";
+
+  if (!isUser && !normalizedGuestTokenHash) {
+    throw getFriendlyRequestError(false);
+  }
+
+  const payload: DiagnosisRequestInsertPayload = isUser
+    ? {
+        requester_type: "user",
+        user_id: user?.id ?? null,
+        image_url: null,
+        status: "pending",
+        guest_token_hash: null,
+      }
+    : {
+        requester_type: "guest",
+        user_id: null,
+        image_url: null,
+        status: "pending",
+        guest_token_hash: normalizedGuestTokenHash,
+      };
 
   const { data: request, error } = await supabase
     .from("diagnosis_requests")
-    .insert({
-      user_id: user?.id ?? null,
-      requester_type: isUser ? "user" : "guest",
-      guest_token_hash: guestTokenHash,
-      status: "pending",
-      image_url: null,
-      requested_at: requestedAt,
-      requested_date: requestedDate,
-    })
+    .insert(payload)
     .select("id")
     .single<DiagnosisRequestRow>();
 
