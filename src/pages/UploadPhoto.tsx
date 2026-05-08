@@ -8,6 +8,7 @@ import {
   HiPhoto,
   HiXMark,
 } from "react-icons/hi2";
+import { getCurrentUser, setAuthReturnTo } from "../api/auth";
 import { uploadDiagnosisPhoto } from "../api/diagnosis";
 import {
   clearStoredDiagnosis,
@@ -32,6 +33,23 @@ export default function UploadPhoto() {
     };
   }, [previewUrl]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    getCurrentUser().then((user) => {
+      if (!isMounted || user) {
+        return;
+      }
+
+      setAuthReturnTo("/photo");
+      navigate("/login", { replace: true });
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
+
   const uploadAndNavigate = async (file: File) => {
     if (isUploading) {
       return;
@@ -40,6 +58,15 @@ export default function UploadPhoto() {
     setIsUploading(true);
     setUploadError("");
     clearStoredDiagnosis();
+
+    const user = await getCurrentUser();
+
+    if (!user) {
+      setAuthReturnTo("/photo");
+      navigate("/login");
+      setIsUploading(false);
+      return;
+    }
 
     try {
       const uploadResult = await uploadDiagnosisPhoto(file);

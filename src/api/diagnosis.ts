@@ -25,8 +25,6 @@ type DiagnosisResultRow = {
 type DiagnosisRequestRow = {
   id: number;
   user_id: string | null;
-  requester_type: "user" | "guest" | null;
-  guest_token_hash: string | null;
 };
 
 type AiDiagnosisResponse = {
@@ -93,27 +91,6 @@ function parseAiDiagnosisResponse(data: unknown): AiDiagnosisResponse {
   };
 }
 
-function getOrCreateGuestId() {
-  const STORAGE_KEY = "wings_guest_id";
-  const existingGuestId = localStorage.getItem(STORAGE_KEY);
-
-  if (existingGuestId) {
-    return existingGuestId;
-  }
-
-  const nextGuestId = crypto.randomUUID();
-  localStorage.setItem(STORAGE_KEY, nextGuestId);
-
-  return nextGuestId;
-}
-
-async function sha256(value: string) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(value);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 
 function isUniqueConstraintError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -130,12 +107,12 @@ function isUniqueConstraintError(error: unknown) {
   );
 }
 
-function getFriendlyRequestError(isUser: boolean) {
-  return isUser
-    ? new Error("오늘의 진단 기회를 이미 사용했어요. 내일 다시 이용해주세요.")
-    : new Error(
-        "비로그인 체험 진단은 1회만 이용할 수 있어요. 로그인하면 하루에 한 번 진단할 수 있습니다.",
-      );
+function getLoginRequiredError() {
+  return new Error("AI 진단은 로그인 후 이용할 수 있어요.");
+}
+
+function getDailyLimitError() {
+  return new Error("오늘의 진단 기회를 이미 사용했어요. 내일 다시 이용해주세요.");
 }
 
 function getGenericDiagnosisError() {
@@ -178,52 +155,27 @@ function storeDiagnosisResult(upload: DiagnosisUpload, result: DiagnosisResultRo
 }
 
 type DiagnosisRequestInsertPayload = {
-  requester_type: "user" | "guest";
-  user_id: string | null;
+  user_id: string;
   image_url: null;
   status: "pending";
-  guest_token_hash: string | null;
 };
 
-async function createDiagnosisRequest({
-  user,
-  guestTokenHash,
-}: {
-  user: User | null;
-  guestTokenHash: string | null;
-}) {
-  const isUser = Boolean(user);
-  const normalizedGuestTokenHash = guestTokenHash?.trim() ?? "";
-
-  if (!isUser && !normalizedGuestTokenHash) {
-    throw getFriendlyRequestError(false);
-  }
-
-  const payload: DiagnosisRequestInsertPayload = isUser
-    ? {
-        requester_type: "user",
-        user_id: user?.id ?? null,
-        image_url: null,
-        status: "pending",
-        guest_token_hash: null,
-      }
-    : {
-        requester_type: "guest",
-        user_id: null,
-        image_url: null,
-        status: "pending",
-        guest_token_hash: normalizedGuestTokenHash,
-      };
+async function createDiagnosisRequest(user: User) {
+  const payload: DiagnosisRequestInsertPayload = {
+    user_id: user.id,
+    image_url: null,
+    status: "pending",
+  };
 
   const { data: request, error } = await supabase
     .from("diagnosis_requests")
     .insert(payload)
-    .select("id")
+    .select("id, user_id")
     .single<DiagnosisRequestRow>();
 
   if (error || !request) {
     if (isUniqueConstraintError(error)) {
-      throw getFriendlyRequestError(isUser);
+      throw getDailyLimitError();
     }
 
     throw getGenericDiagnosisError();
@@ -367,23 +319,23 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
   }
 
   const user = await getCurrentUser();
-  const guestId = user ? null : getOrCreateGuestId();
-  const guestTokenHash = guestId ? await sha256(guestId) : null;
-  const requestedAt = new Date().toISOString();
 
-  if (user) {
-    await ensureUserProfile(user);
+  if (!user) {
+    throw getLoginRequiredError();
   }
 
+  const requestedAt = new Date().toISOString();
+
+  await ensureUserProfile(user);
   let requestId: number | null = null;
 
   try {
-    const request = await createDiagnosisRequest({ user, guestTokenHash });
+    const request = await createDiagnosisRequest(user);
     requestId = request.id;
     const aiResult = await requestAiDiagnosis(file);
     const result = await saveDiagnosisResult(
       request.id,
-      user?.id ?? null,
+      user.id,
       aiResult,
     );
 
@@ -411,7 +363,8 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
 
     if (error instanceof Error) {
       const knownMessages = [
-        getFriendlyRequestError(Boolean(user)).message,
+        getLoginRequiredError().message,
+        getDailyLimitError().message,
         getGenericDiagnosisError().message,
         "이미지를 먼저 선택해주세요.",
         "이미지 파일만 업로드할 수 있어요.",
