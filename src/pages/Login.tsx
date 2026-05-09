@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiArrowLeft, HiSparkles } from "react-icons/hi2";
+import { HiSparkles } from "react-icons/hi2";
 import type { User } from "@supabase/supabase-js";
 import {
   consumeAuthReturnTo,
