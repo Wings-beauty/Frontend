@@ -194,3 +194,18 @@ export async function saveCurrentDiagnosisToUser(user: User) {
       .eq("id", upload.diagnosisResultId);
   }
 }
+
+export async function hasDiagnosisHistory(userId: string) {
+  const { data, error } = await supabase
+    .from("diagnosis_results")
+    .select("id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return false;
+  }
+
+  return Boolean(data);
+}
