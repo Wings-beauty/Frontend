@@ -37,19 +37,19 @@ type ProfileView = {
 const reviews = [
   {
     name: "민지님",
-    tone: "여름 쿨 뮤트",
+    tone: "여름 쿨",
     text: "평소 안 어울리던 색을 피하고 나니까 메이크업이 훨씬 자연스러워졌어요.",
     layout: "wide",
   },
   {
     name: "수아님",
-    tone: "봄 웜 라이트",
+    tone: "봄 웜",
     text: "요즘 이 제품 써보셨어요? 완전 좋아요!",
     layout: "small",
   },
   {
     name: "지윤님",
-    tone: "겨울 쿨 브라이트",
+    tone: "겨울 쿨",
     text: "겨울 쿨톤님들! 이 제품만은 피하세요!",
     layout: "small",
   },

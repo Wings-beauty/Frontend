@@ -19,8 +19,8 @@ export const personalColorResults: Record<
   spring: {
     seasonLabel: "봄",
     toneCode: "spring",
-    toneLabel: "봄 웜 라이트",
-    title: "봄 웜 라이트에 가까워요",
+    toneLabel: "봄 웜",
+    title: "봄 웜톤에 가까워요",
     description: "맑은 코랄, 피치, 아이보리 컬러가 잘 어울려요.",
     detailTitle: "화사하고 생기 있는 웜톤",
     detailDescription: "밝고 따뜻한 색이 얼굴에 생기를 더해줍니다.",
@@ -32,8 +32,8 @@ export const personalColorResults: Record<
   summer: {
     seasonLabel: "여름",
     toneCode: "summer",
-    toneLabel: "여름 쿨 뮤트",
-    title: "여름 쿨 뮤트에 가까워요",
+    toneLabel: "여름 쿨",
+    title: "여름 쿨톤에 가까워요",
     description: "차분한 핑크, 로즈, 라벤더 컬러가 잘 어울려요.",
     detailTitle: "맑고 부드러운 쿨톤",
     detailDescription: "회기가 도는 부드러운 컬러들이 당신의 우아함을 더욱 돋보이게 합니다.",
@@ -45,8 +45,8 @@ export const personalColorResults: Record<
   autumn: {
     seasonLabel: "가을",
     toneCode: "autumn",
-    toneLabel: "가을 웜 뮤트",
-    title: "가을 웜 뮤트에 가까워요",
+    toneLabel: "가을 웜",
+    title: "가을 웜톤에 가까워요",
     description: "카멜, 테라코타, 브라운 로즈 컬러가 잘 어울려요.",
     detailTitle: "차분하고 깊이 있는 웜톤",
     detailDescription: "부드러운 흙빛 컬러가 분위기를 안정적으로 잡아줍니다.",
@@ -58,8 +58,8 @@ export const personalColorResults: Record<
   winter: {
     seasonLabel: "겨울",
     toneCode: "winter",
-    toneLabel: "겨울 쿨 브라이트",
-    title: "겨울 쿨 브라이트에 가까워요",
+    toneLabel: "겨울 쿨",
+    title: "겨울 쿨톤에 가까워요",
     description: "선명한 핑크, 버건디, 아이시 라벤더 컬러가 잘 어울려요.",
     detailTitle: "깨끗하고 또렷한 쿨톤",
     detailDescription: "대비감 있는 컬러가 이목구비를 선명하게 보여줍니다.",
