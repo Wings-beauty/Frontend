@@ -1,6 +1,8 @@
 import type { User } from "@supabase/supabase-js";
 import {
+  setStoredAiDiagnosisResult,
   setStoredDiagnosisUpload,
+  setStoredFinalDiagnosisResult,
   type DiagnosisUpload,
 } from "./diagnosisUpload";
 import { supabase } from "../lib/supabase";
@@ -10,9 +12,24 @@ import {
   personalColorResults,
 } from "../constants/personalColor";
 import { getCurrentUser, ensureProfile as ensureUserProfile } from "./auth";
+import type {
+  FinalDiagnosisResult,
+  PredictResponse,
+  Season,
+  SeasonScores,
+  SurveyAnswers,
+} from "../types/diagnosis";
+import { rerankSeasonScores } from "../utils/diagnosisRerank";
 
 const AI_DIAGNOSIS_ENDPOINT = import.meta.env
   .REACT_APP_AI_DIAGNOSIS_KEY as string | undefined;
+
+const SEASON_KR: Record<Season, string> = {
+  spring: "봄 웜톤",
+  summer: "여름 쿨톤",
+  autumn: "가을 웜톤",
+  winter: "겨울 쿨톤",
+};
 
 type DiagnosisResultRow = {
   id: number;
@@ -27,17 +44,7 @@ type DiagnosisRequestRow = {
   user_id: string | null;
 };
 
-type AiDiagnosisResponse = {
-  season: PersonalColorSeason;
-  season_kr: string;
-  confidence: number;
-  probs: Record<PersonalColorSeason, number>;
-  lab: {
-    L: number;
-    a: number;
-    b: number;
-  };
-};
+export type { FinalDiagnosisResult, PredictResponse, SeasonScores, SurveyAnswers };
 
 export type DiagnosisHistoryItem = {
   id: number;
@@ -57,12 +64,31 @@ function normalizeConfidence(confidence: number) {
   return confidence > 1 ? confidence / 100 : confidence;
 }
 
-function parseAiDiagnosisResponse(data: unknown): AiDiagnosisResponse {
+function normalizeSeasonScores(
+  probs: Partial<Record<PersonalColorSeason, number>> | undefined,
+): SeasonScores {
+  return {
+    spring: typeof probs?.spring === "number" ? probs.spring : 0,
+    summer: typeof probs?.summer === "number" ? probs.summer : 0,
+    autumn: typeof probs?.autumn === "number" ? probs.autumn : 0,
+    winter: typeof probs?.winter === "number" ? probs.winter : 0,
+  };
+}
+
+function parseOptionalSeason(value: string | null | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  return getPersonalColorSeasonFromValue(value);
+}
+
+function parseAiDiagnosisResponse(data: unknown): PredictResponse {
   if (!data || typeof data !== "object") {
     throw new Error("진단 API 응답을 읽지 못했어요.");
   }
 
-  const response = data as Partial<AiDiagnosisResponse>;
+  const response = data as Partial<PredictResponse>;
   const season = getPersonalColorSeasonFromValue(response.season);
 
   if (typeof response.season_kr !== "string") {
@@ -77,17 +103,22 @@ function parseAiDiagnosisResponse(data: unknown): AiDiagnosisResponse {
     season,
     season_kr: response.season_kr,
     confidence: response.confidence,
-    probs: response.probs ?? {
-      spring: 0,
-      summer: 0,
-      autumn: 0,
-      winter: 0,
-    },
+    probs: normalizeSeasonScores(response.probs),
     lab: response.lab ?? {
       L: 0,
       a: 0,
       b: 0,
     },
+    success: response.success,
+    model_version: response.model_version,
+    top2_season: parseOptionalSeason(response.top2_season),
+    top2_season_kr: response.top2_season_kr,
+    top2_confidence: response.top2_confidence,
+    top1_top2_gap: response.top1_top2_gap,
+    needs_questions: response.needs_questions,
+    question_reason: response.question_reason,
+    attributes: response.attributes,
+    quality: response.quality,
   };
 }
 
@@ -187,7 +218,7 @@ async function createDiagnosisRequest(user: User) {
 async function saveDiagnosisResult(
   requestId: number,
   userId: string | null,
-  aiResult: AiDiagnosisResponse,
+  aiResult: PredictResponse,
 ) {
   const { data, error } = await supabase
     .from("diagnosis_results")
@@ -210,6 +241,89 @@ async function saveDiagnosisResult(
   }
 
   return data;
+}
+
+function shouldAskDiagnosisQuestions(result: PredictResponse) {
+  return (
+    result.needs_questions ??
+    (result.confidence < 50 ||
+      (typeof result.top1_top2_gap === "number" &&
+        result.top1_top2_gap < 12) ||
+      (result.season === "autumn" && result.confidence < 60))
+  );
+}
+
+export function createFinalDiagnosisResult(
+  aiResult: PredictResponse,
+  answers?: SurveyAnswers,
+): FinalDiagnosisResult {
+  if (!answers) {
+    return {
+      aiResult,
+      finalSeason: aiResult.season,
+      finalSeasonKr: aiResult.season_kr,
+      finalConfidence: normalizeConfidence(aiResult.confidence),
+      adjustedProbs: aiResult.probs,
+      correctionApplied: false,
+    };
+  }
+
+  const rerankedResult = rerankSeasonScores(aiResult.probs, answers);
+
+  return {
+    aiResult,
+    userAnswers: answers,
+    finalSeason: rerankedResult.finalSeason,
+    finalSeasonKr: SEASON_KR[rerankedResult.finalSeason],
+    finalConfidence: rerankedResult.finalConfidence,
+    adjustedProbs: rerankedResult.adjustedProbs,
+    correctionApplied: rerankedResult.correctionApplied,
+  };
+}
+
+async function updateSavedDiagnosisWithFinalResult(
+  diagnosisResultId: number,
+  finalResult: FinalDiagnosisResult,
+) {
+  const { error } = await supabase
+    .from("diagnosis_results")
+    .update({
+      tone_code: finalResult.finalSeason,
+      tone_label: finalResult.finalSeasonKr,
+      confidence: finalResult.finalConfidence,
+      raw_result: {
+        source: "ai_diagnosis_api",
+        ...finalResult.aiResult,
+        survey_answers: finalResult.userAnswers,
+        final_result: {
+          finalSeason: finalResult.finalSeason,
+          finalSeasonKr: finalResult.finalSeasonKr,
+          finalConfidence: finalResult.finalConfidence,
+          adjustedProbs: finalResult.adjustedProbs,
+          correctionApplied: finalResult.correctionApplied,
+        },
+      },
+    })
+    .eq("id", diagnosisResultId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function finalizeDiagnosisWithSurvey(
+  diagnosisResultId: number | undefined,
+  aiResult: PredictResponse,
+  answers: SurveyAnswers,
+) {
+  const finalResult = createFinalDiagnosisResult(aiResult, answers);
+  setStoredFinalDiagnosisResult(finalResult);
+
+  if (diagnosisResultId) {
+    await updateSavedDiagnosisWithFinalResult(diagnosisResultId, finalResult);
+  }
+
+  return finalResult;
 }
 
 async function updateDiagnosisRequestStatus(
@@ -333,11 +447,14 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
     const request = await createDiagnosisRequest(user);
     requestId = request.id;
     const aiResult = await requestAiDiagnosis(file);
+    setStoredAiDiagnosisResult(aiResult);
+
     const result = await saveDiagnosisResult(
       request.id,
       user.id,
       aiResult,
     );
+    const finalResult = createFinalDiagnosisResult(aiResult);
 
     await updateDiagnosisRequestStatus(request.id, "success", null);
 
@@ -347,9 +464,11 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
       uploadedAt: requestedAt,
       diagnosisRequestId: request.id,
       diagnosisResultId: result.id,
+      needsQuestions: shouldAskDiagnosisQuestions(aiResult),
     };
 
     storeDiagnosisResult(upload, result);
+    setStoredFinalDiagnosisResult(finalResult);
 
     return upload;
   } catch (error) {

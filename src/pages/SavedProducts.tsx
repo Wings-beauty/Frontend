@@ -7,27 +7,26 @@ import {
   removeSavedProduct,
   type RecommendedProduct,
 } from "../api/products";
+import ProductDetailModal from "../components/ProductDetailModal";
+import { getProductCategoryLabel } from "../constants/products";
 
 function ProductCard({
   product,
   onRemove,
+  onOpenDetails,
 }: {
   product: RecommendedProduct;
   onRemove: (productId: number) => void;
+  onOpenDetails: (product: RecommendedProduct) => void;
 }) {
-  const hasProductUrl = Boolean(product.productUrl);
-
   const handleProductClick = () => {
-    if (!product.productUrl) return;
-    window.location.href = product.productUrl;
+    onOpenDetails(product);
   };
 
   return (
     <article
       onClick={handleProductClick}
-      className={`group relative overflow-hidden rounded-[32px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] ${
-        hasProductUrl ? "cursor-pointer" : ""
-      }`}
+      className="group relative cursor-pointer overflow-hidden rounded-[32px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 active:scale-[0.99]"
     >
       <div className="relative aspect-square overflow-hidden rounded-[24px] bg-cream-50">
         {product.productImageUrl ? (
@@ -62,7 +61,9 @@ function ProductCard({
           {product.productName}
         </h3>
         <p className="mt-2 text-sm text-[#7a625c]">
-          {product.productColor || product.category || product.toneType}
+          {product.productColor ||
+            getProductCategoryLabel(product.category) ||
+            product.toneType}
         </p>
       </div>
     </article>
@@ -74,6 +75,8 @@ export default function SavedProducts() {
   const [products, setProducts] = useState<RecommendedProduct[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] =
+    useState<RecommendedProduct | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -116,6 +119,9 @@ export default function SavedProducts() {
     try {
       await removeSavedProduct(userId, productId);
       setProducts((prev) => prev.filter((p) => p.id !== productId));
+      setSelectedProduct((currentProduct) =>
+        currentProduct?.id === productId ? null : currentProduct,
+      );
     } catch (error) {
       console.error("Failed to remove saved product:", error);
     }
@@ -173,6 +179,7 @@ export default function SavedProducts() {
                 <ProductCard
                   product={product}
                   onRemove={handleRemove}
+                  onOpenDetails={setSelectedProduct}
                 />
               </div>
             ))}
@@ -193,6 +200,14 @@ export default function SavedProducts() {
           </div>
         )}
       </section>
+      {selectedProduct ? (
+        <ProductDetailModal
+          product={selectedProduct}
+          isLiked
+          onClose={() => setSelectedProduct(null)}
+          onToggleLike={handleRemove}
+        />
+      ) : null}
     </main>
   );
 }

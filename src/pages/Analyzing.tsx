@@ -4,6 +4,7 @@ import { HiArrowPath, HiCheck, HiSparkles } from "react-icons/hi2";
 import { completeDiagnosis } from "../api/diagnosis";
 import {
   clearStoredDiagnosis,
+  getStoredAiDiagnosisResult,
   getStoredDiagnosisUpload,
   type DiagnosisUpload,
 } from "../api/diagnosisUpload";
@@ -33,6 +34,21 @@ function getStepStatus(stepIndex: number, activeStepIndex: number) {
   if (stepIndex < activeStepIndex) return "done";
   if (stepIndex === activeStepIndex) return "active";
   return "pending";
+}
+
+function getNeedsQuestions(upload: DiagnosisUpload) {
+  const aiResult = getStoredAiDiagnosisResult();
+
+  return (
+    upload.needsQuestions ??
+    aiResult?.needs_questions ??
+    (aiResult
+      ? aiResult.confidence < 50 ||
+        (typeof aiResult.top1_top2_gap === "number" &&
+          aiResult.top1_top2_gap < 12) ||
+        (aiResult.season === "autumn" && aiResult.confidence < 60)
+      : false)
+  );
 }
 
 export default function Analyzing() {
@@ -68,7 +84,10 @@ export default function Analyzing() {
 
       void completeDiagnosis(upload).then((result) => {
         if (result) {
-          navigate("/result", { replace: true });
+          navigate(getNeedsQuestions(upload) ? "/diagnosis-survey" : "/result", {
+            replace: true,
+            state: upload,
+          });
           return;
         }
 

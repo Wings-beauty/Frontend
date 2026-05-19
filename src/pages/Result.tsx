@@ -1,15 +1,22 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiArrowRight, HiHome, HiMiniUser } from "react-icons/hi2";
+import { HiArrowRight, HiCheck, HiHome, HiMiniUser } from "react-icons/hi2";
 import {
   fetchProfile,
   getCurrentUser,
   setAuthReturnTo,
 } from "../api/auth";
 import {
+  getStoredDiagnosisFeedback,
+  getStoredFinalDiagnosisResult,
+  setStoredDiagnosisFeedback,
+} from "../api/diagnosisUpload";
+import {
   getStoredPersonalColorSeason,
   personalColorResults,
+  type PersonalColorSeason,
 } from "../constants/personalColor";
+import type { DiagnosisFeedback } from "../types/diagnosis";
 
 type ProfileView = {
   profileImageUrl: string | null;
@@ -19,7 +26,16 @@ export default function Result() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const result = personalColorResults[getStoredPersonalColorSeason()];
+  const [feedback, setFeedback] = useState<DiagnosisFeedback | null>(
+    getStoredDiagnosisFeedback(),
+  );
+  const finalResult = getStoredFinalDiagnosisResult();
+  const season = finalResult?.finalSeason ?? getStoredPersonalColorSeason();
+  const result = personalColorResults[season];
+  const confidence = finalResult
+    ? Math.round(finalResult.finalConfidence * 100)
+    : null;
+  const isAdjusted = Boolean(finalResult?.userAnswers);
 
   useEffect(() => {
     let isMounted = true;
@@ -50,7 +66,7 @@ export default function Result() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [navigate]);
 
   const goToLoginForSave = () => {
     setAuthReturnTo("/recommendation");
@@ -67,8 +83,35 @@ export default function Result() {
     navigate("/home");
   };
 
+  const saveFeedback = (nextFeedback: DiagnosisFeedback) => {
+    setFeedback(nextFeedback);
+    setStoredDiagnosisFeedback(nextFeedback);
+    // TODO: 피드백 저장 API 연결 필요
+  };
+
+  const selectMatchStatus = (matchStatus: DiagnosisFeedback["matchStatus"]) => {
+    saveFeedback({
+      matchStatus,
+      userSelectedSeason:
+        matchStatus === "match" ? undefined : feedback?.userSelectedSeason,
+    });
+  };
+
+  const selectFeedbackSeason = (
+    userSelectedSeason: PersonalColorSeason | "unknown",
+  ) => {
+    if (!feedback || feedback.matchStatus === "match") {
+      return;
+    }
+
+    saveFeedback({
+      ...feedback,
+      userSelectedSeason,
+    });
+  };
+
   return (
-    <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-white px-5 pb-6 pt-5">
+    <main className="relative flex min-h-dvh w-full flex-col overflow-hidden bg-white px-5 pb-6 pt-5">
       <div
         className={`absolute -right-24 top-80 size-80 rounded-full ${result.accentSoftClassName} blur-3xl`}
         aria-hidden="true"
@@ -105,19 +148,21 @@ export default function Result() {
         </div>
       </header>
 
-      <div className="relative flex flex-1 flex-col justify-between gap-5 pt-8">
+      <div className="relative flex flex-1 flex-col justify-between gap-5 overflow-y-auto pt-8">
         <section className="text-center">
           <div className="mx-auto mb-4 flex h-8 w-24 items-center justify-center rounded-full bg-cream-100 text-sm font-normal leading-5 text-[#7a625c] shadow-inner">
             분석 완료
           </div>
 
           <h2 className="text-3xl font-normal leading-10 text-brown-600">
-            당신은
+            {isAdjusted ? "답변을 반영해" : "AI 퍼스널컬러 진단 결과"}
             <br />
-            {result.title}
+            {isAdjusted ? "최종 결과를 조정했어요" : result.title}
           </h2>
           <p className="mt-3 text-sm font-normal leading-6 text-[#7a625c]">
-            {result.description}
+            {isAdjusted
+              ? "사진 분석 결과에 사용자의 답변을 더해 최종 톤을 정리했어요."
+              : result.description}
           </p>
         </section>
 
@@ -133,11 +178,21 @@ export default function Result() {
           </div>
 
           <h3 className="text-lg font-normal leading-8 text-brown-600">
-            {result.detailTitle}
+            {finalResult?.finalSeasonKr ?? result.detailTitle}
           </h3>
           <p className="mt-3 text-sm font-normal leading-6 text-[#7a625c]">
             {result.detailDescription}
           </p>
+          {confidence !== null ? (
+            <p className="mt-4 text-sm font-normal leading-6 text-brown-300">
+              최종 일치도 {confidence}%
+            </p>
+          ) : null}
+          {finalResult?.correctionApplied ? (
+            <p className="mt-3 rounded-2xl bg-cream-100 px-4 py-3 text-sm font-normal leading-6 text-[#7a625c]">
+              AI 분석 결과와 답변을 함께 반영한 결과예요.
+            </p>
+          ) : null}
         </section>
 
         <section>
@@ -155,6 +210,84 @@ export default function Result() {
               />
             ))}
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-ivory/70 bg-cream-50 px-5 py-5 shadow-sm">
+          <h3 className="text-lg font-normal leading-7 text-brown-600">
+            결과가 잘 맞는 것 같나요?
+          </h3>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {[
+              { value: "match", label: "맞아요" },
+              { value: "unclear", label: "애매해요" },
+              { value: "not_match", label: "아닌 것 같아요" },
+            ].map((option) => {
+              const isSelected = feedback?.matchStatus === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`flex min-h-12 items-center justify-center rounded-2xl border px-2 text-sm font-normal leading-5 ${
+                    isSelected
+                      ? "border-brown-400 bg-brown-400 text-white"
+                      : "border-ivory bg-white text-[#7a625c]"
+                  }`}
+                  onClick={() =>
+                    selectMatchStatus(
+                      option.value as DiagnosisFeedback["matchStatus"],
+                    )
+                  }
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {feedback?.matchStatus === "unclear" ||
+          feedback?.matchStatus === "not_match" ? (
+            <div className="mt-5">
+              <p className="text-sm font-normal leading-6 text-[#7a625c]">
+                생각하는 톤이 있다면 알려주세요.
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {[
+                  { value: "spring", label: "봄 웜톤" },
+                  { value: "summer", label: "여름 쿨톤" },
+                  { value: "autumn", label: "가을 웜톤" },
+                  { value: "winter", label: "겨울 쿨톤" },
+                  { value: "unknown", label: "잘 모르겠음" },
+                ].map((option) => {
+                  const isSelected =
+                    feedback.userSelectedSeason === option.value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`flex min-h-11 items-center justify-center gap-1 rounded-2xl border px-3 text-sm font-normal leading-5 ${
+                        isSelected
+                          ? "border-green bg-green/10 text-green"
+                          : "border-ivory bg-white text-[#7a625c]"
+                      } ${option.value === "unknown" ? "col-span-2" : ""}`}
+                      onClick={() =>
+                        selectFeedbackSeason(
+                          option.value as PersonalColorSeason | "unknown",
+                        )
+                      }
+                    >
+                      {isSelected ? (
+                        <HiCheck className="size-4" aria-hidden="true" />
+                      ) : null}
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <footer className="pt-2">

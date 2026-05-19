@@ -3,6 +3,7 @@ import Welcome from "./pages/Welcome";
 import Onboarding from "./pages/Onboarding";
 import UploadPhoto from "./pages/UploadPhoto";
 import Analyzing from "./pages/Analyzing";
+import DiagnosisSurvey from "./pages/DiagnosisSurvey";
 import Result from "./pages/Result";
 import Recommendation from "./pages/Recommendation";
 import Home from "./pages/Home";
@@ -30,6 +31,7 @@ function App() {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/photo" element={<UploadPhoto />} />
         <Route path="/analyzing" element={<Analyzing />} />
+        <Route path="/diagnosis-survey" element={<DiagnosisSurvey />} />
         <Route path="/result" element={<Result />} />
         <Route path="/recommendation" element={<Recommendation />} />
         <Route path="/tone-products" element={<ToneProducts />} />

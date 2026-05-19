@@ -15,30 +15,29 @@ import {
   personalColorResults,
   type PersonalColorSeason,
 } from "../constants/personalColor";
+import ProductDetailModal from "../components/ProductDetailModal";
 
 function ProductCard({
   product,
   toneLabel,
   isLiked,
   onToggleLike,
+  onOpenDetails,
 }: {
   product: RecommendedProduct;
   toneLabel: string;
   isLiked: boolean;
   onToggleLike: (productId: number) => void;
+  onOpenDetails: (product: RecommendedProduct) => void;
 }) {
-  const hasProductUrl = Boolean(product.productUrl);
-
   const handleProductClick = () => {
-    if (!product.productUrl) return;
-    window.location.href = product.productUrl;
+    onOpenDetails(product);
   };
 
   return (
     <article
       onClick={handleProductClick}
-      className={`group relative overflow-hidden rounded-[32px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] ${hasProductUrl ? "cursor-pointer" : ""
-        }`}
+      className="group relative cursor-pointer overflow-hidden rounded-[32px] bg-white p-4 shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 active:scale-[0.99]"
     >
       <div className="relative aspect-square overflow-hidden rounded-[24px] bg-cream-50">
         {product.productImageUrl ? (
@@ -92,6 +91,8 @@ export default function ToneProducts() {
   );
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] =
+    useState<RecommendedProduct | null>(null);
   const result = personalColorResults[personalSeason];
 
   useEffect(() => {
@@ -140,7 +141,7 @@ export default function ToneProducts() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [navigate]);
 
   const handleToggleLike = async (productId: number) => {
     if (!userId) {
@@ -228,6 +229,7 @@ export default function ToneProducts() {
                   toneLabel={result.toneLabel}
                   isLiked={savedProductIds.has(product.id)}
                   onToggleLike={handleToggleLike}
+                  onOpenDetails={setSelectedProduct}
                 />
               </div>
             ))}
@@ -238,6 +240,14 @@ export default function ToneProducts() {
           </div>
         )}
       </section>
+      {selectedProduct ? (
+        <ProductDetailModal
+          product={selectedProduct}
+          isLiked={savedProductIds.has(selectedProduct.id)}
+          onClose={() => setSelectedProduct(null)}
+          onToggleLike={handleToggleLike}
+        />
+      ) : null}
     </main>
   );
 }

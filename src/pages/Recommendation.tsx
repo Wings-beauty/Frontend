@@ -24,45 +24,42 @@ import {
   getStoredPersonalColorSeason,
   personalColorResults,
 } from "../constants/personalColor";
+import { getProductCategoryLabel } from "../constants/products";
+import ProductDetailModal from "../components/ProductDetailModal";
 
 type ProfileView = {
   profileImageUrl: string | null;
 };
 
+function formatPrice(price: number | null) {
+  if (typeof price !== "number") {
+    return "";
+  }
+
+  return `${price.toLocaleString("ko-KR")}원`;
+}
+
 function ProductCard({
   product,
   isLiked,
   onToggleLike,
+  onOpenDetails,
 }: {
   product: RecommendedProduct;
   isLiked: boolean;
   onToggleLike: (productId: number) => void;
+  onOpenDetails: (product: RecommendedProduct) => void;
 }) {
-  // 상품 URL이 있는지 여부를 미리 계산해서 클릭 가능 상태를 판단한다.
-  const hasProductUrl = Boolean(product.productUrl);
-
-  // 상품 카드를 클릭했을 때 실행되는 함수다.
   const handleProductClick = () => {
-    // 상품 URL이 없으면 아무 동작도 하지 않는다.
-    if (!product.productUrl) {
-      return;
-    }
-
-    // 상품 URL이 있으면 해당 주소로 이동한다.
-    window.location.href = product.productUrl;
+    onOpenDetails(product);
   };
 
-  // 키보드 접근성을 위해 Enter 또는 Space 입력 시에도 이동하게 처리한다.
   const handleProductKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    // Enter 또는 Space 키가 아닌 경우에는 아무 동작도 하지 않는다.
     if (event.key !== "Enter" && event.key !== " ") {
       return;
     }
 
-    // Space 키 입력 시 페이지 스크롤이 발생하지 않도록 기본 동작을 막는다.
     event.preventDefault();
-
-    // 키보드 입력으로도 상품 URL 이동을 실행한다.
     handleProductClick();
   };
 
@@ -70,10 +67,9 @@ function ProductCard({
     <article
       onClick={handleProductClick}
       onKeyDown={handleProductKeyDown}
-      role={hasProductUrl ? "button" : undefined}
-      tabIndex={hasProductUrl ? 0 : undefined}
-      className={`overflow-hidden rounded-2xl border border-cream-200 bg-white p-3 shadow-sm ${hasProductUrl ? "cursor-pointer transition hover:-translate-y-1 hover:shadow-md" : ""
-        }`}
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer overflow-hidden rounded-2xl border border-cream-200 bg-white p-3 shadow-sm transition active:scale-[0.99]"
     >
       <div className="relative aspect-square overflow-hidden rounded-xl bg-cream-50">
         {product.productImageUrl ? (
@@ -113,8 +109,15 @@ function ProductCard({
         </h3>
 
         <p className="mt-4 text-sm font-normal leading-6 text-[#7a625c]">
-          {product.productColor || product.category || product.toneType}
+          {product.productColor ||
+            getProductCategoryLabel(product.category) ||
+            product.toneType}
         </p>
+        {product.price ? (
+          <p className="mt-2 text-sm font-normal leading-6 text-brown-600">
+            {formatPrice(product.price)}
+          </p>
+        ) : null}
       </div>
     </article>
   );
@@ -137,6 +140,8 @@ export default function Recommendation() {
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
   const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
   const [profile, setProfile] = useState<ProfileView | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<RecommendedProduct | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -186,7 +191,7 @@ export default function Recommendation() {
     return () => {
       isMounted = false;
     };
-  }, [season]);
+  }, [navigate, season]);
 
   useEffect(() => {
     let isMounted = true;
@@ -316,7 +321,7 @@ export default function Recommendation() {
         </div>
 
         <h2 className="text-3xl font-normal leading-10 tracking-tight text-brown-600">
-          {result.seasonLabel} 톤에 어울리는
+          {result.toneLabel} 톤에 어울리는
           <br />
           추천 상품입니다
         </h2>
@@ -351,7 +356,7 @@ export default function Recommendation() {
       {!isLoadingProducts && recommendedProducts.length === 0 ? (
         <section className="mt-8 rounded-3xl border border-cream-200 bg-white px-5 py-8 text-center shadow-sm">
           <p className="text-base leading-7 text-[#7a625c]">
-            현재 톤과 일치하는 상품이 `products` 테이블에 없습니다.
+            현재 톤과 일치하는 상품이 존재하지 않습니다.
           </p>
         </section>
       ) : null}
@@ -364,6 +369,7 @@ export default function Recommendation() {
               product={product}
               isLiked={savedProductIds.has(product.id)}
               onToggleLike={handleToggleLike}
+              onOpenDetails={setSelectedProduct}
             />
           ))}
         </section>
@@ -423,6 +429,15 @@ export default function Recommendation() {
           </div>
         </div>
       )}
+
+      {selectedProduct ? (
+        <ProductDetailModal
+          product={selectedProduct}
+          isLiked={savedProductIds.has(selectedProduct.id)}
+          onClose={() => setSelectedProduct(null)}
+          onToggleLike={handleToggleLike}
+        />
+      ) : null}
     </main>
   );
 }

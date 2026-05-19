@@ -12,6 +12,13 @@ export type RecommendedProduct = {
   productUrl: string | null;
   price: number | null;
   toneType: string;
+  detailedTone: string;
+  lipType: string;
+  texture: string;
+  recommendedSkinType: string;
+  hue: number | null;
+  saturation: number | null;
+  brightness: number | null;
 };
 
 type ProductRow = {
@@ -25,6 +32,13 @@ type ProductRow = {
   product_url: string | null;
   price: number | null;
   tone_type: string | null;
+  detailed_tone: string | null;
+  lip_type: string | null;
+  texture: string | null;
+  recommended_skin_type: string | null;
+  hue: number | null;
+  saturation: number | null;
+  brightness: number | null;
   is_active: boolean | null;
 };
 
@@ -44,6 +58,13 @@ function mapProduct(product: ProductRow): RecommendedProduct | null {
     productUrl: product.product_url,
     price: product.price,
     toneType: product.tone_type ?? "",
+    detailedTone: product.detailed_tone ?? "",
+    lipType: product.lip_type ?? "",
+    texture: product.texture ?? "",
+    recommendedSkinType: product.recommended_skin_type ?? "",
+    hue: product.hue,
+    saturation: product.saturation,
+    brightness: product.brightness,
   };
 }
 
@@ -62,7 +83,7 @@ export async function fetchRecommendedProducts(season: PersonalColorSeason) {
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, brand_name, product_name, product_color, category, color_hex, product_image_url, product_url, price, tone_type, is_active",
+      "id, brand_name, product_name, product_color, category, color_hex, product_image_url, product_url, price, tone_type, detailed_tone, lip_type, texture, recommended_skin_type, hue, saturation, brightness, is_active",
     )
     .ilike("tone_type", `%${translatedseason}%`)
     .order("updated_at", { ascending: false })
@@ -101,7 +122,7 @@ export async function fetchSavedProductsForUser(userId: string) {
   const { data: products, error: productsError } = await supabase
     .from("products")
     .select(
-      "id, brand_name, product_name, product_color, category, color_hex, product_image_url, product_url, price, tone_type, is_active",
+      "id, brand_name, product_name, product_color, category, color_hex, product_image_url, product_url, price, tone_type, detailed_tone, lip_type, texture, recommended_skin_type, hue, saturation, brightness, is_active",
     )
     .in("id", productIds)
     .returns<ProductRow[]>();

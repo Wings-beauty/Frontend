@@ -27,6 +27,7 @@ import {
   personalColorResults,
   type PersonalColorSeason,
 } from "../constants/personalColor";
+import ProductDetailModal from "../components/ProductDetailModal";
 
 type ProfileView = {
   nickname: string;
@@ -84,6 +85,8 @@ export default function Home() {
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [latestDiagnosis, setLatestDiagnosis] =
     useState<LatestDiagnosis | null>(null);
+  const [selectedProduct, setSelectedProduct] =
+    useState<RecommendedProduct | null>(null);
   const result = personalColorResults[personalSeason];
 
   useEffect(() => {
@@ -344,12 +347,8 @@ export default function Home() {
                   ? lifeProducts.map((product) => (
                       <article
                         key={product.id}
-                        className="w-36 shrink-0"
-                        onClick={() => {
-                          if (product.productUrl) {
-                            window.location.href = product.productUrl;
-                          }
-                        }}
+                        className="w-36 shrink-0 cursor-pointer"
+                        onClick={() => setSelectedProduct(product)}
                       >
                         <div className="relative aspect-square overflow-hidden rounded-3xl bg-cream-50 shadow-md">
                           {product.productImageUrl ? (
@@ -538,6 +537,15 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {selectedProduct ? (
+        <ProductDetailModal
+          product={selectedProduct}
+          isLiked={savedProductIds.has(selectedProduct.id)}
+          onClose={() => setSelectedProduct(null)}
+          onToggleLike={handleToggleLike}
+        />
+      ) : null}
     </main>
   );
 }

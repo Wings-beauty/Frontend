@@ -32,6 +32,7 @@ import {
   personalColorResults,
 } from "../constants/personalColor";
 import type { ProfileRole } from "../constants/inquiries";
+import ProductDetailModal from "../components/ProductDetailModal";
 
 type ProfileView = {
   nickname: string;
@@ -44,7 +45,7 @@ const baseMenuItems = [
   {
     label: "공지사항",
     icon: HiMegaphone,
-    path: null,
+    path: "https://enchanting-season-dd0.notion.site/36586389f99c807fb0d7eb849fb85bee?pvs=73",
   },
 ] as const;
 
@@ -97,6 +98,8 @@ export default function MyPage() {
   const [savedProducts, setSavedProducts] = useState<RecommendedProduct[]>([]);
   const [authError, setAuthError] = useState("");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] =
+    useState<RecommendedProduct | null>(null);
   const [nicknameDraft, setNicknameDraft] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
@@ -204,6 +207,9 @@ export default function MyPage() {
     await removeSavedProduct(userId, productId);
     setSavedProducts((currentProducts) =>
       currentProducts.filter((product) => product.id !== productId),
+    );
+    setSelectedProduct((currentProduct) =>
+      currentProduct?.id === productId ? null : currentProduct,
     );
   };
 
@@ -383,12 +389,8 @@ export default function MyPage() {
               ? savedProducts.map((product) => (
                   <article
                     key={product.id}
-                    className="w-36 shrink-0 overflow-hidden rounded-3xl bg-white pb-5 shadow-[0_14px_36px_rgb(107_74_63/0.08)]"
-                    onClick={() => {
-                      if (product.productUrl) {
-                        window.location.href = product.productUrl;
-                      }
-                    }}
+                    className="w-36 shrink-0 cursor-pointer overflow-hidden rounded-3xl bg-white pb-5 shadow-[0_14px_36px_rgb(107_74_63/0.08)]"
+                    onClick={() => setSelectedProduct(product)}
                   >
                     <div className="relative aspect-square overflow-hidden rounded-xl bg-cream-50">
                       {product.productImageUrl ? (
@@ -524,6 +526,17 @@ export default function MyPage() {
             </div>
           </div>
         </div>
+      ) : null}
+
+      {selectedProduct ? (
+        <ProductDetailModal
+          product={selectedProduct}
+          isLiked
+          onClose={() => setSelectedProduct(null)}
+          onToggleLike={(productId) => {
+            void handleSavedProductRemove(productId);
+          }}
+        />
       ) : null}
     </main>
   );
