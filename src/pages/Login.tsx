@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiArrowLeft, HiSparkles } from "react-icons/hi2";
+import { HiSparkles } from "react-icons/hi2";
+import type { User } from "@supabase/supabase-js";
 import {
   consumeAuthReturnTo,
   getCurrentUser,
+  hasDiagnosisHistory,
   saveCurrentDiagnosisToUser,
   signInWithGoogle,
 } from "../api/auth";
@@ -11,11 +13,34 @@ import { supabase } from "../lib/supabase";
 
 export default function Login() {
   const navigate = useNavigate();
+  const hasHandledAuthenticatedUser = useRef(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [authError, setAuthError] = useState("");
-  const isInitialDiagnosisLogin =
-    sessionStorage.getItem("wings_auth_return_to") === "/photo";
+
+  const resolvePostLoginPath = useCallback(async (userId: string) => {
+    const returnTo = consumeAuthReturnTo();
+
+    if (returnTo !== "/home") {
+      return returnTo;
+    }
+
+    return (await hasDiagnosisHistory(userId)) ? "/home" : "/photo";
+  }, []);
+
+  const handleAuthenticatedUser = useCallback(
+    async (user: User) => {
+      if (hasHandledAuthenticatedUser.current) {
+        return null;
+      }
+
+      hasHandledAuthenticatedUser.current = true;
+
+      await saveCurrentDiagnosisToUser(user);
+      return resolvePostLoginPath(user.id);
+    },
+    [resolvePostLoginPath],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -26,10 +51,10 @@ export default function Login() {
           return;
         }
 
-        await saveCurrentDiagnosisToUser(user);
+        const nextPath = await handleAuthenticatedUser(user);
 
-        if (isMounted) {
-          navigate(consumeAuthReturnTo(), { replace: true });
+        if (isMounted && nextPath) {
+          navigate(nextPath, { replace: true });
         }
       })
       .finally(() => {
@@ -45,8 +70,10 @@ export default function Login() {
         return;
       }
 
-      void saveCurrentDiagnosisToUser(session.user).finally(() => {
-        navigate(consumeAuthReturnTo(), { replace: true });
+      void handleAuthenticatedUser(session.user).then((nextPath) => {
+        if (isMounted && nextPath) {
+          navigate(nextPath, { replace: true });
+        }
       });
     });
 
@@ -54,7 +81,7 @@ export default function Login() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [handleAuthenticatedUser, navigate]);
 
   const handleGoogleLogin = async () => {
     setIsSigningIn(true);
@@ -77,23 +104,12 @@ export default function Login() {
         aria-hidden="true"
       />
       <div
-        className="absolute -left-24 bottom-12 size-72 rounded-full bg-tone-spring/25 blur-3xl"
+        className="absolute -left-24 bottom-12 size-72 rounded-full bg-tone-spring/40 blur-3xl"
         aria-hidden="true"
       />
 
       <header className="relative flex items-center justify-between">
-        {isInitialDiagnosisLogin ? (
-          <div className="size-10" aria-hidden="true" />
-        ) : (
-          <button
-            type="button"
-            className="flex size-10 items-center justify-center text-brown-600"
-            aria-label="이전 페이지로 이동"
-            onClick={() => navigate(-1)}
-          >
-            <HiArrowLeft className="size-6" aria-hidden="true" />
-          </button>
-        )}
+        <div className="size-10" aria-hidden="true" />
 
         <h1 className="text-2xl font-normal leading-[30px] text-[#1f1b1b]">
           WINGS
@@ -111,12 +127,13 @@ export default function Login() {
         <h2 className="text-3xl font-normal leading-10 tracking-tight text-brown-600">
           로그인하고
           <br />
-          내 퍼스널 컬러 결과를 저장하세요
+          윙즈의 모든 서비스를 이용해보세요.
         </h2>
         <p className="mt-6 text-base font-normal leading-7 text-[#7a625c]">
           구글 계정으로 간편하게 시작할 수 있어요.
           <br />
-          저장한 진단 기록과 찜한 제품은 마이페이지에서 다시 확인할 수 있습니다.
+          저장한 진단 기록과 찜한 제품은 <br /> 마이페이지에서 다시 확인할 수
+          있습니다.{" "}
         </p>
 
         <div className="mt-12 rounded-2xl bg-white px-5 py-6 shadow-lg">
