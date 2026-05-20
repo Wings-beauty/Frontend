@@ -441,10 +441,15 @@ export default function MyPage() {
           return (
             <button
               onClick={() => {
-                if (item.path) {
-                  navigate(item.path);
-                }
-              }}
+  if (!item.path) return;
+
+  if (item.path.startsWith("http")) {
+    window.open(item.path, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  navigate(item.path);
+}}
               key={item.label}
               type="button"
               className="flex h-20 w-full items-center border-b border-cream-200 text-brown-600"
