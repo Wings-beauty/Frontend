@@ -28,8 +28,8 @@ import {
   type RecommendedProduct,
 } from "../api/products";
 import {
-  getStoredPersonalColorSeason,
   personalColorResults,
+  type PersonalColorSeason,
 } from "../constants/personalColor";
 import type { ProfileRole } from "../constants/inquiries";
 import ProductDetailModal from "../components/ProductDetailModal";
@@ -38,6 +38,7 @@ type ProfileView = {
   nickname: string;
   email: string;
   profileImageUrl: string | null;
+  skinTone: PersonalColorSeason | null;
   role: ProfileRole;
 };
 
@@ -105,10 +106,7 @@ export default function MyPage() {
   const [profileError, setProfileError] = useState("");
   const latestDiagnosis = diagnosisHistory[0] ?? null;
   const menuItems = getMenuItems(profile?.role);
-  const result =
-    personalColorResults[
-      latestDiagnosis?.season ?? getStoredPersonalColorSeason()
-    ];
+  const result = personalColorResults[profile?.skinTone ?? "summer"];
 
   useEffect(() => {
     let isMounted = true;
@@ -187,6 +185,7 @@ export default function MyPage() {
           updatedProfile.profile_image_url ??
           currentProfile?.profileImageUrl ??
           null,
+        skinTone: currentProfile?.skinTone ?? null,
         role: currentProfile?.role ?? "user",
       }));
       setIsProfileModalOpen(false);
@@ -265,11 +264,11 @@ export default function MyPage() {
                   ? "불러오는 중"
                   : (profile?.nickname ?? "WINGS 사용자")}
               </h2>
-              {latestDiagnosis ? (
+              {profile?.skinTone ? (
                 <span
                   className={`rounded-full px-5 py-1.5 text-base font-normal leading-6 text-brown-600 ${result.accentClassName}`}
                 >
-                  {latestDiagnosis.toneLabel}
+                  {result.toneLabel}
                 </span>
               ) : null}
             </div>

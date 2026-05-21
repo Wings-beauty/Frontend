@@ -5,14 +5,16 @@ import {
   fetchProfile,
   getCurrentUser,
   setAuthReturnTo,
+  updateProfileSkinTone,
 } from "../api/auth";
 import {
   getStoredDiagnosisFeedback,
+  getStoredDiagnosisUpload,
   getStoredFinalDiagnosisResult,
   setStoredDiagnosisFeedback,
 } from "../api/diagnosisUpload";
+import { saveResultPageFeedback } from "../api/feedback";
 import {
-  getStoredPersonalColorSeason,
   personalColorResults,
   type PersonalColorSeason,
 } from "../constants/personalColor";
@@ -20,6 +22,7 @@ import type { DiagnosisFeedback } from "../types/diagnosis";
 
 type ProfileView = {
   profileImageUrl: string | null;
+  skinTone: PersonalColorSeason | null;
 };
 
 export default function Result() {
@@ -29,13 +32,20 @@ export default function Result() {
   const [feedback, setFeedback] = useState<DiagnosisFeedback | null>(
     getStoredDiagnosisFeedback(),
   );
+  const [feedbackSaveError, setFeedbackSaveError] = useState("");
+  const [currentSeason, setCurrentSeason] =
+    useState<PersonalColorSeason | null>(null);
   const finalResult = getStoredFinalDiagnosisResult();
-  const season = finalResult?.finalSeason ?? getStoredPersonalColorSeason();
+  const diagnosisUpload = getStoredDiagnosisUpload();
+  const season = currentSeason ?? "summer";
+  const sessionResultMatchesProfile = finalResult?.finalSeason === currentSeason;
   const result = personalColorResults[season];
-  const confidence = finalResult
+  const confidence = sessionResultMatchesProfile
     ? Math.round(finalResult.finalConfidence * 100)
     : null;
-  const isAdjusted = Boolean(finalResult?.userAnswers);
+  const isAdjusted = Boolean(
+    sessionResultMatchesProfile && finalResult?.userAnswers,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -57,7 +67,11 @@ export default function Result() {
       const profileFromDb = await fetchProfile(user);
 
       if (isMounted) {
-        setProfile({ profileImageUrl: profileFromDb.profileImageUrl });
+        setProfile({
+          profileImageUrl: profileFromDb.profileImageUrl,
+          skinTone: profileFromDb.skinTone,
+        });
+        setCurrentSeason(profileFromDb.skinTone);
       }
     };
 
@@ -83,13 +97,48 @@ export default function Result() {
     navigate("/home");
   };
 
+  const getFeedbackRating = (matchStatus: DiagnosisFeedback["matchStatus"]) => {
+    if (matchStatus === "match") return 5;
+    if (matchStatus === "unclear") return 3;
+    return 1;
+  };
+
+  const saveResultFeedbackToDb = async (nextFeedback: DiagnosisFeedback) => {
+    const user = await getCurrentUser();
+    const diagnosisResultId = diagnosisUpload?.diagnosisResultId;
+
+    if (!user || !diagnosisResultId) {
+      return;
+    }
+
+    await saveResultPageFeedback({
+      userId: user.id,
+      diagnosisResultId,
+      rating: getFeedbackRating(nextFeedback.matchStatus),
+      isMatch: nextFeedback.matchStatus === "match",
+      comment: "result페이지에서 저장한 결과",
+    });
+  };
+
   const saveFeedback = (nextFeedback: DiagnosisFeedback) => {
     setFeedback(nextFeedback);
     setStoredDiagnosisFeedback(nextFeedback);
-    // TODO: 피드백 저장 API 연결 필요
+    setFeedbackSaveError("");
+
+    void saveResultFeedbackToDb(nextFeedback).catch(() => {
+      setFeedbackSaveError("피드백 저장에 실패했어요. 잠시 후 다시 시도해주세요.");
+    });
   };
 
   const selectMatchStatus = (matchStatus: DiagnosisFeedback["matchStatus"]) => {
+    if (matchStatus === "match" && currentSeason) {
+      void getCurrentUser().then((user) => {
+        if (user) {
+          void updateProfileSkinTone(user.id, currentSeason);
+        }
+      });
+    }
+
     saveFeedback({
       matchStatus,
       userSelectedSeason:
@@ -108,6 +157,15 @@ export default function Result() {
       ...feedback,
       userSelectedSeason,
     });
+
+    if (userSelectedSeason !== "unknown") {
+      setCurrentSeason(userSelectedSeason);
+      void getCurrentUser().then((user) => {
+        if (user) {
+          void updateProfileSkinTone(user.id, userSelectedSeason);
+        }
+      });
+    }
   };
 
   return (
@@ -149,6 +207,16 @@ export default function Result() {
       </header>
 
       <div className="relative flex flex-1 flex-col justify-between gap-5 overflow-y-auto pt-8">
+        {!currentSeason ? (
+          <section className="rounded-3xl bg-cream-50 px-6 py-8 text-center">
+            <p className="text-base font-normal leading-7 text-[#7a625c]">
+              저장된 톤 정보를 불러오는 중입니다.
+            </p>
+          </section>
+        ) : null}
+
+        {currentSeason ? (
+          <>
         <section className="text-center">
           <div className="mx-auto mb-4 flex h-8 w-24 items-center justify-center rounded-full bg-cream-100 text-sm font-normal leading-5 text-[#7a625c] shadow-inner">
             분석 완료
@@ -178,7 +246,7 @@ export default function Result() {
           </div>
 
           <h3 className="text-lg font-normal leading-8 text-brown-600">
-            {finalResult?.finalSeasonKr ?? result.detailTitle}
+            {result.detailTitle}
           </h3>
           <p className="mt-3 text-sm font-normal leading-6 text-[#7a625c]">
             {result.detailDescription}
@@ -188,7 +256,7 @@ export default function Result() {
               최종 일치도 {confidence}%
             </p>
           ) : null}
-          {finalResult?.correctionApplied ? (
+          {sessionResultMatchesProfile && finalResult?.correctionApplied ? (
             <p className="mt-3 rounded-2xl bg-cream-100 px-4 py-3 text-sm font-normal leading-6 text-[#7a625c]">
               AI 분석 결과와 답변을 함께 반영한 결과예요.
             </p>
@@ -288,6 +356,11 @@ export default function Result() {
               </div>
             </div>
           ) : null}
+          {feedbackSaveError ? (
+            <p className="mt-4 text-sm font-normal leading-5 text-red">
+              {feedbackSaveError}
+            </p>
+          ) : null}
         </section>
 
         <footer className="pt-2">
@@ -302,6 +375,8 @@ export default function Result() {
             <HiArrowRight className="size-5" aria-hidden="true" />
           </button>
         </footer>
+          </>
+        ) : null}
       </div>
     </main>
   );

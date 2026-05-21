@@ -11,7 +11,12 @@ import {
   getPersonalColorSeasonFromValue,
   personalColorResults,
 } from "../constants/personalColor";
-import { getCurrentUser, ensureProfile as ensureUserProfile } from "./auth";
+import {
+  getCurrentUser,
+  ensureProfile as ensureUserProfile,
+  fetchProfileSkinToneForUser,
+  updateProfileSkinTone,
+} from "./auth";
 import type {
   FinalDiagnosisResult,
   PredictResponse,
@@ -323,6 +328,12 @@ export async function finalizeDiagnosisWithSurvey(
     await updateSavedDiagnosisWithFinalResult(diagnosisResultId, finalResult);
   }
 
+  const user = await getCurrentUser();
+
+  if (user) {
+    await updateProfileSkinTone(user.id, finalResult.finalSeason);
+  }
+
   return finalResult;
 }
 
@@ -344,30 +355,12 @@ async function updateDiagnosisRequestStatus(
 export { ensureUserProfile };
 
 export async function fetchLatestDiagnosisSeasonForUser(userId: string) {
-  const { data, error } = await supabase
-    .from("diagnosis_results")
-    .select("tone_code, tone_label")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<Pick<DiagnosisResultRow, "tone_code" | "tone_label">>();
-
-  if (error || !data) {
-    return null;
-  }
-
-  const season = getPersonalColorSeasonFromValue(data.tone_code ?? data.tone_label);
-
-  sessionStorage.setItem("wings_personal_color_season", season);
-
-  if (data.tone_label) {
-    sessionStorage.setItem("wings_personal_color_result", data.tone_label);
-  }
-
-  return season;
+  return fetchProfileSkinToneForUser(userId);
 }
 
 export async function fetchLatestDiagnosisForUser(userId: string) {
+  const profileSeason = await fetchProfileSkinToneForUser(userId);
+
   const { data, error } = await supabase
     .from("diagnosis_results")
     .select("id, tone_code, tone_label, confidence, created_at")
@@ -380,20 +373,20 @@ export async function fetchLatestDiagnosisForUser(userId: string) {
     return null;
   }
 
-  const season = getPersonalColorSeasonFromValue(
-    data.tone_code ?? data.tone_label,
-  );
+  const season =
+    profileSeason ??
+    getPersonalColorSeasonFromValue(data.tone_code ?? data.tone_label);
 
   sessionStorage.setItem("wings_personal_color_season", season);
-
-  if (data.tone_label) {
-    sessionStorage.setItem("wings_personal_color_result", data.tone_label);
-  }
+  sessionStorage.setItem(
+    "wings_personal_color_result",
+    personalColorResults[season].toneLabel,
+  );
 
   return {
     id: data.id,
     season,
-    toneLabel: data.tone_label ?? personalColorResults[season].toneLabel,
+    toneLabel: personalColorResults[season].toneLabel,
     confidence: data.confidence,
     createdAt: data.created_at ?? null,
   };
@@ -469,6 +462,7 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
 
     storeDiagnosisResult(upload, result);
     setStoredFinalDiagnosisResult(finalResult);
+    await updateProfileSkinTone(user.id, finalResult.finalSeason);
 
     return upload;
   } catch (error) {

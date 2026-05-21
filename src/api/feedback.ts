@@ -8,10 +8,7 @@ export type FeedbackPayload = {
   comment: string;
 };
 
-export async function fetchFeedbackForDiagnosis(
-  userId: string,
-  diagnosisResultId: number,
-) {
+export async function fetchFeedbackForDiagnosis(userId: string, diagnosisResultId: number) {
   const { data, error } = await supabase
     .from("feedbacks")
     .select("id, rating, is_match, comment")
@@ -28,13 +25,7 @@ export async function fetchFeedbackForDiagnosis(
   return data;
 }
 
-export async function saveDiagnosisFeedback({
-  userId,
-  diagnosisResultId,
-  rating,
-  isMatch,
-  comment,
-}: FeedbackPayload) {
+export async function saveDiagnosisFeedback({ userId, diagnosisResultId, rating, isMatch, comment }: FeedbackPayload) {
   const { error } = await supabase.from("feedbacks").insert({
     user_id: userId,
     diagnosis_result_id: diagnosisResultId,
@@ -45,5 +36,19 @@ export async function saveDiagnosisFeedback({
 
   if (error) {
     throw new Error(error.message || "피드백 저장에 실패했어요.");
+  }
+}
+
+export async function saveResultPageFeedback({ userId, diagnosisResultId, rating, isMatch, comment }: FeedbackPayload) {
+  const { error } = await supabase.from("feedbacks").insert({
+    user_id: userId,
+    diagnosis_result_id: diagnosisResultId,
+    rating,
+    is_match: isMatch,
+    comment: comment.trim() || null,
+  });
+
+  if (error) {
+    throw new Error(error.message || "결과 피드백 저장에 실패했어요.");
   }
 }

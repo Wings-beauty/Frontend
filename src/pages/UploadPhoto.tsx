@@ -14,6 +14,10 @@ import {
   clearStoredDiagnosis,
   setStoredDiagnosisUpload,
 } from "../api/diagnosisUpload";
+import { validateDiagnosisImage } from "../utils/diagnosisImageValidation";
+
+const INVALID_PHOTO_MESSAGE =
+  "정확한 진단이 어려운 사진이에요. 정면 얼굴이 잘 보이는 사진을 다시 업로드해주세요.";
 
 export default function UploadPhoto() {
   const navigate = useNavigate();
@@ -24,7 +28,7 @@ export default function UploadPhoto() {
   const [fileName, setFileName] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-
+  const [isInvalidPhotoModalOpen, setIsInvalidPhotoModalOpen] = useState(false);
 
   useEffect(() => {
     getCurrentUser().then((user) => {
@@ -38,7 +42,7 @@ export default function UploadPhoto() {
         URL.revokeObjectURL(previewUrl);
       }
     };
-  }, [previewUrl]);
+  }, [navigate, previewUrl]);
 
   const uploadAndNavigate = async (file: File) => {
     if (isUploading) {
@@ -59,6 +63,13 @@ export default function UploadPhoto() {
     }
 
     try {
+      const isValidImage = await validateDiagnosisImage(file);
+
+      if (!isValidImage) {
+        setIsInvalidPhotoModalOpen(true);
+        return;
+      }
+
       const uploadResult = await uploadDiagnosisPhoto(file);
 
       setStoredDiagnosisUpload(uploadResult);
@@ -105,6 +116,7 @@ export default function UploadPhoto() {
     setSelectedFile(null);
     setFileName("");
     setUploadError("");
+    setIsInvalidPhotoModalOpen(false);
 
     if (cameraInputRef.current) {
       cameraInputRef.current.value = "";
@@ -119,6 +131,11 @@ export default function UploadPhoto() {
     if (selectedFile) {
       void uploadAndNavigate(selectedFile);
     }
+  };
+
+  const closeInvalidPhotoModal = () => {
+    setIsInvalidPhotoModalOpen(false);
+    resetImage();
   };
 
   return (
@@ -264,6 +281,34 @@ export default function UploadPhoto() {
           onChange={handleImageChange}
         />
       </section>
+
+      {isInvalidPhotoModalOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-brown-600/35 px-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="invalid-photo-modal-title"
+        >
+          <div className="w-full max-w-sm rounded-3xl bg-white px-6 py-7 text-center shadow-2xl">
+            <h2
+              id="invalid-photo-modal-title"
+              className="text-lg font-normal leading-7 text-brown-600"
+            >
+              사진을 다시 선택해주세요
+            </h2>
+            <p className="mt-4 text-base font-normal leading-7 text-[#7a625c]">
+              {INVALID_PHOTO_MESSAGE}
+            </p>
+            <button
+              type="button"
+              className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-brown-600 text-base font-normal leading-6 text-white"
+              onClick={closeInvalidPhotoModal}
+            >
+              다시 업로드하기
+            </button>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

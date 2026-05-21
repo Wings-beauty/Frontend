@@ -33,6 +33,7 @@ type ProfileView = {
   nickname: string;
   email: string;
   profileImageUrl: string | null;
+  skinTone: PersonalColorSeason | null;
 };
 
 const reviews = [
@@ -113,30 +114,28 @@ export default function Home() {
         setProfile(fetchProfileData);
         setIsLoadingLifeProducts(true);
 
-        const storedSeason = hasStoredPersonalColorResult()
-          ? getStoredPersonalColorSeason()
-          : null;
         const latestDiagnosisFromDb = await fetchLatestDiagnosisForUser(
           user.id,
         );
-        const latestSeason = latestDiagnosisFromDb?.season ?? storedSeason;
+        const profileSeason = fetchProfileData.skinTone;
 
         if (!isMounted) {
           return;
         }
 
-        if (!latestSeason) {
+        if (!profileSeason) {
           setHasPersonalTone(false);
           setLifeProducts([]);
+          setLatestDiagnosis(latestDiagnosisFromDb);
           return;
         }
 
         setHasPersonalTone(true);
-        setPersonalSeason(latestSeason);
+        setPersonalSeason(profileSeason);
         setLatestDiagnosis(latestDiagnosisFromDb);
 
         const [products, savedProducts] = await Promise.all([
-          fetchRecommendedProducts(latestSeason),
+          fetchRecommendedProducts(profileSeason),
           fetchSavedProductsForUser(user.id),
         ]);
 

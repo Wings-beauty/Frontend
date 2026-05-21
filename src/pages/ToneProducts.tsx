@@ -110,7 +110,7 @@ export default function ToneProducts() {
         const user = await getCurrentUser();
         if (!isMounted) return;
 
-        let season = getStoredPersonalColorSeason();
+        let season: PersonalColorSeason | null = null;
         if (user) {
           setUserId(user.id);
           const [latestSeason, savedProducts] = await Promise.all([
@@ -119,6 +119,11 @@ export default function ToneProducts() {
           ]);
           if (latestSeason) season = latestSeason;
           setSavedProductIds(new Set(savedProducts.map((p) => p.id)));
+        }
+
+        if (!season) {
+          setProducts([]);
+          return;
         }
 
         setPersonalSeason(season);

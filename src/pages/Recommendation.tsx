@@ -23,6 +23,7 @@ import { addToLaunchWaitlist } from "../api/waitlist";
 import {
   getStoredPersonalColorSeason,
   personalColorResults,
+  type PersonalColorSeason,
 } from "../constants/personalColor";
 import { getProductCategoryLabel } from "../constants/products";
 import ProductDetailModal from "../components/ProductDetailModal";
@@ -125,8 +126,10 @@ function ProductCard({
 
 export default function Recommendation() {
   const navigate = useNavigate();
-  const season = getStoredPersonalColorSeason();
-  const result = personalColorResults[season];
+  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>(
+    getStoredPersonalColorSeason(),
+  );
+  const result = personalColorResults[personalSeason];
   const [recommendedProducts, setRecommendedProducts] = useState<
     RecommendedProduct[]
   >([]);
@@ -154,23 +157,31 @@ export default function Recommendation() {
 
     const loadData = async () => {
       try {
-        const [productsFromDb, user] = await Promise.all([
-          fetchRecommendedProducts(season),
-          getCurrentUser(),
-        ]);
+        const user = await getCurrentUser();
 
         if (!isMounted) return;
 
-        setRecommendedProducts(productsFromDb);
         setIsLoggedIn(Boolean(user));
 
         if (user) {
           setUserId(user.id);
-          const [savedProducts, profileFromDb] = await Promise.all([
+          const profileFromDb = await fetchProfile(user);
+          const profileSeason = profileFromDb.skinTone;
+
+          if (!profileSeason) {
+            setRecommendedProducts([]);
+            setProfile({ profileImageUrl: profileFromDb.profileImageUrl });
+            return;
+          }
+
+          setPersonalSeason(profileSeason);
+
+          const [productsFromDb, savedProducts] = await Promise.all([
+            fetchRecommendedProducts(profileSeason),
             fetchSavedProductsForUser(user.id),
-            fetchProfile(user),
           ]);
           if (isMounted) {
+            setRecommendedProducts(productsFromDb);
             setSavedProductIds(new Set(savedProducts.map((p) => p.id)));
             setProfile({ profileImageUrl: profileFromDb.profileImageUrl });
           }
@@ -191,7 +202,7 @@ export default function Recommendation() {
     return () => {
       isMounted = false;
     };
-  }, [navigate, season]);
+  }, [navigate]);
 
   useEffect(() => {
     let isMounted = true;

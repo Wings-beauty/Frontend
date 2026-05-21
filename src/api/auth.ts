@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getStoredDiagnosisUpload } from "./diagnosisUpload";
 import type { ProfileRole } from "../constants/inquiries";
+import type { PersonalColorSeason } from "../constants/personalColor";
 
 const AUTH_RETURN_TO = "/home";
 const AUTH_RETURN_TO_KEY = "wings_auth_return_to";
@@ -16,6 +17,7 @@ export type CurrentUserProfile = {
   id: string;
   nickname: string | null;
   profileImageUrl: string | null;
+  skinTone: PersonalColorSeason | null;
   role: ProfileRole;
 };
 
@@ -28,7 +30,7 @@ export async function getCurrentUserProfile() {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, nickname, profile_image_url, role")
+    .select("id, nickname, profile_image_url, skin_tone, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -40,6 +42,7 @@ export async function getCurrentUserProfile() {
     id: data.id,
     nickname: data.nickname,
     profileImageUrl: data.profile_image_url,
+    skinTone: data.skin_tone,
     role: data.role === "admin" ? "admin" : "user",
   } satisfies CurrentUserProfile;
 }
@@ -126,7 +129,7 @@ export async function fetchProfile(user: User) {
 
   const { data } = await supabase
     .from("profiles")
-    .select("nickname, profile_image_url, role")
+    .select("nickname, profile_image_url, skin_tone, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -143,8 +146,29 @@ export async function fetchProfile(user: User) {
       user.user_metadata.avatar_url ??
       user.user_metadata.picture ??
       null,
+    skinTone: data?.skin_tone ?? null,
     role: (data?.role === "admin" ? "admin" : "user") satisfies ProfileRole,
   };
+}
+
+export async function fetchProfileSkinToneForUser(userId: string) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("skin_tone")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error || !data?.skin_tone) {
+    return null;
+  }
+
+  sessionStorage.setItem("wings_personal_color_season", data.skin_tone);
+  sessionStorage.setItem(
+    "wings_personal_color_result",
+    data.skin_tone,
+  );
+
+  return data.skin_tone;
 }
 
 export async function updateProfileNickname(userId: string, nickname: string) {
@@ -169,6 +193,23 @@ export async function updateProfileNickname(userId: string, nickname: string) {
   }
 
   return data;
+}
+
+export async function updateProfileSkinTone(
+  userId: string,
+  skinTone: PersonalColorSeason,
+) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      skin_tone: skinTone,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error(error.message || "피부 톤 저장에 실패했어요.");
+  }
 }
 
 export async function saveCurrentDiagnosisToUser(user: User) {

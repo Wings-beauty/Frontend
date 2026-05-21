@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   public: {
@@ -79,6 +73,32 @@ export type Database = {
         Relationships: [];
       };
       feedbacks: {
+        Row: {
+          id: number;
+          user_id: string | null;
+          diagnosis_result_id: number | null;
+          rating: number | null;
+          is_match: boolean | null;
+          comment: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: never;
+          user_id?: string | null;
+          diagnosis_result_id?: number | null;
+          rating?: number | null;
+          is_match?: boolean | null;
+          comment?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          rating?: number | null;
+          is_match?: boolean | null;
+          comment?: string | null;
+        };
+        Relationships: [];
+      };
+      feedbacks_result: {
         Row: {
           id: number;
           user_id: string | null;
@@ -268,6 +288,7 @@ export type Database = {
           profile_image_url: string | null;
           birth_year: number | null;
           skin_note: string | null;
+          skin_tone: "spring" | "summer" | "autumn" | "winter" | null;
           role: string;
           created_at: string | null;
           updated_at: string | null;
@@ -279,6 +300,7 @@ export type Database = {
           profile_image_url?: string | null;
           birth_year?: number | null;
           skin_note?: string | null;
+          skin_tone?: "spring" | "summer" | "autumn" | "winter" | null;
           role?: string;
           created_at?: string | null;
           updated_at?: string | null;
@@ -289,6 +311,7 @@ export type Database = {
           profile_image_url?: string | null;
           birth_year?: number | null;
           skin_note?: string | null;
+          skin_tone?: "spring" | "summer" | "autumn" | "winter" | null;
           role?: string;
           updated_at?: string | null;
         };
@@ -316,7 +339,9 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
-    Enums: Record<string, never>;
+    Enums: {
+      skin_tone: "spring" | "summer" | "autumn" | "winter";
+    };
     CompositeTypes: Record<string, never>;
   };
 };

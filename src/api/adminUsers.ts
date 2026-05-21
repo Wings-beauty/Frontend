@@ -52,6 +52,7 @@ export type AdminUserDetail = {
   profileImageUrl: string | null;
   birthYear: number | null;
   skinNote: string | null;
+  skinTone: string | null;
   role: ProfileRole;
   createdAt: string | null;
   updatedAt: string | null;
@@ -68,6 +69,7 @@ type ProfileRow = {
   profile_image_url: string | null;
   birth_year: number | null;
   skin_note: string | null;
+  skin_tone: string | null;
   role: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -168,7 +170,7 @@ export async function fetchAdminUsers(filters: AdminUserFilters = {}) {
   let profileQuery = supabase
     .from("profiles")
     .select(
-      "id, email, nickname, profile_image_url, birth_year, skin_note, role, created_at, updated_at",
+      "id, email, nickname, profile_image_url, birth_year, skin_note, skin_tone, role, created_at, updated_at",
     )
     .order("created_at", { ascending: false });
 
@@ -255,8 +257,8 @@ export async function fetchAdminUsers(filters: AdminUserFilters = {}) {
         nickname: profile.nickname,
         role: normalizeRole(profile.role),
         createdAt: profile.created_at,
-        latestToneCode: latest?.tone_code ?? null,
-        latestToneLabel: latest?.tone_label ?? null,
+        latestToneCode: profile.skin_tone,
+        latestToneLabel: profile.skin_tone,
         latestConfidence: latest?.confidence ?? null,
         savedProductCount: savedCountByUser.get(profile.id) ?? 0,
         hasWaitlist: isWaitlisted(profile, waitlistRows),
@@ -288,7 +290,7 @@ export async function fetchAdminUserDetail(userId: string) {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
-      "id, email, nickname, profile_image_url, birth_year, skin_note, role, created_at, updated_at",
+      "id, email, nickname, profile_image_url, birth_year, skin_note, skin_tone, role, created_at, updated_at",
     )
     .eq("id", userId)
     .maybeSingle<ProfileRow>();
@@ -364,6 +366,7 @@ export async function fetchAdminUserDetail(userId: string) {
     profileImageUrl: profile.profile_image_url,
     birthYear: profile.birth_year,
     skinNote: profile.skin_note,
+    skinTone: profile.skin_tone,
     role: normalizeRole(profile.role),
     createdAt: profile.created_at,
     updatedAt: profile.updated_at,
