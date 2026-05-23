@@ -236,6 +236,7 @@ export default function AdminInquiries() {
                     작성자{" "}
                     {inquiry.authorNickname ??
                       inquiry.authorEmail ??
+                      inquiry.displayUserId ??
                       inquiry.userId}
                   </p>
                   <p className="mt-1 text-sm font-normal leading-5 text-[#7a625c]">

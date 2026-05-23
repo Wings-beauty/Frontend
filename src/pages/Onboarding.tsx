@@ -4,7 +4,7 @@ import { HiArrowRight } from "react-icons/hi2";
 export default function Onboarding() {
   return (
     <main className="flex min-h-dvh w-full items-center justify-center bg-white px-8 py-4">
-      <section className="relative flex h-[calc(100dvh-32px)] max-h-screen min-h-96 w-full max-w-md flex-col items-center justify-between overflow-hidden rounded-3xl border border-ivory/50 bg-white shadow-lg">
+      <section className="relative flex h-[calc(100dvh-32px)] max-h-[100dvh] min-h-96 w-full max-w-md flex-col items-center justify-between overflow-hidden rounded-3xl border border-ivory/50 bg-white shadow-lg">
         <div
           className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-white/0"
           aria-hidden="true"
@@ -75,7 +75,7 @@ export default function Onboarding() {
             className="flex h-16 w-full items-center justify-center gap-2 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-lg"
           >
             내 톤 진단하기
-            <HiArrowRight className="size-[18px]" aria-hidden="true" />
+            <HiArrowRight className="size-4.5" aria-hidden="true" />
           </Link>
         </footer>
       </section>

@@ -128,7 +128,7 @@ export default function SavedProducts() {
   };
 
   return (
-    <main className="min-h-screen w-full px-5 pb-12 pt-6 bg-cream-50/30">
+    <main className="min-h-dvh w-full px-5 pb-12 pt-6 bg-cream-50/30">
       <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-5 py-4 bg-white/80 backdrop-blur-md">
         <button
           onClick={() => navigate(-1)}

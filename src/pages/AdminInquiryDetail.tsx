@@ -187,10 +187,10 @@ export default function AdminInquiryDetail() {
             </h2>
             <p className="mt-3 text-sm font-normal leading-5 text-[#7a625c]">
               작성자{" "}
-              {inquiry.authorNickname ?? inquiry.authorEmail ?? inquiry.userId}
+              {inquiry.authorNickname ?? inquiry.authorEmail ?? inquiry.displayUserId ?? inquiry.userId}
             </p>
             <p className="mt-1 text-sm font-normal leading-5 text-[#7a625c]">
-              작성자 ID {inquiry.userId}
+              작성자 ID {inquiry.displayUserId ?? inquiry.userId}
             </p>
             <p className="mt-1 text-sm font-normal leading-5 text-[#7a625c]">
               작성자 이메일 {inquiry.authorEmail ?? "-"}

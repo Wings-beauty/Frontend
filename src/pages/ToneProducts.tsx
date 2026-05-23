@@ -3,18 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { HiChevronLeft, HiHome, HiHeart } from "react-icons/hi2";
 import { getCurrentUser } from "../api/auth";
 import { fetchLatestDiagnosisSeasonForUser } from "../api/diagnosis";
-import {
-  fetchRecommendedProducts,
-  fetchSavedProductsForUser,
-  saveSavedProduct,
-  removeSavedProduct,
-  type RecommendedProduct,
-} from "../api/products";
-import {
-  getStoredPersonalColorSeason,
-  personalColorResults,
-  type PersonalColorSeason,
-} from "../constants/personalColor";
+import { fetchRecommendedProducts, fetchSavedProductsForUser, saveSavedProduct, removeSavedProduct, type RecommendedProduct } from "../api/products";
+import { getStoredPersonalColorSeason, personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
 import ProductDetailModal from "../components/ProductDetailModal";
 
 function ProductCard({
@@ -41,23 +31,15 @@ function ProductCard({
     >
       <div className="relative aspect-square overflow-hidden rounded-[24px] bg-cream-50">
         {product.productImageUrl ? (
-          <img
-            src={product.productImageUrl}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-110"
-            alt={product.productName}
-          />
+          <img src={product.productImageUrl} className="size-full object-cover transition-transform duration-500 group-hover:scale-110" alt={product.productName} />
         ) : (
-          <div
-            className="size-full"
-            style={{ backgroundColor: product.colorHex ?? "#fff9e6" }}
-          />
+          <div className="size-full" style={{ backgroundColor: product.colorHex ?? "#fff9e6" }} />
         )}
         <button
           type="button"
-          className={`absolute right-3 top-3 flex size-10 items-center justify-center rounded-full shadow-sm backdrop-blur-md transition-all ${isLiked
-              ? "bg-[#df7e8b] text-white"
-              : "bg-white/80 text-brown-600 hover:bg-white hover:text-[#df7e8b]"
-            }`}
+          className={`absolute right-3 top-3 flex size-10 items-center justify-center rounded-full shadow-sm backdrop-blur-md transition-all ${
+            isLiked ? "bg-[#df7e8b] text-white" : "bg-white/80 text-brown-600 hover:bg-white hover:text-[#df7e8b]"
+          }`}
           onClick={(e) => {
             e.stopPropagation();
             onToggleLike(product.id);
@@ -68,12 +50,8 @@ function ProductCard({
       </div>
 
       <div className="mt-4 px-1">
-        <p className="text-xs font-medium text-[#df7e8b] tracking-wider uppercase">
-          {product.toneType || toneLabel}
-        </p>
-        <h3 className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-brown-800">
-          {product.productName}
-        </h3>
+        <p className="text-xs font-medium text-[#df7e8b] tracking-wider uppercase">{product.toneType || toneLabel}</p>
+        <h3 className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-brown-800">{product.productName}</h3>
         <p className="mt-2 text-sm text-[#7a625c]">{product.brandName}</p>
       </div>
     </article>
@@ -82,17 +60,12 @@ function ProductCard({
 
 export default function ToneProducts() {
   const navigate = useNavigate();
-  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>(
-    getStoredPersonalColorSeason(),
-  );
+  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>(getStoredPersonalColorSeason());
   const [products, setProducts] = useState<RecommendedProduct[]>([]);
-  const [savedProductIds, setSavedProductIds] = useState<Set<number>>(
-    new Set(),
-  );
+  const [savedProductIds, setSavedProductIds] = useState<Set<number>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] =
-    useState<RecommendedProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<RecommendedProduct | null>(null);
   const result = personalColorResults[personalSeason];
 
   useEffect(() => {
@@ -104,7 +77,6 @@ export default function ToneProducts() {
       }
     });
 
-
     const loadData = async () => {
       try {
         const user = await getCurrentUser();
@@ -113,10 +85,7 @@ export default function ToneProducts() {
         let season: PersonalColorSeason | null = null;
         if (user) {
           setUserId(user.id);
-          const [latestSeason, savedProducts] = await Promise.all([
-            fetchLatestDiagnosisSeasonForUser(user.id),
-            fetchSavedProductsForUser(user.id),
-          ]);
+          const [latestSeason, savedProducts] = await Promise.all([fetchLatestDiagnosisSeasonForUser(user.id), fetchSavedProductsForUser(user.id)]);
           if (latestSeason) season = latestSeason;
           setSavedProductIds(new Set(savedProducts.map((p) => p.id)));
         }
@@ -178,27 +147,19 @@ export default function ToneProducts() {
   };
 
   return (
-    <main className="min-h-screen w-full px-5 pb-12 pt-6">
-      <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-5 py-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex size-10 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm"
-        >
+    <main className="min-h-dvh w-full px-5 pb-12 pt-6">
+      <header className="top-0 z-40 flex items-center justify-between">
+        <button onClick={() => navigate(-1)} className="flex size-10 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm">
           <HiChevronLeft className="size-6" />
         </button>
         <h1 className="text-lg font-bold text-brown-800">나와 맞는 제품들</h1>
-        <button
-          onClick={() => navigate("/home")}
-          className="flex size-10 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm"
-        >
+        <button onClick={() => navigate("/home")} className="flex size-10 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm">
           <HiHome className="size-6" />
         </button>
       </header>
 
       <section className="mt-20">
-        <div
-          className={`mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold ${result.accentClassName} shadow-sm`}
-        >
+        <div className={`mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold ${result.accentClassName} shadow-sm`}>
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-current"></span>
@@ -215,27 +176,14 @@ export default function ToneProducts() {
         {isLoading ? (
           <div className="mt-12 grid grid-cols-2 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse rounded-[32px] bg-cream-100/50 aspect-[3/4]"
-              />
+              <div key={i} className="animate-pulse rounded-[32px] bg-cream-100/50 aspect-[3/4]" />
             ))}
           </div>
         ) : products.length > 0 ? (
           <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-6">
             {products.map((product, index) => (
-              <div
-                key={product.id}
-                className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <ProductCard
-                  product={product}
-                  toneLabel={result.toneLabel}
-                  isLiked={savedProductIds.has(product.id)}
-                  onToggleLike={handleToggleLike}
-                  onOpenDetails={setSelectedProduct}
-                />
+              <div key={product.id} className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both" style={{ animationDelay: `${index * 50}ms` }}>
+                <ProductCard product={product} toneLabel={result.toneLabel} isLiked={savedProductIds.has(product.id)} onToggleLike={handleToggleLike} onOpenDetails={setSelectedProduct} />
               </div>
             ))}
           </div>
@@ -246,12 +194,7 @@ export default function ToneProducts() {
         )}
       </section>
       {selectedProduct ? (
-        <ProductDetailModal
-          product={selectedProduct}
-          isLiked={savedProductIds.has(selectedProduct.id)}
-          onClose={() => setSelectedProduct(null)}
-          onToggleLike={handleToggleLike}
-        />
+        <ProductDetailModal product={selectedProduct} isLiked={savedProductIds.has(selectedProduct.id)} onClose={() => setSelectedProduct(null)} onToggleLike={handleToggleLike} />
       ) : null}
     </main>
   );

@@ -71,6 +71,40 @@ export async function signOut() {
   }
 }
 
+export async function deleteMyAccount() {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session?.access_token) {
+    throw new Error("로그인이 필요합니다.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("delete-account", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  const { error: signOutError } = await supabase.auth.signOut();
+
+  if (signOutError) {
+    throw signOutError;
+  }
+
+  return data;
+}
+
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -163,10 +197,7 @@ export async function fetchProfileSkinToneForUser(userId: string) {
   }
 
   sessionStorage.setItem("wings_personal_color_season", data.skin_tone);
-  sessionStorage.setItem(
-    "wings_personal_color_result",
-    data.skin_tone,
-  );
+  sessionStorage.setItem("wings_personal_color_result", data.skin_tone);
 
   return data.skin_tone;
 }
@@ -189,7 +220,7 @@ export async function updateProfileNickname(userId: string, nickname: string) {
     .single();
 
   if (error) {
-    throw new Error(error.message || "프로필 저장에 실패했어요.");
+    throw new Error(error.message || "프로필 수정에 실패했어요.");
   }
 
   return data;
@@ -208,7 +239,7 @@ export async function updateProfileSkinTone(
     .eq("id", userId);
 
   if (error) {
-    throw new Error(error.message || "피부 톤 저장에 실패했어요.");
+    throw new Error(error.message || "피부 톤 수정에 실패했어요.");
   }
 }
 

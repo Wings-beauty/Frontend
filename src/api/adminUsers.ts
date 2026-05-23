@@ -5,6 +5,7 @@ import type { ProfileRole, ToneCode } from "../constants/inquiries";
 
 export type AdminUserSummary = {
   id: string;
+  displayId: string;
   email: string | null;
   nickname: string | null;
   role: ProfileRole;
@@ -47,6 +48,7 @@ export type SavedProductWithProduct = {
 
 export type AdminUserDetail = {
   id: string;
+  displayId: string;
   email: string | null;
   nickname: string | null;
   profileImageUrl: string | null;
@@ -125,6 +127,10 @@ type InquiryRow = {
 
 function normalizeRole(role: string | null): ProfileRole {
   return role === "admin" ? "admin" : "user";
+}
+
+function getDisplayUserId(email: string | null, id: string) {
+  return email?.trim() || id;
 }
 
 function mapInquiry(row: InquiryRow): Inquiry {
@@ -253,6 +259,7 @@ export async function fetchAdminUsers(filters: AdminUserFilters = {}) {
 
       return {
         id: profile.id,
+        displayId: getDisplayUserId(profile.email, profile.id),
         email: profile.email,
         nickname: profile.nickname,
         role: normalizeRole(profile.role),
@@ -287,13 +294,26 @@ export async function fetchAdminUsers(filters: AdminUserFilters = {}) {
 export async function fetchAdminUserDetail(userId: string) {
   await requireAdmin();
 
-  const { data: profile, error: profileError } = await supabase
+  let { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select(
       "id, email, nickname, profile_image_url, birth_year, skin_note, skin_tone, role, created_at, updated_at",
     )
     .eq("id", userId)
     .maybeSingle<ProfileRow>();
+
+  if (!profile && userId.includes("@")) {
+    const emailLookup = await supabase
+      .from("profiles")
+      .select(
+        "id, email, nickname, profile_image_url, birth_year, skin_note, skin_tone, role, created_at, updated_at",
+      )
+      .eq("email", userId)
+      .maybeSingle<ProfileRow>();
+
+    profile = emailLookup.data;
+    profileError = emailLookup.error;
+  }
 
   if (profileError) {
     throw new Error(profileError.message || "회원 정보를 불러오지 못했어요.");
@@ -302,6 +322,8 @@ export async function fetchAdminUserDetail(userId: string) {
   if (!profile) {
     return null;
   }
+
+  const profileId = profile.id;
 
   const [
     { data: diagnosisRows },
@@ -313,26 +335,26 @@ export async function fetchAdminUserDetail(userId: string) {
     supabase
       .from("diagnosis_results")
       .select("id, user_id, tone_code, tone_label, confidence, raw_result, created_at")
-      .eq("user_id", userId)
+      .eq("user_id", profileId)
       .order("created_at", { ascending: false })
       .returns<DiagnosisRow[]>(),
     supabase
       .from("saved_products")
       .select("id, user_id, product_id, created_at")
-      .eq("user_id", userId)
+      .eq("user_id", profileId)
       .order("created_at", { ascending: false })
       .returns<SavedProductRow[]>(),
     supabase
       .from("inquiries")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", profileId)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .returns<InquiryRow[]>(),
     supabase
       .from("launch_waitlist")
       .select("user_id, email")
-      .eq("user_id", userId)
+      .eq("user_id", profileId)
       .returns<WaitlistRow[]>(),
     profile.email
       ? supabase
@@ -361,6 +383,7 @@ export async function fetchAdminUserDetail(userId: string) {
 
   return {
     id: profile.id,
+    displayId: getDisplayUserId(profile.email, profile.id),
     email: profile.email,
     nickname: profile.nickname,
     profileImageUrl: profile.profile_image_url,

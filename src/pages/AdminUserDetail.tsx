@@ -50,6 +50,7 @@ function formatConfidence(value: number | null) {
 export default function AdminUserDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const userIdentifier = id ? decodeURIComponent(id) : "";
   const [userDetail, setUserDetail] = useState<AdminUserDetailData | null>(null);
   const [expandedRawResults, setExpandedRawResults] = useState<Set<number>>(
     new Set(),
@@ -71,13 +72,13 @@ export default function AdminUserDetail() {
         const user = await getCurrentUser();
 
         if (!user) {
-          setAuthReturnTo(`/admin/users/${id}`);
+          setAuthReturnTo(`/admin/users/${encodeURIComponent(userIdentifier)}`);
           navigate("/login", { replace: true });
           return;
         }
 
         await requireAdmin();
-        const nextUserDetail = await fetchAdminUserDetail(id);
+        const nextUserDetail = await fetchAdminUserDetail(userIdentifier);
 
         if (isMounted) {
           setUserDetail(nextUserDetail);
@@ -102,7 +103,7 @@ export default function AdminUserDetail() {
     return () => {
       isMounted = false;
     };
-  }, [id, navigate]);
+  }, [navigate, userIdentifier]);
 
   const toggleRawResult = (diagnosisId: number) => {
     setExpandedRawResults((current) => {
@@ -195,7 +196,7 @@ export default function AdminUserDetail() {
             <dl className="mt-7 grid grid-cols-2 gap-4 text-sm font-normal leading-5">
               <div>
                 <dt className="text-[#9b8179]">User ID</dt>
-                <dd className="mt-1 break-all text-brown-600">{userDetail.id}</dd>
+                <dd className="mt-1 break-all text-brown-600">{userDetail.displayId}</dd>
               </div>
               <div>
                 <dt className="text-[#9b8179]">출생연도</dt>

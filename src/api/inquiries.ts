@@ -8,6 +8,7 @@ import type {
 export type Inquiry = {
   id: string;
   userId: string;
+  displayUserId?: string;
   authorEmail?: string | null;
   authorNickname?: string | null;
   category: InquiryCategory;
@@ -85,6 +86,7 @@ async function attachInquiryAuthors(inquiries: Inquiry[]) {
 
     return {
       ...inquiry,
+      displayUserId: profile?.email ?? inquiry.userId,
       authorEmail: profile?.email ?? null,
       authorNickname: profile?.nickname ?? null,
     };

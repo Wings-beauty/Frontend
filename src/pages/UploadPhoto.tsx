@@ -140,7 +140,7 @@ export default function UploadPhoto() {
 
   return (
     <main className="flex min-h-dvh w-full items-center justify-center bg-white px-8 py-4">
-      <section className="relative flex h-[calc(100dvh-32px)] max-h-screen min-h-96 w-full max-w-md flex-col overflow-hidden rounded-3xl border border-ivory/50 bg-white shadow-lg">
+      <section className="relative flex h-[calc(100dvh-32px)] max-h-[100dvh] min-h-96 w-full max-w-md flex-col overflow-hidden rounded-3xl border border-ivory/50 bg-white shadow-lg">
         <div
           className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/60 to-white/0"
           aria-hidden="true"

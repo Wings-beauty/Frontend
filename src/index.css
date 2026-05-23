@@ -99,8 +99,8 @@
 
 @layer base {
   :root {
-    --app-font-size: clamp(13px, calc(9px + 0.26vw + 0.34vh), 18px);
-    --app-frame-width: clamp(19rem, min(90vw, calc(100dvh * 0.54)), 32rem);
+    --app-font-size: clamp(13px, calc(11px + 0.55vw), 18px);
+    --app-frame-width: min(100vw, 32rem);
     font-family: "Pretendard";
     font-size: var(--app-font-size);
     color: #111827;
@@ -112,7 +112,7 @@
   }
 
   html {
-    min-height: 100%;
+    min-height: 100dvh;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
@@ -120,7 +120,7 @@
   body {
     display: flex;
     justify-content: center;
-    min-height: 100%;
+    min-height: 100dvh;
     margin: 0;
     color: #111827;
   }
@@ -128,28 +128,28 @@
   #root {
     width: 100%;
     max-width: var(--app-frame-width);
-    min-height: 100vh;
+    min-height: 100dvh;
     background-color: #ffffff;  
   }
 
   @media (max-width: 360px), (max-height: 720px) {
     :root {
-      --app-font-size: clamp(13px, calc(9px + 0.45vw + 0.36vh), 16px);
+      --app-font-size: clamp(13px, calc(11px + 0.45vw), 16px);
       --app-frame-width: min(100%, 100vw);
     }
   }
 
   @media (min-width: 768px) and (min-height: 900px) {
     :root {
-      --app-font-size: clamp(14px, calc(9px + 0.2vw + 0.34vh), 18px);
-      --app-frame-width: clamp(22rem, min(76vw, calc(100dvh * 0.56)), 34rem);
+      --app-font-size: clamp(14px, calc(11px + 0.32vw), 18px);
+      --app-frame-width: clamp(22rem, 52vw, 34rem);
     }
   }
 
   @media (min-width: 1200px) and (min-height: 800px) {
     :root {
-      --app-font-size: clamp(13px, calc(8px + 0.16vw + 0.24vh), 16px);
-      --app-frame-width: clamp(21rem, min(68vw, calc(100dvh * 0.5)), 30rem);
+      --app-font-size: clamp(13px, calc(10px + 0.18vw), 16px);
+      --app-frame-width: clamp(21rem, 30vw, 30rem);
     }
   }
 
