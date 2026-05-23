@@ -1,34 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiArrowRight, HiCheck, HiHome, HiMiniUser } from "react-icons/hi2";
-import {
-  fetchProfile,
-  getCurrentUser,
-  setAuthReturnTo,
-  updateProfileSkinTone,
-} from "../api/auth";
-import {
-  getStoredDiagnosisFeedback,
-  getStoredDiagnosisUpload,
-  getStoredFinalDiagnosisResult,
-  setStoredDiagnosisFeedback,
-} from "../api/diagnosisUpload";
+import { fetchProfile, getCurrentUser, setAuthReturnTo, updateProfileSkinTone } from "../api/auth";
+import { getStoredDiagnosisFeedback, getStoredDiagnosisUpload, getStoredFinalDiagnosisResult, setStoredDiagnosisFeedback } from "../api/diagnosisUpload";
 import { saveResultPageFeedback } from "../api/feedback";
-import {
-  personalColorResults,
-  type PersonalColorSeason,
-} from "../constants/personalColor";
+import { personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
 import type { DiagnosisFeedback } from "../types/diagnosis";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
 type ProfileView = {
   profileImageUrl: string | null;
@@ -39,23 +20,16 @@ export default function Result() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [feedback, setFeedback] = useState<DiagnosisFeedback | null>(
-    getStoredDiagnosisFeedback(),
-  );
+  const [feedback, setFeedback] = useState<DiagnosisFeedback | null>(getStoredDiagnosisFeedback());
   const [feedbackSaveError, setFeedbackSaveError] = useState("");
-  const [currentSeason, setCurrentSeason] =
-    useState<PersonalColorSeason | null>(null);
+  const [currentSeason, setCurrentSeason] = useState<PersonalColorSeason | null>(null);
   const finalResult = getStoredFinalDiagnosisResult();
   const diagnosisUpload = getStoredDiagnosisUpload();
   const season = currentSeason ?? "summer";
   const sessionResultMatchesProfile = finalResult?.finalSeason === currentSeason;
   const result = personalColorResults[season];
-  const confidence = sessionResultMatchesProfile
-    ? Math.round(finalResult.finalConfidence * 100)
-    : null;
-  const isAdjusted = Boolean(
-    sessionResultMatchesProfile && finalResult?.userAnswers,
-  );
+  const confidence = sessionResultMatchesProfile ? Math.round(finalResult.finalConfidence * 100) : null;
+  const isAdjusted = Boolean(sessionResultMatchesProfile && finalResult?.userAnswers);
 
   useEffect(() => {
     let isMounted = true;
@@ -146,14 +120,11 @@ export default function Result() {
 
     saveFeedback({
       matchStatus,
-      userSelectedSeason:
-        matchStatus === "match" ? undefined : feedback?.userSelectedSeason,
+      userSelectedSeason: matchStatus === "match" ? undefined : feedback?.userSelectedSeason,
     });
   };
 
-  const selectFeedbackSeason = (
-    userSelectedSeason: PersonalColorSeason | "unknown",
-  ) => {
+  const selectFeedbackSeason = (userSelectedSeason: PersonalColorSeason | "unknown") => {
     if (!feedback || feedback.matchStatus === "match") {
       return;
     }
@@ -176,13 +147,7 @@ export default function Result() {
   return (
     <main className="min-h-dvh bg-white px-5 pb-6 pt-5">
       <header className="flex items-center justify-between">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="홈으로 이동"
-          onClick={handleHomeClick}
-        >
+        <Button type="button" variant="ghost" size="icon" aria-label="홈으로 이동" onClick={handleHomeClick}>
           <HiHome className="size-7" aria-hidden="true" />
         </Button>
 
@@ -202,9 +167,7 @@ export default function Result() {
       <div className="flex flex-1 flex-col gap-5 pt-8">
         {!currentSeason ? (
           <Card className="border-none bg-cream-50 shadow-none">
-            <CardContent className="p-6 text-center text-[#7a625c]">
-              저장된 톤 정보를 불러오는 중입니다.
-            </CardContent>
+            <CardContent className="p-6 text-center text-[#7a625c]">저장된 톤 정보를 불러오는 중입니다.</CardContent>
           </Card>
         ) : (
           <>
@@ -215,37 +178,21 @@ export default function Result() {
                 <br />
                 {isAdjusted ? "최종 결과를 정리했어요" : result.title}
               </h2>
-              <p className="mt-3 text-sm leading-6 text-[#7a625c]">
-                {isAdjusted
-                  ? "사진 분석 결과에 사용자의 답변을 더해 최종 톤을 정리했어요."
-                  : result.description}
-              </p>
+              <p className="mt-3 text-sm leading-6 text-[#7a625c]">{isAdjusted ? "사진 분석 결과에 사용자의 답변을 더해 최종 톤을 정리했어요." : result.description}</p>
             </section>
 
             <Card className="overflow-hidden border-none">
               <CardHeader className="items-center pb-2 text-center">
-                <div
-                  className={`mb-3 flex size-24 items-center justify-center rounded-full ${result.accentClassName} p-2 shadow-md`}
-                >
-                  <img
-                    src={result.imageUrl}
-                    className="size-full rounded-full object-cover"
-                    alt={`${result.seasonLabel} 퍼스널 컬러`}
-                  />
+                <div className={`mb-3 flex size-24 items-center justify-center rounded-full ${result.accentClassName} p-2 shadow-md`}>
+                  <img src={result.imageUrl} className="size-full rounded-full object-cover" alt={`${result.seasonLabel} 퍼스널 컬러`} />
                 </div>
                 <CardTitle>{result.detailTitle}</CardTitle>
                 <CardDescription>{result.detailDescription}</CardDescription>
               </CardHeader>
               <CardContent className="pt-3 text-center">
-                {confidence !== null ? (
-                  <p className="text-sm leading-6 text-brown-300">
-                    최종 일치도 {confidence}%
-                  </p>
-                ) : null}
+                {confidence !== null ? <p className="text-sm leading-6 text-brown-300">최종 일치도 {confidence}%</p> : null}
                 {sessionResultMatchesProfile && finalResult?.correctionApplied ? (
-                  <div className="mt-4 rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-6 text-[#7a625c]">
-                    AI 분석 결과에 설문 답변을 반영한 결과입니다.
-                  </div>
+                  <div className="mt-4 rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-6 text-[#7a625c]">AI 분석 결과에 설문 답변을 반영한 결과입니다.</div>
                 ) : null}
               </CardContent>
             </Card>
@@ -257,12 +204,7 @@ export default function Result() {
               <CardContent>
                 <div className="flex justify-between gap-3">
                   {result.bestColors.map((color) => (
-                    <div
-                      key={color}
-                      className="aspect-square flex-1 rounded-full shadow-sm"
-                      style={{ backgroundColor: color }}
-                      aria-label={`${color} 컬러`}
-                    />
+                    <div key={color} className="aspect-square flex-1 rounded-full shadow-sm" style={{ backgroundColor: color }} aria-label={`${color} 컬러`} />
                   ))}
                 </div>
               </CardContent>
@@ -277,7 +219,7 @@ export default function Result() {
                   {[
                     { value: "match", label: "잘 맞아요" },
                     { value: "unclear", label: "애매해요" },
-                    { value: "not_match", label: "다르게 느껴져요" },
+                    { value: "not_match", label: "아니에요" },
                   ].map((option) => {
                     const isSelected = feedback?.matchStatus === option.value;
 
@@ -287,11 +229,7 @@ export default function Result() {
                         type="button"
                         variant={isSelected ? "default" : "outline"}
                         className="min-h-12"
-                        onClick={() =>
-                          selectMatchStatus(
-                            option.value as DiagnosisFeedback["matchStatus"],
-                          )
-                        }
+                        onClick={() => selectMatchStatus(option.value as DiagnosisFeedback["matchStatus"])}
                       >
                         {option.label}
                       </Button>
@@ -299,22 +237,17 @@ export default function Result() {
                   })}
                 </div>
 
-                {feedback?.matchStatus === "unclear" ||
-                feedback?.matchStatus === "not_match" ? (
+                {feedback?.matchStatus === "unclear" || feedback?.matchStatus === "not_match" ? (
                   <div className="mt-5">
-                    <p className="text-sm leading-6 text-[#7a625c]">
-                      더 가깝게 느껴지는 톤이 있다면 알려주세요.
-                    </p>
+                    <p className="text-sm leading-6 text-[#7a625c]">더 가깝게 느껴지는 톤이 있다면 알려주세요.</p>
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       {[
                         { value: "spring", label: "봄 웜톤" },
                         { value: "summer", label: "여름 쿨톤" },
                         { value: "autumn", label: "가을 웜톤" },
                         { value: "winter", label: "겨울 쿨톤" },
-                        { value: "unknown", label: "잘 모르겠어요" },
                       ].map((option) => {
-                        const isSelected =
-                          feedback.userSelectedSeason === option.value;
+                        const isSelected = feedback.userSelectedSeason === option.value;
 
                         return (
                           <Button
@@ -322,15 +255,9 @@ export default function Result() {
                             type="button"
                             variant={isSelected ? "secondary" : "outline"}
                             className={option.value === "unknown" ? "col-span-2" : ""}
-                            onClick={() =>
-                              selectFeedbackSeason(
-                                option.value as PersonalColorSeason | "unknown",
-                              )
-                            }
+                            onClick={() => selectFeedbackSeason(option.value as PersonalColorSeason | "unknown")}
                           >
-                            {isSelected ? (
-                              <HiCheck className="size-4" aria-hidden="true" />
-                            ) : null}
+                            {isSelected ? <HiCheck className="size-4" aria-hidden="true" /> : null}
                             {option.label}
                           </Button>
                         );
@@ -339,20 +266,11 @@ export default function Result() {
                   </div>
                 ) : null}
 
-                {feedbackSaveError ? (
-                  <p className="mt-4 text-sm leading-5 text-red">
-                    {feedbackSaveError}
-                  </p>
-                ) : null}
+                {feedbackSaveError ? <p className="mt-4 text-sm leading-5 text-red">{feedbackSaveError}</p> : null}
               </CardContent>
             </Card>
 
-            <Button
-              type="button"
-              size="lg"
-              className="w-full"
-              onClick={isLoggedIn ? () => navigate("/recommendation") : goToLoginForSave}
-            >
+            <Button type="button" size="lg" className="w-full" onClick={isLoggedIn ? () => navigate("/recommendation") : goToLoginForSave}>
               {isLoggedIn ? "내게 맞는 상품 보기" : "로그인하고 진단결과 저장하기"}
               <HiArrowRight className="size-5" aria-hidden="true" />
             </Button>

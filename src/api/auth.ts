@@ -21,6 +21,20 @@ export type CurrentUserProfile = {
   role: ProfileRole;
 };
 
+type ProfileToneRow = {
+  id?: string;
+  nickname?: string | null;
+  profile_image_url?: string | null;
+  skin_tone?: PersonalColorSeason | null;
+  role?: string | null;
+};
+
+function getProfileTone(
+  profile: Pick<ProfileToneRow, "skin_tone"> | null | undefined,
+) {
+  return profile?.skin_tone ?? null;
+}
+
 export async function getCurrentUserProfile() {
   const user = await getCurrentUser();
 
@@ -32,17 +46,17 @@ export async function getCurrentUserProfile() {
     .from("profiles")
     .select("id, nickname, profile_image_url, skin_tone, role")
     .eq("id", user.id)
-    .maybeSingle();
+    .maybeSingle<ProfileToneRow>();
 
   if (error || !data) {
     return null;
   }
 
   return {
-    id: data.id,
-    nickname: data.nickname,
-    profileImageUrl: data.profile_image_url,
-    skinTone: data.skin_tone,
+    id: data.id ?? user.id,
+    nickname: data.nickname ?? null,
+    profileImageUrl: data.profile_image_url ?? null,
+    skinTone: getProfileTone(data),
     role: data.role === "admin" ? "admin" : "user",
   } satisfies CurrentUserProfile;
 }
@@ -131,23 +145,14 @@ export function setAuthReturnTo(path: string) {
 }
 
 export async function ensureProfile(user: User) {
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("id", user.id)
-    .maybeSingle();
+  const { data: existingProfile } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
 
   if (existingProfile) {
     return;
   }
 
-  const nickname =
-    user.user_metadata.full_name ??
-    user.user_metadata.name ??
-    user.email?.split("@")[0] ??
-    "WINGS 사용자";
-  const profileImageUrl =
-    user.user_metadata.avatar_url ?? user.user_metadata.picture ?? null;
+  const nickname = user.user_metadata.full_name ?? user.user_metadata.name ?? user.email?.split("@")[0] ?? "WINGS 사용자";
+  const profileImageUrl = user.user_metadata.avatar_url ?? user.user_metadata.picture ?? null;
 
   await supabase.from("profiles").insert({
     id: user.id,
@@ -165,22 +170,13 @@ export async function fetchProfile(user: User) {
     .from("profiles")
     .select("nickname, profile_image_url, skin_tone, role")
     .eq("id", user.id)
-    .maybeSingle();
+    .maybeSingle<ProfileToneRow>();
 
   return {
-    nickname:
-      data?.nickname ??
-      user.user_metadata.full_name ??
-      user.user_metadata.name ??
-      user.email?.split("@")[0] ??
-      "WINGS 사용자",
+    nickname: data?.nickname ?? user.user_metadata.full_name ?? user.user_metadata.name ?? user.email?.split("@")[0] ?? "WINGS 사용자",
     email: user.email ?? "",
-    profileImageUrl:
-      data?.profile_image_url ??
-      user.user_metadata.avatar_url ??
-      user.user_metadata.picture ??
-      null,
-    skinTone: data?.skin_tone ?? null,
+    profileImageUrl: data?.profile_image_url ?? user.user_metadata.avatar_url ?? user.user_metadata.picture ?? null,
+    skinTone: getProfileTone(data),
     role: (data?.role === "admin" ? "admin" : "user") satisfies ProfileRole,
   };
 }
@@ -190,16 +186,18 @@ export async function fetchProfileSkinToneForUser(userId: string) {
     .from("profiles")
     .select("skin_tone")
     .eq("id", userId)
-    .maybeSingle();
+    .maybeSingle<ProfileToneRow>();
 
-  if (error || !data?.skin_tone) {
+  const tone = getProfileTone(data);
+
+  if (error || !tone) {
     return null;
   }
 
-  sessionStorage.setItem("wings_personal_color_season", data.skin_tone);
-  sessionStorage.setItem("wings_personal_color_result", data.skin_tone);
+  sessionStorage.setItem("wings_personal_color_season", tone);
+  sessionStorage.setItem("wings_personal_color_result", tone);
 
-  return data.skin_tone;
+  return tone;
 }
 
 export async function updateProfileNickname(userId: string, nickname: string) {
@@ -226,10 +224,7 @@ export async function updateProfileNickname(userId: string, nickname: string) {
   return data;
 }
 
-export async function updateProfileSkinTone(
-  userId: string,
-  skinTone: PersonalColorSeason,
-) {
+export async function updateProfileSkinTone(userId: string, skinTone: PersonalColorSeason) {
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -253,27 +248,16 @@ export async function saveCurrentDiagnosisToUser(user: User) {
   await ensureProfile(user);
 
   if (upload.diagnosisRequestId) {
-    await supabase
-      .from("diagnosis_requests")
-      .update({ user_id: user.id })
-      .eq("id", upload.diagnosisRequestId);
+    await supabase.from("diagnosis_requests").update({ user_id: user.id }).eq("id", upload.diagnosisRequestId);
   }
 
   if (upload.diagnosisResultId) {
-    await supabase
-      .from("diagnosis_results")
-      .update({ user_id: user.id })
-      .eq("id", upload.diagnosisResultId);
+    await supabase.from("diagnosis_results").update({ user_id: user.id }).eq("id", upload.diagnosisResultId);
   }
 }
 
 export async function hasDiagnosisHistory(userId: string) {
-  const { data, error } = await supabase
-    .from("diagnosis_results")
-    .select("id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
+  const { data, error } = await supabase.from("diagnosis_results").select("id").eq("user_id", userId).limit(1).maybeSingle();
 
   if (error) {
     return false;

@@ -59,6 +59,11 @@ export type DiagnosisHistoryItem = {
   createdAt: string | null;
 };
 
+export type DiagnosisHistoryDetail = DiagnosisHistoryItem & {
+  description: string;
+  detailDescription: string;
+};
+
 export type LatestDiagnosis = DiagnosisHistoryItem;
 
 function getSeasonFromToneCode(toneCode: string | null): PersonalColorSeason {
@@ -418,6 +423,37 @@ export async function fetchDiagnosisHistoryForUser(userId: string) {
       createdAt: item.created_at ?? null,
     };
   });
+}
+
+export async function fetchDiagnosisHistoryDetailForUser(
+  userId: string,
+  diagnosisId: number,
+) {
+  const { data, error } = await supabase
+    .from("diagnosis_results")
+    .select("id, tone_code, tone_label, confidence, created_at")
+    .eq("user_id", userId)
+    .eq("id", diagnosisId)
+    .maybeSingle<DiagnosisResultRow>();
+
+  if (error || !data) {
+    return null;
+  }
+
+  const season = getPersonalColorSeasonFromValue(
+    data.tone_code ?? data.tone_label,
+  );
+  const result = personalColorResults[season];
+
+  return {
+    id: data.id,
+    season,
+    toneLabel: data.tone_label ?? result.toneLabel,
+    confidence: data.confidence,
+    createdAt: data.created_at ?? null,
+    description: result.description,
+    detailDescription: result.detailDescription,
+  } satisfies DiagnosisHistoryDetail;
 }
 
 export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload> {

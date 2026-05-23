@@ -1,49 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  HiArrowRightOnRectangle,
-  HiChevronRight,
-  HiHeart,
-  HiHome,
-  HiMegaphone,
-  HiMiniUser,
-  HiPencil,
-  HiQuestionMarkCircle,
-  HiShieldCheck,
-  HiSparkles,
-} from "react-icons/hi2";
-import {
-  deleteMyAccount,
-  fetchProfile,
-  getCurrentUser,
-  signOut,
-  updateProfileNickname,
-} from "../api/auth";
-import {
-  fetchDiagnosisHistoryForUser,
-  type DiagnosisHistoryItem,
-} from "../api/diagnosis";
-import {
-  fetchSavedProductsForUser,
-  removeSavedProduct,
-  type RecommendedProduct,
-} from "../api/products";
-import {
-  personalColorResults,
-  type PersonalColorSeason,
-} from "../constants/personalColor";
+import { HiArrowRightOnRectangle, HiChevronRight, HiHeart, HiHome, HiMegaphone, HiMiniUser, HiPencil, HiQuestionMarkCircle, HiShieldCheck, HiSparkles } from "react-icons/hi2";
+import { deleteMyAccount, fetchProfile, getCurrentUser, signOut, updateProfileNickname } from "../api/auth";
+import { fetchDiagnosisHistoryForUser, type DiagnosisHistoryItem } from "../api/diagnosis";
+import { fetchSavedProductsForUser, removeSavedProduct, type RecommendedProduct } from "../api/products";
+import { personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
 import type { ProfileRole } from "../constants/inquiries";
 import ProductDetailModal from "../components/ProductDetailModal";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { DialogShell } from "../components/ui/dialog-shell";
 import { Input } from "../components/ui/input";
 
@@ -76,10 +43,7 @@ const adminMenuItem = {
 } as const;
 
 function getMenuItems(role: ProfileRole | undefined) {
-  return [
-    ...baseMenuItems,
-    role === "admin" ? adminMenuItem : userSupportMenuItem,
-  ];
+  return [...baseMenuItems, role === "admin" ? adminMenuItem : userSupportMenuItem];
 }
 
 function formatDate(value: string | null) {
@@ -99,30 +63,21 @@ export default function MyPage() {
   const [userId, setUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [profile, setProfile] = useState<ProfileView | null>(null);
-  const [diagnosisHistory, setDiagnosisHistory] = useState<
-    DiagnosisHistoryItem[]
-  >([]);
+  const [diagnosisHistory, setDiagnosisHistory] = useState<DiagnosisHistoryItem[]>([]);
   const [savedProducts, setSavedProducts] = useState<RecommendedProduct[]>([]);
   const [authError, setAuthError] = useState("");
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] =
-    useState<RecommendedProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<RecommendedProduct | null>(null);
   const [nicknameDraft, setNicknameDraft] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
-  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] =
-    useState(false);
+  const [isDeleteAccountModalOpen, setIsDeleteAccountModalOpen] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteAccountError, setDeleteAccountError] = useState("");
 
   const latestDiagnosis = diagnosisHistory[0] ?? null;
   const menuItems = getMenuItems(profile?.role);
-  const result =
-    latestDiagnosis
-      ? personalColorResults[latestDiagnosis.season]
-      : profile?.skinTone
-        ? personalColorResults[profile.skinTone]
-        : personalColorResults.summer;
+  const result = profile?.skinTone ? personalColorResults[profile.skinTone] : personalColorResults.summer;
 
   useEffect(() => {
     let isMounted = true;
@@ -138,12 +93,7 @@ export default function MyPage() {
 
         setUserId(user.id);
 
-        const [profileFromDb, historyFromDb, savedProductsFromDb] =
-          await Promise.all([
-            fetchProfile(user),
-            fetchDiagnosisHistoryForUser(user.id),
-            fetchSavedProductsForUser(user.id),
-          ]);
+        const [profileFromDb, historyFromDb, savedProductsFromDb] = await Promise.all([fetchProfile(user), fetchDiagnosisHistoryForUser(user.id), fetchSavedProductsForUser(user.id)]);
 
         if (!isMounted) {
           return;
@@ -158,11 +108,7 @@ export default function MyPage() {
         setSavedProducts(savedProductsFromDb);
       } catch (error) {
         if (isMounted) {
-          setAuthError(
-            error instanceof Error
-              ? error.message
-              : "마이페이지 정보를 불러오지 못했습니다.",
-          );
+          setAuthError(error instanceof Error ? error.message : "마이페이지 정보를 불러오지 못했습니다.");
         }
       } finally {
         if (isMounted) {
@@ -197,18 +143,13 @@ export default function MyPage() {
       setProfile((currentProfile) => ({
         nickname: updatedProfile.nickname ?? nicknameDraft.trim(),
         email: currentProfile?.email ?? "",
-        profileImageUrl:
-          updatedProfile.profile_image_url ??
-          currentProfile?.profileImageUrl ??
-          null,
+        profileImageUrl: updatedProfile.profile_image_url ?? currentProfile?.profileImageUrl ?? null,
         skinTone: currentProfile?.skinTone ?? null,
         role: currentProfile?.role ?? "user",
       }));
       setIsProfileModalOpen(false);
     } catch (error) {
-      setProfileError(
-        error instanceof Error ? error.message : "프로필 저장에 실패했습니다.",
-      );
+      setProfileError(error instanceof Error ? error.message : "프로필 저장에 실패했습니다.");
     } finally {
       setIsSavingProfile(false);
     }
@@ -220,12 +161,8 @@ export default function MyPage() {
     }
 
     await removeSavedProduct(userId, productId);
-    setSavedProducts((currentProducts) =>
-      currentProducts.filter((product) => product.id !== productId),
-    );
-    setSelectedProduct((currentProduct) =>
-      currentProduct?.id === productId ? null : currentProduct,
-    );
+    setSavedProducts((currentProducts) => currentProducts.filter((product) => product.id !== productId));
+    setSelectedProduct((currentProduct) => (currentProduct?.id === productId ? null : currentProduct));
   };
 
   const handleDeleteAccount = async () => {
@@ -239,9 +176,7 @@ export default function MyPage() {
       navigate("/home", { replace: true });
     } catch (error) {
       console.error("Failed to delete account:", error);
-      setDeleteAccountError(
-        "회원탈퇴 처리 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.",
-      );
+      setDeleteAccountError("회원탈퇴 처리 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
     } finally {
       setIsDeletingAccount(false);
     }
@@ -250,13 +185,7 @@ export default function MyPage() {
   return (
     <main className="min-h-dvh bg-white px-5 pb-12 pt-6">
       <header className="flex items-center justify-between">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="홈으로 이동"
-          onClick={() => navigate("/home")}
-        >
+        <Button type="button" variant="ghost" size="icon" aria-label="홈으로 이동" onClick={() => navigate("/home")}>
           <HiHome className="size-7" aria-hidden="true" />
         </Button>
 
@@ -266,9 +195,7 @@ export default function MyPage() {
 
       {authError ? (
         <Card className="mt-10 border-red/20 bg-red/5 shadow-none">
-          <CardContent className="p-6 text-center text-sm leading-7 text-red">
-            {authError}
-          </CardContent>
+          <CardContent className="p-6 text-center text-sm leading-7 text-red">{authError}</CardContent>
         </Card>
       ) : null}
 
@@ -287,18 +214,10 @@ export default function MyPage() {
 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-3xl leading-8 text-brown-600">
-                  {isLoading ? "불러오는 중" : profile?.nickname ?? "WINGS 사용자"}
-                </h2>
-                {latestDiagnosis || profile?.skinTone ? (
-                  <Badge className={`${result.accentClassName} bg-opacity-90 px-4 py-1.5`}>
-                    {latestDiagnosis?.toneLabel ?? result.toneLabel}
-                  </Badge>
-                ) : null}
+                <h2 className="text-3xl leading-8 text-brown-600">{isLoading ? "불러오는 중" : (profile?.nickname ?? "WINGS 사용자")}</h2>
+                {profile?.skinTone || latestDiagnosis ? <Badge className={`${result.accentClassName} bg-opacity-90 px-4 py-1.5`}>{result.toneLabel ?? latestDiagnosis?.toneLabel}</Badge> : null}
               </div>
-              <p className="mt-3 truncate text-base leading-6 text-[#8a716b]">
-                {profile?.email || "이메일 정보 없음"}
-              </p>
+              <p className="mt-3 truncate text-base leading-6 text-[#8a716b]">{profile?.email || "이메일 정보 없음"}</p>
             </div>
           </div>
 
@@ -321,52 +240,34 @@ export default function MyPage() {
       <section className="mt-12">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl leading-8 text-brown-600">나의 진단 기록</h2>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/result")}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate("/diagnosis-history")}>
             전체보기
             <HiChevronRight className="size-4" aria-hidden="true" />
           </Button>
         </div>
 
         {isLoading ? (
-          <Card>
-            <CardContent className="p-6 text-[#8a716b]">
-              진단 기록을 불러오는 중입니다.
-            </CardContent>
+          <Card className="cursor-pointer" onClick={() => navigate(`/diagnosis-history/${latestDiagnosis.id}`)}>
+            <CardContent className="p-6 text-[#8a716b]">진단 기록을 불러오는 중입니다.</CardContent>
           </Card>
         ) : latestDiagnosis ? (
           <Card>
             <CardHeader className="pb-3">
               <Badge className="w-fit bg-cream-50 text-brown-300">최근 진단일</Badge>
               <CardTitle className="text-2xl">{formatDate(latestDiagnosis.createdAt)}</CardTitle>
-              <CardDescription>
-                {latestDiagnosis.toneLabel}
-              </CardDescription>
+              <CardDescription>{latestDiagnosis.toneLabel}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-base leading-7 text-brown-600">
-                {result.detailDescription} {result.description}
-              </p>
+              <p className="text-base leading-7 text-brown-600">{personalColorResults[latestDiagnosis.season]?.description}</p>
             </CardContent>
           </Card>
         ) : (
           <Card>
-            <CardContent className="p-6 text-[#8a716b]">
-              아직 저장된 진단 기록이 없습니다.
-            </CardContent>
+            <CardContent className="p-6 text-[#8a716b]">아직 저장된 진단 기록이 없습니다.</CardContent>
           </Card>
         )}
 
-        <Button
-          type="button"
-          size="lg"
-          className="mt-5 w-full"
-          onClick={() => navigate("/photo")}
-        >
+        <Button type="button" size="lg" className="mt-5 w-full" onClick={() => navigate("/photo")}>
           <HiSparkles className="size-5" aria-hidden="true" />
           AI 톤 진단 시작하기
         </Button>
@@ -375,12 +276,7 @@ export default function MyPage() {
       <section className="mt-12">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-2xl leading-8 text-brown-600">찜한 상품</h2>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/saved-products")}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => navigate("/saved-products")}>
             {savedProducts.length}개
             <HiChevronRight className="size-4" aria-hidden="true" />
           </Button>
@@ -388,28 +284,16 @@ export default function MyPage() {
 
         <div className="-mx-5 overflow-x-auto px-5 pb-2">
           <div className="flex gap-4">
-            {isLoading ? (
-              <p className="py-6 text-[#8a716b]">찜한 상품을 불러오는 중입니다.</p>
-            ) : null}
+            {isLoading ? <p className="py-6 text-[#8a716b]">찜한 상품을 불러오는 중입니다.</p> : null}
 
-            {!isLoading && savedProducts.length === 0 ? (
-              <p className="py-6 text-[#8a716b]">아직 찜한 상품이 없습니다.</p>
-            ) : null}
+            {!isLoading && savedProducts.length === 0 ? <p className="py-6 text-[#8a716b]">아직 찜한 상품이 없습니다.</p> : null}
 
             {!isLoading
               ? savedProducts.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="w-36 shrink-0 cursor-pointer overflow-hidden rounded-[28px]"
-                    onClick={() => setSelectedProduct(product)}
-                  >
+                  <Card key={product.id} className="w-36 shrink-0 cursor-pointer overflow-hidden rounded-[28px]" onClick={() => setSelectedProduct(product)}>
                     <div className="relative aspect-square bg-cream-50">
                       {product.productImageUrl ? (
-                        <img
-                          src={product.productImageUrl}
-                          className="size-full object-cover"
-                          alt={product.productName}
-                        />
+                        <img src={product.productImageUrl} className="size-full object-cover" alt={product.productName} />
                       ) : (
                         <div
                           className="size-full"
@@ -418,27 +302,23 @@ export default function MyPage() {
                           }}
                         />
                       )}
-                      <Button
+                      <button
                         type="button"
-                        variant="secondary"
-                        size="icon"
-                        className="absolute right-2 top-2 text-[#df7e8b]"
-                        aria-label={`${product.productName} 찜 해제`}
-                        onClick={(event) => {
-                          event.stopPropagation();
+                        className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full shadow-sm transition-colors ${
+                        bg-[#df7e8b] text-white
+                        "
+                        aria-label={`${product.productName} 찜하기`}
+                        onClick={(e) => {
+                          e.stopPropagation();
                           void handleSavedProductRemove(product.id);
                         }}
                       >
-                        <HiHeart className="size-5" aria-hidden="true" />
-                      </Button>
+                        <HiHeart className="size-5 fill-current" />
+                      </button>
                     </div>
                     <CardContent className="p-3">
-                      <p className="truncate text-sm leading-5 text-[#8a716b]">
-                        {product.brandName}
-                      </p>
-                      <h3 className="mt-2 line-clamp-2 text-base leading-6 text-brown-600">
-                        {product.productName}
-                      </h3>
+                      <p className="truncate text-sm leading-5 text-[#8a716b]">{product.brandName}</p>
+                      <h3 className="mt-2 line-clamp-2 text-base leading-6 text-brown-600">{product.productName}</h3>
                     </CardContent>
                   </Card>
                 ))
@@ -468,20 +348,12 @@ export default function MyPage() {
             >
               <Icon className="ml-2 size-6 shrink-0 text-[#8a716b]" aria-hidden="true" />
               <span className="ml-4 text-xl leading-7">{item.label}</span>
-              <HiChevronRight
-                className="ml-auto mr-2 size-5 text-[#8a716b]"
-                aria-hidden="true"
-              />
+              <HiChevronRight className="ml-auto mr-2 size-5 text-[#8a716b]" aria-hidden="true" />
             </Button>
           );
         })}
 
-        <Button
-          type="button"
-          variant="ghost"
-          className="h-18 w-full justify-start rounded-none px-0 text-red hover:bg-red/5 hover:text-red"
-          onClick={handleSignOut}
-        >
+        <Button type="button" variant="ghost" className="h-18 w-full justify-start rounded-none px-0 text-red hover:bg-red/5 hover:text-red" onClick={handleSignOut}>
           <HiArrowRightOnRectangle className="ml-2 size-6 shrink-0" aria-hidden="true" />
           <span className="ml-4 text-xl leading-7">로그아웃</span>
         </Button>
@@ -491,9 +363,7 @@ export default function MyPage() {
         <Card className="mt-12 border-red/15 bg-red/5 shadow-none">
           <CardHeader className="pb-3">
             <CardTitle className="text-xl text-red">회원탈퇴</CardTitle>
-            <CardDescription className="text-sm leading-6 text-[#8a716b]">
-              탈퇴하면 계정 정보와 개인 활동 내역이 삭제되고 되돌릴 수 없어요.
-            </CardDescription>
+            <CardDescription className="text-sm leading-6 text-[#8a716b]">탈퇴하면 계정 정보와 개인 활동 내역이 삭제되고 되돌릴 수 없어요.</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
             <Button
@@ -518,30 +388,16 @@ export default function MyPage() {
 
             <label className="mt-5 block text-sm leading-5 text-[#8a716b]">
               닉네임
-              <Input
-                className="mt-3"
-                value={nicknameDraft}
-                onChange={(event) => setNicknameDraft(event.target.value)}
-              />
+              <Input className="mt-3" value={nicknameDraft} onChange={(event) => setNicknameDraft(event.target.value)} />
             </label>
 
-            {profileError ? (
-              <p className="mt-4 text-sm leading-5 text-red">{profileError}</p>
-            ) : null}
+            {profileError ? <p className="mt-4 text-sm leading-5 text-red">{profileError}</p> : null}
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsProfileModalOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setIsProfileModalOpen(false)}>
                 취소
               </Button>
-              <Button
-                type="button"
-                disabled={isSavingProfile}
-                onClick={handleProfileSave}
-              >
+              <Button type="button" disabled={isSavingProfile} onClick={handleProfileSave}>
                 {isSavingProfile ? "저장 중" : "저장"}
               </Button>
             </div>
@@ -562,32 +418,16 @@ export default function MyPage() {
           <div className="p-6">
             <h2 className="text-2xl leading-8 text-brown-600">회원탈퇴</h2>
             <p className="mt-5 text-sm leading-6 text-[#7a625c]">
-              탈퇴하면 계정 정보, 찜한 상품, 문의 내역이 삭제됩니다. 진단
-              결과와 피드백은 개인을 식별할 수 없도록 익명화되어 통계
-              목적으로만 보관됩니다. 정말 탈퇴하시겠어요?
+              탈퇴하면 계정 정보, 찜한 상품, 문의 내역이 삭제됩니다. 진단 결과와 피드백은 개인을 식별할 수 없도록 익명화되어 통계 목적으로만 보관됩니다. 정말 탈퇴하시겠어요?
             </p>
 
-            {deleteAccountError ? (
-              <p className="mt-4 text-sm leading-5 text-red">
-                {deleteAccountError}
-              </p>
-            ) : null}
+            {deleteAccountError ? <p className="mt-4 text-sm leading-5 text-red">{deleteAccountError}</p> : null}
 
             <div className="mt-6 grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isDeletingAccount}
-                onClick={() => setIsDeleteAccountModalOpen(false)}
-              >
+              <Button type="button" variant="outline" disabled={isDeletingAccount} onClick={() => setIsDeleteAccountModalOpen(false)}>
                 취소
               </Button>
-              <Button
-                type="button"
-                disabled={isDeletingAccount}
-                className="bg-red text-white hover:bg-red/90"
-                onClick={handleDeleteAccount}
-              >
+              <Button type="button" disabled={isDeletingAccount} className="bg-red text-white hover:bg-red/90" onClick={handleDeleteAccount}>
                 {isDeletingAccount ? "탈퇴 처리 중..." : "탈퇴 확인"}
               </Button>
             </div>

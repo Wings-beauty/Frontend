@@ -5,6 +5,8 @@ import UploadPhoto from "./pages/UploadPhoto";
 import Analyzing from "./pages/Analyzing";
 import DiagnosisSurvey from "./pages/DiagnosisSurvey";
 import Result from "./pages/Result";
+import DiagnosisHistory from "./pages/DiagnosisHistory";
+import DiagnosisHistoryDetail from "./pages/DiagnosisHistoryDetail";
 import Recommendation from "./pages/Recommendation";
 import Home from "./pages/Home";
 import MyPage from "./pages/MyPage";
@@ -33,6 +35,8 @@ function App() {
         <Route path="/analyzing" element={<Analyzing />} />
         <Route path="/diagnosis-survey" element={<DiagnosisSurvey />} />
         <Route path="/result" element={<Result />} />
+        <Route path="/diagnosis-history" element={<DiagnosisHistory />} />
+        <Route path="/diagnosis-history/:id" element={<DiagnosisHistoryDetail />} />
         <Route path="/recommendation" element={<Recommendation />} />
         <Route path="/tone-products" element={<ToneProducts />} />
         <Route path="/saved-products" element={<SavedProducts />} />
