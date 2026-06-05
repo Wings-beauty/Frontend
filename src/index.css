@@ -16,7 +16,7 @@
 
   --color-brown-200: #bfa995;
   --color-brown-300: #735a4c;
-  --color-brown-400: #6B4A3F;
+  --color-brown-400: #6b4a3f;
   --color-brown-600: #3a2527;
 
   --color-ivory: #e8d7b2;
@@ -29,9 +29,9 @@
   --color-tone-summer: #d7e8fa;
   --color-tone-autumn: #d9a98f;
   --color-tone-winter: #e2d8ff;
-  --color-green: #6FAE8C;
+  --color-green: #6fae8c;
 
-  --color-red: #D96A6A;
+  --color-red: #d96a6a;
 }
 
 @font-face {
@@ -118,8 +118,6 @@
   }
 
   body {
-    display: flex;
-    justify-content: center;
     min-height: 100dvh;
     margin: 0;
     color: #111827;
@@ -127,9 +125,8 @@
 
   #root {
     width: 100%;
-    max-width: var(--app-frame-width);
     min-height: 100dvh;
-    background-color: #ffffff;  
+    background-color: #ffffff;
   }
 
   @media (max-width: 360px), (max-height: 720px) {
@@ -197,6 +194,11 @@
 
   .welcome-fade-out {
     animation: welcome-fade-out 600ms ease-in both;
+  }
+
+  .home-hero-image-shell::before,
+  .home-hero-image-shell::after {
+    content: none;
   }
 }
 

@@ -36,7 +36,7 @@ export default function InquiryDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const successMessage = (location.state as { message?: string } | null)?.message;
+  const successMessage = new URLSearchParams(location.search).get("message");
 
   useEffect(() => {
     let isMounted = true;

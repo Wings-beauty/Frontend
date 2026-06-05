@@ -1,10 +1,5 @@
 import type { User } from "@supabase/supabase-js";
-import {
-  setStoredAiDiagnosisResult,
-  setStoredDiagnosisUpload,
-  setStoredFinalDiagnosisResult,
-  type DiagnosisUpload,
-} from "./diagnosisUpload";
+import type { DiagnosisUpload } from "./diagnosisUpload";
 import { supabase } from "../lib/supabase";
 import type { PersonalColorSeason } from "../constants/personalColor";
 import {
@@ -25,9 +20,6 @@ import type {
   SurveyAnswers,
 } from "../types/diagnosis";
 import { rerankSeasonScores } from "../utils/diagnosisRerank";
-
-const AI_DIAGNOSIS_ENDPOINT = process.env
-  .REACT_APP_AI_DIAGNOSIS_KEY as string | undefined;
 
 const SEASON_KR: Record<Season, string> = {
   spring: "봄 웜톤",
@@ -66,10 +58,6 @@ export type DiagnosisHistoryDetail = DiagnosisHistoryItem & {
 
 export type LatestDiagnosis = DiagnosisHistoryItem;
 
-function getSeasonFromToneCode(toneCode: string | null): PersonalColorSeason {
-  return getPersonalColorSeasonFromValue(toneCode);
-}
-
 function normalizeConfidence(confidence: number) {
   return confidence > 1 ? confidence / 100 : confidence;
 }
@@ -93,42 +81,110 @@ function parseOptionalSeason(value: string | null | undefined) {
   return getPersonalColorSeasonFromValue(value);
 }
 
+function getStringField(
+  data: Record<string, unknown>,
+  keys: string[],
+): string | undefined {
+  for (const key of keys) {
+    const value = data[key];
+
+    if (typeof value === "string") {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function getNumberField(
+  data: Record<string, unknown>,
+  keys: string[],
+): number | undefined {
+  for (const key of keys) {
+    const value = data[key];
+
+    if (typeof value === "number") {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
+function getObjectField<T extends Record<string, unknown>>(
+  data: Record<string, unknown>,
+  keys: string[],
+): T | undefined {
+  for (const key of keys) {
+    const value = data[key];
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value as T;
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeLab(
+  lab: Record<string, unknown> | undefined,
+): PredictResponse["lab"] {
+  return {
+    L: typeof lab?.L === "number" ? lab.L : typeof lab?.l === "number" ? lab.l : 0,
+    a: typeof lab?.a === "number" ? lab.a : 0,
+    b: typeof lab?.b === "number" ? lab.b : 0,
+  };
+}
+
 function parseAiDiagnosisResponse(data: unknown): PredictResponse {
   if (!data || typeof data !== "object") {
     throw new Error("진단 API 응답을 읽지 못했어요.");
   }
 
-  const response = data as Partial<PredictResponse>;
-  const season = getPersonalColorSeasonFromValue(response.season);
+  const response = data as Record<string, unknown>;
+  const season = getPersonalColorSeasonFromValue(
+    getStringField(response, ["season", "toneCode", "tone_code"]),
+  );
+  const seasonKr = getStringField(response, [
+    "season_kr",
+    "seasonKr",
+    "toneLabel",
+    "tone_label",
+  ]);
+  const confidence = getNumberField(response, ["confidence"]);
+  const probabilities = getObjectField<Partial<Record<PersonalColorSeason, number>>>(
+    response,
+    ["probs", "probabilities"],
+  );
 
-  if (typeof response.season_kr !== "string") {
+  if (!seasonKr) {
     throw new Error("진단 API 응답에 톤 이름이 없어요.");
   }
 
-  if (typeof response.confidence !== "number") {
+  if (typeof confidence !== "number") {
     throw new Error("진단 API 응답에 신뢰도가 없어요.");
   }
 
   return {
     season,
-    season_kr: response.season_kr,
-    confidence: response.confidence,
-    probs: normalizeSeasonScores(response.probs),
-    lab: response.lab ?? {
-      L: 0,
-      a: 0,
-      b: 0,
-    },
-    success: response.success,
-    model_version: response.model_version,
-    top2_season: parseOptionalSeason(response.top2_season),
-    top2_season_kr: response.top2_season_kr,
-    top2_confidence: response.top2_confidence,
-    top1_top2_gap: response.top1_top2_gap,
-    needs_questions: response.needs_questions,
-    question_reason: response.question_reason,
-    attributes: response.attributes,
-    quality: response.quality,
+    season_kr: seasonKr,
+    confidence,
+    probs: normalizeSeasonScores(probabilities),
+    lab: normalizeLab(getObjectField(response, ["lab"])),
+    success: typeof response.success === "boolean" ? response.success : undefined,
+    model_version:
+      typeof response.model_version === "string" ? response.model_version : undefined,
+    top2_season: parseOptionalSeason(getStringField(response, ["top2_season"])),
+    top2_season_kr: getStringField(response, ["top2_season_kr"]),
+    top2_confidence: getNumberField(response, ["top2_confidence"]),
+    top1_top2_gap: getNumberField(response, ["top1_top2_gap"]),
+    needs_questions:
+      typeof response.needs_questions === "boolean"
+        ? response.needs_questions
+        : undefined,
+    question_reason: getStringField(response, ["question_reason"]),
+    attributes: getObjectField(response, ["attributes"]),
+    quality: getObjectField(response, ["quality"]),
   };
 }
 
@@ -160,15 +216,11 @@ function getGenericDiagnosisError() {
   return new Error("진단 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
 }
 
-async function requestAiDiagnosis(file: File) {
-  if (!AI_DIAGNOSIS_ENDPOINT) {
-    throw new Error("REACT_APP_AI_DIAGNOSIS_KEY 환경변수가 없습니다.");
-  }
-
+export async function requestAiDiagnosis(file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${AI_DIAGNOSIS_ENDPOINT}/predict`, {
+  const response = await fetch("/api/diagnosis/analyze", {
     method: "POST",
     body: formData,
   });
@@ -180,19 +232,40 @@ async function requestAiDiagnosis(file: File) {
   return parseAiDiagnosisResponse(await response.json());
 }
 
+export async function analyzeDiagnosisPhoto(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { getAuthorizationHeader } = await import("./home");
+  const response = await fetch("/api/diagnosis/submit", {
+    method: "POST",
+    headers: await getAuthorizationHeader(),
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("진단 결과를 저장하지 못했습니다.");
+  }
+
+  const data = (await response.json()) as {
+    finalResult: FinalDiagnosisResult;
+  };
+  const finalResult = data.finalResult;
+  const aiResult = finalResult.aiResult;
+
+  return {
+    aiResult,
+    finalResult,
+    needsQuestions: shouldAskDiagnosisQuestions(aiResult),
+  };
+}
+
 function storeDiagnosisResult(upload: DiagnosisUpload, result: DiagnosisResultRow) {
-  const storedSeason = getSeasonFromToneCode(result.tone_code);
   const updatedUpload = {
     ...upload,
     diagnosisResultId: result.id,
   };
 
-  setStoredDiagnosisUpload(updatedUpload);
-  sessionStorage.setItem("wings_personal_color_season", storedSeason);
-  sessionStorage.setItem(
-    "wings_personal_color_result",
-    result.tone_label ?? personalColorResults[storedSeason].toneLabel,
-  );
+  void updatedUpload;
 }
 
 type DiagnosisRequestInsertPayload = {
@@ -327,7 +400,6 @@ export async function finalizeDiagnosisWithSurvey(
   answers: SurveyAnswers,
 ) {
   const finalResult = createFinalDiagnosisResult(aiResult, answers);
-  setStoredFinalDiagnosisResult(finalResult);
 
   if (diagnosisResultId) {
     await updateSavedDiagnosisWithFinalResult(diagnosisResultId, finalResult);
@@ -381,12 +453,6 @@ export async function fetchLatestDiagnosisForUser(userId: string) {
   const season =
     profileSeason ??
     getPersonalColorSeasonFromValue(data.tone_code ?? data.tone_label);
-
-  sessionStorage.setItem("wings_personal_color_season", season);
-  sessionStorage.setItem(
-    "wings_personal_color_result",
-    personalColorResults[season].toneLabel,
-  );
 
   return {
     id: data.id,
@@ -476,8 +542,6 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
     const request = await createDiagnosisRequest(user);
     requestId = request.id;
     const aiResult = await requestAiDiagnosis(file);
-    setStoredAiDiagnosisResult(aiResult);
-
     const result = await saveDiagnosisResult(
       request.id,
       user.id,
@@ -497,7 +561,6 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
     };
 
     storeDiagnosisResult(upload, result);
-    setStoredFinalDiagnosisResult(finalResult);
     await updateProfileSkinTone(user.id, finalResult.finalSeason);
 
     return upload;

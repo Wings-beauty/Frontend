@@ -56,9 +56,8 @@ export default function NewInquiry() {
         content: nextContent,
       });
 
-      navigate(`/inquiries/${inquiry.id}`, {
+      navigate(`/inquiries/${inquiry.id}?message=${encodeURIComponent("문의가 접수되었습니다.")}`, {
         replace: true,
-        state: { message: "문의가 접수되었습니다." },
       });
     } catch (error) {
       console.error("Failed to create inquiry:", error);

@@ -1,11 +1,9 @@
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
-import { getStoredDiagnosisUpload } from "./diagnosisUpload";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import type { ProfileRole } from "../constants/inquiries";
 import type { PersonalColorSeason } from "../constants/personalColor";
 
 const AUTH_RETURN_TO = "/home";
-const AUTH_RETURN_TO_KEY = "wings_auth_return_to";
 
 export async function getCurrentUser() {
   const { data } = await supabase.auth.getUser();
@@ -29,9 +27,7 @@ type ProfileToneRow = {
   role?: string | null;
 };
 
-function getProfileTone(
-  profile: Pick<ProfileToneRow, "skin_tone"> | null | undefined,
-) {
+function getProfileTone(profile: Pick<ProfileToneRow, "skin_tone"> | null | undefined) {
   return profile?.skin_tone ?? null;
 }
 
@@ -42,11 +38,7 @@ export async function getCurrentUserProfile() {
     return null;
   }
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, nickname, profile_image_url, skin_tone, role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileToneRow>();
+  const { data, error } = await supabase.from("profiles").select("id, nickname, profile_image_url, skin_tone, role").eq("id", user.id).maybeSingle<ProfileToneRow>();
 
   if (error || !data) {
     return null;
@@ -120,10 +112,14 @@ export async function deleteMyAccount() {
 }
 
 export async function signInWithGoogle() {
+  if (!isSupabaseConfigured) {
+    throw new Error("Supabase URL 또는 공개 키가 설정되지 않았습니다.");
+  }
+
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${window.location.origin}/login`,
+      redirectTo: `${window.location.origin}/home`,
     },
   });
 
@@ -133,15 +129,16 @@ export async function signInWithGoogle() {
 }
 
 export function consumeAuthReturnTo() {
-  const returnTo = sessionStorage.getItem(AUTH_RETURN_TO_KEY) ?? AUTH_RETURN_TO;
+  if (typeof window === "undefined") {
+    return AUTH_RETURN_TO;
+  }
 
-  sessionStorage.removeItem(AUTH_RETURN_TO_KEY);
-
-  return returnTo;
+  const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+  return returnTo?.startsWith("/") ? returnTo : AUTH_RETURN_TO;
 }
 
 export function setAuthReturnTo(path: string) {
-  sessionStorage.setItem(AUTH_RETURN_TO_KEY, path);
+  void path;
 }
 
 export async function ensureProfile(user: User) {
@@ -166,11 +163,7 @@ export async function ensureProfile(user: User) {
 export async function fetchProfile(user: User) {
   await ensureProfile(user);
 
-  const { data } = await supabase
-    .from("profiles")
-    .select("nickname, profile_image_url, skin_tone, role")
-    .eq("id", user.id)
-    .maybeSingle<ProfileToneRow>();
+  const { data } = await supabase.from("profiles").select("nickname, profile_image_url, skin_tone, role").eq("id", user.id).maybeSingle<ProfileToneRow>();
 
   return {
     nickname: data?.nickname ?? user.user_metadata.full_name ?? user.user_metadata.name ?? user.email?.split("@")[0] ?? "WINGS 사용자",
@@ -182,20 +175,13 @@ export async function fetchProfile(user: User) {
 }
 
 export async function fetchProfileSkinToneForUser(userId: string) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("skin_tone")
-    .eq("id", userId)
-    .maybeSingle<ProfileToneRow>();
+  const { data, error } = await supabase.from("profiles").select("skin_tone").eq("id", userId).maybeSingle<ProfileToneRow>();
 
   const tone = getProfileTone(data);
 
   if (error || !tone) {
     return null;
   }
-
-  sessionStorage.setItem("wings_personal_color_season", tone);
-  sessionStorage.setItem("wings_personal_color_result", tone);
 
   return tone;
 }
@@ -239,21 +225,7 @@ export async function updateProfileSkinTone(userId: string, skinTone: PersonalCo
 }
 
 export async function saveCurrentDiagnosisToUser(user: User) {
-  const upload = getStoredDiagnosisUpload();
-
-  if (!upload) {
-    return;
-  }
-
   await ensureProfile(user);
-
-  if (upload.diagnosisRequestId) {
-    await supabase.from("diagnosis_requests").update({ user_id: user.id }).eq("id", upload.diagnosisRequestId);
-  }
-
-  if (upload.diagnosisResultId) {
-    await supabase.from("diagnosis_results").update({ user_id: user.id }).eq("id", upload.diagnosisResultId);
-  }
 }
 
 export async function hasDiagnosisHistory(userId: string) {

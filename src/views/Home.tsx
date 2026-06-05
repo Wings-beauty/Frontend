@@ -1,447 +1,456 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "../lib/router";
-import { HiChevronRight, HiHome, HiSparkles, HiStar, HiMiniUser, HiChatBubbleBottomCenterText } from "react-icons/hi2";
-import { fetchProfile, getCurrentUser, setAuthReturnTo } from "../api/auth";
-import { fetchLatestDiagnosisForUser, type LatestDiagnosis } from "../api/diagnosis";
-import { fetchRecommendedProducts, fetchSavedProductsForUser, saveSavedProduct, removeSavedProduct, type RecommendedProduct } from "../api/products";
-import { addToLaunchWaitlist } from "../api/waitlist";
-import { HiHeart } from "react-icons/hi2";
-import { getStoredPersonalColorSeason, personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { HiArrowRight, HiBell, HiChatBubbleBottomCenterText, HiHeart, HiHome, HiMiniUser, HiNewspaper, HiSparkles, HiUserGroup } from "react-icons/hi2";
+import { fetchHomeDashboard, joinLaunchWaitlist } from "../api/home";
+import { fetchRecommendedProducts, fetchSavedProductsForUser, removeSavedProduct, saveSavedProduct, type RecommendedProduct } from "../api/products";
 import ProductDetailModal from "../components/ProductDetailModal";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "../components/ui/carousel";
+import { useNavigate } from "../lib/router";
+import Image from "next/image";
 
-type ProfileView = {
-  nickname: string;
-  email: string;
-  profileImageUrl: string | null;
-  skinTone: PersonalColorSeason | null;
-};
-
-const reviews = [
+const heroSlides = [
   {
-    name: "민지님",
-    tone: "여름 쿨",
-    text: "평소 안 어울리던 색을 피하고 나니까 메이크업이 훨씬 자연스러워졌어요.",
-    layout: "wide",
+    eyebrow: "AI Personal Color",
+    title: "내 톤을 알면, 리뷰도 제품도 다르게 보입니다.",
+    description: "WINGS는 사진 한 장으로 퍼스널컬러를 진단하고, 같은 톤 사람들이 검증한 리뷰와 추천 제품까지 연결합니다.",
+    cta: "AI 톤 진단 시작하기",
+    mode: "diagnosis",
+    visualTitle: "Tone Scan",
+    visualMeta: "AI 진단 결과를 기준으로 리뷰와 추천을 연결합니다.",
+    imageUrl: "/banner/banner3.png",
   },
   {
-    name: "수아님",
-    tone: "봄 웜",
-    text: "요즘 이 제품 써보셨어요? 완전 좋아요!",
-    layout: "small",
+    eyebrow: "Tone Community",
+    title: "나와 같은 톤의 사람들이 고른 이유를 먼저 봅니다.",
+    description: "인기순이 아니라 비슷한 톤 사용자들의 발색 후기, 저장, 실패 경험을 기준으로 선택을 도와줍니다.",
+    cta: "톤별 리뷰 보기",
+    mode: "community",
+    visualTitle: "Same Tone Reviews",
+    visualMeta: "같은 톤 사용자의 후기와 발색 경험을 먼저 봅니다.",
+    imageUrl: "/banner/banner2.png",
   },
   {
-    name: "지윤님",
-    tone: "겨울 쿨",
-    text: "겨울 쿨톤님들! 이 제품만은 피하세요!",
-    layout: "small",
+    eyebrow: "Tone Based Recommendation",
+    title: "추천은 상품 목록이 아니라, 내 톤에서 시작됩니다.",
+    description: "진단 결과와 커뮤니티 반응을 함께 보고 내 톤에 맞는 제품만 좁혀서 확인하세요.",
+    cta: "추천 흐름 보기",
+    mode: "recommendation",
+    visualTitle: "Curated For Your Tone",
+    visualMeta: "제품은 마지막 단계입니다. 먼저 내 톤과 실제 리뷰를 확인합니다.",
+    imageUrl: "/banner/banner1.png",
   },
 ] as const;
 
-const FEEDBACK_AUTO_HIDE_MS = 5000;
+const communityPreview = ["여름 쿨 유저들이 저장한 로즈 립 후기", "봄 웜이 실패 적었다고 말한 코랄 블러셔", "가을 웜 파우치에서 자주 언급된 로즈 브라운"];
+const toneCategories = ["AI 진단", "같은 톤 후기", "톤 리포트", "추천 제품"];
+const HERO_CAROUSEL_INTERVAL_MS = 8000;
 
-function hasStoredPersonalColorResult() {
-  return Boolean(sessionStorage.getItem("wings_personal_color_season") ?? sessionStorage.getItem("wings_personal_color_result"));
+function HomeSkeleton() {
+  return (
+    <main className="min-h-dvh px-5 py-5 lg:px-10">
+      <div className="mx-auto flex max-w-360 flex-col gap-5">
+        <div className="h-14 rounded-full border border-[#E8D7B2]" />
+        <div className="h-130 rounded-4xl border border-[#E8D7B2]" />
+      </div>
+    </main>
+  );
+}
+
+function OutlineButton({ children, onClick, className = "", disabled }: { children: React.ReactNode; onClick?: () => void; className?: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#E8D7B2] px-5 text-sm text-[#3A2527] transition disabled:opacity-50 ${className}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SectionHeader({ eyebrow, title, actionLabel, onAction }: { eyebrow: string; title: string; actionLabel: string; onAction: () => void }) {
+  return (
+    <div className="flex items-end justify-between gap-4">
+      <div>
+        <p className="text-sm text-[#C98F7A]">{eyebrow}</p>
+        <h2 className="text-2xl text-[#3A2527]">{title}</h2>
+      </div>
+      <button type="button" className="shrink-0 text-sm text-[#6B4A3F]" onClick={onAction}>
+        {actionLabel}
+      </button>
+    </div>
+  );
+}
+
+function HeroBanner({ slide, onPrimaryAction }: { slide: (typeof heroSlides)[number]; onPrimaryAction: () => void }) {
+  return (
+    <article className="flex min-h-110 flex-col lg:flex-row">
+      <div className="home-hero-image-shell relative min-h-72 flex-1 overflow-hidden lg:min-h-110">
+        <Image src={slide.imageUrl} alt="" fill sizes="(min-width: 756px) 25vw, 50vw" priority={slide.mode === "diagnosis"} className="object-contain" />
+      </div>
+
+      <div className="flex flex-1 flex-col justify-center px-0 py-8 lg:px-14 lg:py-12">
+        <p className="text-sm uppercase tracking-[0.22em] text-[#C98F7A]">{slide.eyebrow}</p>
+        <h1 className="mt-5 max-w-2xl text-2xl leading-[1.08] text-[#3A2527] md:text-4xl">{slide.title}</h1>
+        <p className="mt-6 max-w-xl text-base leading-7 text-[#7A625C] md:text-lg md:leading-8">{slide.description}</p>
+        <div className="mt-7">
+          <OutlineButton onClick={onPrimaryAction}>
+            {slide.cta}
+            <HiArrowRight className="size-5" aria-hidden="true" />
+          </OutlineButton>
+        </div>
+      </div>
+    </article>
+  );
 }
 
 export default function Home() {
   const navigate = useNavigate();
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>(getStoredPersonalColorSeason());
-  const [hasPersonalTone, setHasPersonalTone] = useState(hasStoredPersonalColorResult());
-  const [lifeProducts, setLifeProducts] = useState<RecommendedProduct[]>([]);
-  const [isLoadingLifeProducts, setIsLoadingLifeProducts] = useState(false);
-  const [savedProductIds, setSavedProductIds] = useState<Set<number>>(new Set());
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isPreparingModalOpen, setIsPreparingModalOpen] = useState(false);
-  const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
-  const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
-  const [profile, setProfile] = useState<ProfileView | null>(null);
-  const [latestDiagnosis, setLatestDiagnosis] = useState<LatestDiagnosis | null>(null);
+  const queryClient = useQueryClient();
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [selectedProduct, setSelectedProduct] = useState<RecommendedProduct | null>(null);
-  const [showDiagnosisFeedbackCard, setShowDiagnosisFeedbackCard] = useState(false);
-  const [feedbackCardRemainingMs, setFeedbackCardRemainingMs] = useState(FEEDBACK_AUTO_HIDE_MS);
-  const result = personalColorResults[personalSeason];
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
+
+  const homeQuery = useQuery({
+    queryKey: ["home-dashboard"],
+    queryFn: fetchHomeDashboard,
+  });
+
+  const dashboard = homeQuery.data ?? null;
+  const season = dashboard?.profile.skinTone ?? dashboard?.latestDiagnosis?.season ?? null;
+  const hasTone = Boolean(season);
+  const userId = dashboard?.user.id ?? null;
+
+  const productsQuery = useQuery({
+    queryKey: ["home-products", season, userId],
+    queryFn: async () => {
+      if (!season || !userId) {
+        return { products: [] as RecommendedProduct[], savedProductIds: [] as number[] };
+      }
+
+      const [recommendedProducts, savedProducts] = await Promise.all([fetchRecommendedProducts(season), fetchSavedProductsForUser(userId)]);
+
+      return {
+        products: recommendedProducts.slice(0, 4),
+        savedProductIds: savedProducts.map((product) => product.id),
+      };
+    },
+    enabled: Boolean(season && userId),
+  });
+
+  const products = productsQuery.data?.products ?? [];
+  const savedProductIds = useMemo(() => new Set(productsQuery.data?.savedProductIds ?? []), [productsQuery.data?.savedProductIds]);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!carouselApi) return;
 
-    const loadHomeState = async () => {
-      try {
-        const user = await getCurrentUser();
-        if (!isMounted) {
-          return;
-        }
-
-        setIsLoggedIn(Boolean(user));
-
-        if (!user) {
-          setProfile(null);
-          setLifeProducts([]);
-          setAuthReturnTo("/home");
-          navigate("/login", { replace: true });
-          return;
-        }
-
-        const fetchProfileData = await fetchProfile(user);
-        setProfile(fetchProfileData);
-        setIsLoadingLifeProducts(true);
-
-        const latestDiagnosisFromDb = await fetchLatestDiagnosisForUser(user.id);
-        const profileSeason = fetchProfileData.skinTone;
-
-        if (!isMounted) {
-          return;
-        }
-
-        if (!profileSeason) {
-          setHasPersonalTone(false);
-          setLifeProducts([]);
-          setLatestDiagnosis(latestDiagnosisFromDb);
-          return;
-        }
-
-        setHasPersonalTone(true);
-        setPersonalSeason(profileSeason);
-        setLatestDiagnosis(latestDiagnosisFromDb);
-
-        const [products, savedProducts] = await Promise.all([fetchRecommendedProducts(profileSeason), fetchSavedProductsForUser(user.id)]);
-
-        if (isMounted) {
-          setLifeProducts(products.slice(0, 6));
-          setSavedProductIds(new Set(savedProducts.map((p) => p.id)));
-          setUserId(user.id);
-        }
-      } finally {
-        if (isMounted) {
-          setIsCheckingAuth(false);
-          setIsLoadingLifeProducts(false);
-        }
-      }
+    const updateActiveSlide = () => {
+      setActiveSlide(carouselApi.selectedScrollSnap());
     };
 
-    void loadHomeState().catch(() => {
-      if (isMounted) {
-        setIsCheckingAuth(false);
-        setIsLoadingLifeProducts(false);
-      }
-    });
+    updateActiveSlide();
+    carouselApi.on("select", updateActiveSlide);
+    carouselApi.on("reInit", updateActiveSlide);
 
     return () => {
-      isMounted = false;
+      carouselApi.off("select", updateActiveSlide);
     };
-  }, [navigate]);
+  }, [carouselApi]);
 
   useEffect(() => {
-    if (!latestDiagnosis) {
-      setShowDiagnosisFeedbackCard(false);
-      setFeedbackCardRemainingMs(FEEDBACK_AUTO_HIDE_MS);
+    if (!carouselApi) return;
+
+    const carouselTimer = window.setInterval(() => {
+      carouselApi.scrollNext();
+    }, HERO_CAROUSEL_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(carouselTimer);
+    };
+  }, [carouselApi]);
+
+  const selectSlide = (index: number) => {
+    if (index === activeSlide) return;
+    carouselApi?.scrollTo(index);
+  };
+
+  const likeMutation = useMutation({
+    mutationFn: async ({ productId, wasLiked }: { productId: number; wasLiked: boolean }) => {
+      if (!userId) throw new Error("Login required");
+      if (wasLiked) await removeSavedProduct(userId, productId);
+      else await saveSavedProduct(userId, productId);
+    },
+    onMutate: async ({ productId, wasLiked }) => {
+      const queryKey = ["home-products", season, userId];
+      await queryClient.cancelQueries({ queryKey });
+      const previousData = queryClient.getQueryData<{ products: RecommendedProduct[]; savedProductIds: number[] }>(queryKey);
+
+      queryClient.setQueryData<{ products: RecommendedProduct[]; savedProductIds: number[] }>(queryKey, (currentData) => {
+        if (!currentData) return currentData;
+        const nextIds = new Set(currentData.savedProductIds);
+        if (wasLiked) nextIds.delete(productId);
+        else nextIds.add(productId);
+        return { ...currentData, savedProductIds: Array.from(nextIds) };
+      });
+
+      return { previousData, queryKey };
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousData) queryClient.setQueryData(context.queryKey, context.previousData);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["home-products", season, userId] });
+    },
+  });
+
+  const waitlistMutation = useMutation({
+    mutationFn: () => joinLaunchWaitlist("home_first_screen"),
+    onSuccess: () => setIsWaitlistSuccess(true),
+  });
+
+  const handleToggleLike = (productId: number) => {
+    if (!userId) {
+      navigate("/login?returnTo=/home");
       return;
     }
 
-    setShowDiagnosisFeedbackCard(true);
-    setFeedbackCardRemainingMs(FEEDBACK_AUTO_HIDE_MS);
-
-    const startedAt = Date.now();
-    const hideTimeout = window.setTimeout(() => {
-      setShowDiagnosisFeedbackCard(false);
-      setFeedbackCardRemainingMs(0);
-    }, FEEDBACK_AUTO_HIDE_MS);
-
-    const progressInterval = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      const remaining = Math.max(FEEDBACK_AUTO_HIDE_MS - elapsed, 0);
-      setFeedbackCardRemainingMs(remaining);
-    }, 100);
-
-    return () => {
-      window.clearTimeout(hideTimeout);
-      window.clearInterval(progressInterval);
-    };
-  }, [latestDiagnosis]);
-
-  const handleLaunchWaitlist = async () => {
-    setIsSubmittingWaitlist(true);
-
-    try {
-      await addToLaunchWaitlist("home_preparing_modal");
-      setIsWaitlistSuccess(true);
-    } catch (error) {
-      console.error("Failed to add to waitlist:", error);
-      setIsPreparingModalOpen(false);
-    } finally {
-      setIsSubmittingWaitlist(false);
-    }
+    likeMutation.mutate({ productId, wasLiked: savedProductIds.has(productId) });
   };
 
-  const handleClosePreparingModal = () => {
-    setIsPreparingModalOpen(false);
-    setIsWaitlistSuccess(false);
-  };
-
-  const handleToggleLike = async (productId: number) => {
-    if (!isLoggedIn || !userId) {
-      navigate("/login");
-      return;
-    }
-
-    const isLiked = savedProductIds.has(productId);
-
-    try {
-      if (isLiked) {
-        await removeSavedProduct(userId, productId);
-        setSavedProductIds((prev) => {
-          const next = new Set(prev);
-          next.delete(productId);
-          return next;
-        });
-      } else {
-        await saveSavedProduct(userId, productId);
-        setSavedProductIds((prev) => {
-          const next = new Set(prev);
-          next.add(productId);
-          return next;
-        });
-      }
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
-    }
-  };
+  if (homeQuery.isLoading) {
+    return <HomeSkeleton />;
+  }
 
   return (
-    <main className="relative min-h-dvh w-full overflow-hidden bg-white px-5 pb-10 pt-6">
-      <header className="relative flex items-center justify-between">
-        <button type="button" className="flex size-10 items-center justify-center text-brown-600" aria-label="홈" onClick={() => navigate("/home")}>
-          <HiHome className="size-7" aria-hidden="true" />
-        </button>
+    <main className="min-h-dvh pb-24 text-[#3A2527] lg:pb-12">
+      <header className="sticky top-0 z-40 border-b border-[#E8D7B2] backdrop-blur">
+        <div className="mx-auto flex max-w-360 items-center justify-between px-5 py-5 lg:px-10">
+          <button type="button" className="text-2xl tracking-[0.26em] text-[#3A2527]" onClick={() => navigate("/home")}>
+            WINGS
+          </button>
 
-        <h1 className="text-2xl font-normal leading-7.5 text-[#1f1b1b]">WINGS</h1>
+          <nav className="hidden items-center gap-16 text-sm uppercase tracking-[0.14em] text-[#6B4A3F] lg:flex">
+            <button type="button" onClick={() => navigate("/photo")}>
+              Diagnose
+            </button>
+            <button type="button" onClick={() => setIsWaitlistOpen(true)}>
+              Community
+            </button>
+            <button type="button" onClick={() => navigate("/recommendation")}>
+              Recommendations
+            </button>
+            <button type="button" onClick={() => setIsWaitlistOpen(true)}>
+              News
+            </button>
+          </nav>
 
-        <button
-          type="button"
-          className="size-10 overflow-hidden rounded-full border-2 border-cream-200 bg-cream-50 shadow-[0_4px_14px_rgb(58_37_39/0.12)] flex items-center justify-center"
-          aria-label="마이페이지로 이동"
-          onClick={() => navigate("/mypage")}
-        >
-          {profile?.profileImageUrl ? <img src={profile.profileImageUrl} className="size-full object-cover" alt="프로필" /> : <HiMiniUser className="size-7 text-brown-400" aria-hidden="true" />}
-        </button>
+          <nav className="hidden items-center gap-7 text-sm uppercase tracking-[0.14em] text-[#6B4A3F] md:flex">
+            <button type="button" className="flex size-10 items-center justify-center rounded-full border border-[#E8D7B2] text-[#6B4A3F]" aria-label="알림" onClick={() => setIsWaitlistOpen(true)}>
+              <HiBell className="size-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="flex size-10 items-center justify-center overflow-hidden rounded-full border border-[#E8D7B2] text-[#6B4A3F]"
+              aria-label="마이페이지"
+              onClick={() => navigate("/mypage")}
+            >
+              {dashboard?.profile.profileImageUrl ? <img src={dashboard.profile.profileImageUrl} alt="" className="size-full object-cover" /> : <HiMiniUser className="size-5" aria-hidden="true" />}
+            </button>
+          </nav>
+        </div>
+
+        <nav className="mx-auto flex max-w-360 items-center gap-2 overflow-x-auto px-5 pb-4 text-sm md:hidden">
+          {[
+            { label: "AI 진단", action: () => navigate("/photo") },
+            { label: "커뮤니티", action: () => setIsWaitlistOpen(true) },
+            { label: "추천", action: () => navigate("/recommendation") },
+            { label: "뉴스", action: () => setIsWaitlistOpen(true) },
+          ].map((item) => (
+            <button key={item.label} type="button" className="shrink-0 rounded-full border border-[#E8D7B2] px-4 py-2 text-[#6B4A3F]" onClick={item.action}>
+              {item.label}
+            </button>
+          ))}
+        </nav>
       </header>
 
-      {!isCheckingAuth && !isLoggedIn ? (
-        <section className="relative mt-16 overflow-hidden rounded-3xl bg-linear-to-br from-white via-cream-50 to-cream-100 px-6 py-8 shadow-lg">
-          <div className="mb-8 inline-flex h-11 items-center rounded-full bg-white/85 px-5 text-base font-normal leading-6 text-[#7a625c] shadow-sm">AI Personal Color</div>
+      <div className="mx-auto flex w-full max-w-360 flex-col gap-10 px-5 pt-5 lg:px-10 lg:pt-8">
+        <section className="relative flex flex-col justify-between overflow-hidden border border-[#E8D7B2] rounded-4xl shadow-[0_18px_60px_rgb(58_37_39/0.08)]">
+          <Carousel setApi={setCarouselApi} opts={{ align: "start", loop: true, duration: 60 }} className="flex flex-1 flex-col p-4">
+            <CarouselPrevious className="absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 lg:flex" aria-label="이전 배너 보기" />
+            <CarouselNext className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 lg:flex" aria-label="다음 배너 보기" />
+            <CarouselContent className="flex-1">
+              {heroSlides.map((slide) => (
+                <CarouselItem key={slide.eyebrow}>
+                  <HeroBanner slide={slide} onPrimaryAction={slide.mode === "community" ? () => setIsWaitlistOpen(true) : () => navigate("/photo")} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
 
-          <h2 className="text-4xl font-normal leading-10 tracking-tight text-brown-600">
-            오늘의 내 톤은?
-            <br />
-            사진 한 장으로 바로 확인해보세요.
-          </h2>
-          <p className="mt-7 text-base font-normal leading-7 text-[#7a625c]">간단한 셀카 촬영으로 나에게 가장 잘 어울리는 컬러와 메이크업을 찾아드려요.</p>
-
-          <button
-            type="button"
-            className="mt-10 flex h-16 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-lg"
-            onClick={() => navigate("/photo")}
-          >
-            <HiSparkles className="size-7" aria-hidden="true" />
-            AI 톤 진단 시작하기
-          </button>
+            <div className="mt-10 flex items-center justify-center gap-4">
+              <CarouselPrevious className="size-10 lg:hidden" aria-label="이전 배너 보기" />
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.eyebrow}
+                  type="button"
+                  className={`h-2 rounded-full border border-[#3A2527] transition-all ${index === activeSlide ? "w-10" : "w-2"}`}
+                  aria-label={`${index + 1}번 배너 보기`}
+                  onClick={() => selectSlide(index)}
+                />
+              ))}
+              <CarouselNext className="size-10 lg:hidden" aria-label="다음 배너 보기" />
+            </div>
+          </Carousel>
         </section>
-      ) : null}
 
-      <div className="relative">
-        <div className={isLoggedIn ? "" : "pointer-events-none select-none blur-[6px]"}>
-          {latestDiagnosis && showDiagnosisFeedbackCard ? (
-            <section className={`mb-10 mt-8 overflow-hidden rounded-3xl px-6 py-4 shadow-lg ${result.accentSoftClassName}`}>
-              <div className="flex items-start gap-4">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm">
-                  <HiChatBubbleBottomCenterText className="size-6" aria-hidden="true" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-normal leading-5 text-[#7a625c]">최근 진단 결과 피드백</p>
-                  <h3 className="mt-2 text-xl font-normal leading-7 text-brown-600">{latestDiagnosis.toneLabel} 결과가 잘 맞았나요?</h3>
-                  <p className="mt-2 text-sm font-normal leading-6 text-[#7a625c]">짧은 설문으로 추천 정확도를 함께 높여주세요.</p>
-                </div>
-              </div>
+        <section className="flex flex-col gap-4 border-y border-[#E8D7B2] py-5 lg:flex-row lg:items-center lg:justify-between">
+          <p className="text-sm uppercase tracking-[0.2em] text-[#C98F7A]">Curated paths</p>
+          <div className="flex flex-wrap gap-3">
+            {toneCategories.map((category) => (
               <button
+                key={category}
                 type="button"
-                className="mt-5 flex h-13 w-full items-center justify-center rounded-full bg-brown-600 text-base font-normal leading-6 text-white shadow-md"
-                onClick={() => navigate("/feedback")}
+                className="rounded-full border border-[#E8D7B2] px-5 py-2 text-sm text-[#6B4A3F]"
+                onClick={category === "AI 진단" ? () => navigate("/photo") : () => setIsWaitlistOpen(true)}
               >
-                피드백 남기기
+                {category}
               </button>
-              <div>
-                <div className="mb-4 flex items-center justify-between gap-3"></div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-white/60">
-                  <div
-                    className="h-full rounded-full bg-brown-600 transition-[width] duration-100 ease-linear"
-                    style={{
-                      width: `${(feedbackCardRemainingMs / FEEDBACK_AUTO_HIDE_MS) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            </section>
-          ) : null}
-          <section className="relative mt-12">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-normal leading-7.5 text-brown-600">나와 같은 톤의 인생템</h2>
-              <button type="button" className="flex items-center gap-1 text-base font-normal leading-6 text-[#7a625c]" onClick={() => navigate("/tone-products")}>
-                더보기
-                <HiChevronRight className="size-5" aria-hidden="true" />
-              </button>
-            </div>
+            ))}
+          </div>
+        </section>
 
-            <div className="relative -mx-5 overflow-hidden px-5">
-              <div className="flex gap-4 overflow-x-auto pb-3">
-                {isLoadingLifeProducts ? <p className="py-8 text-base font-normal leading-7 text-[#7a625c]">내 톤에 맞는 제품을 불러오는 중입니다.</p> : null}
+        <section className="flex flex-col gap-3 md:flex-row">
+          {[
+            {
+              icon: HiSparkles,
+              title: "AI 톤 진단",
+              description: "사진 한 장으로 내 톤 기준 만들기",
+              action: () => navigate("/photo"),
+            },
+            {
+              icon: HiChatBubbleBottomCenterText,
+              title: "같은 톤 리뷰",
+              description: "나와 비슷한 톤의 발색 후기 보기",
+              action: () => setIsWaitlistOpen(true),
+            },
+            {
+              icon: HiHeart,
+              title: "톤 기반 추천",
+              description: "추천 이유가 있는 제품만 확인하기",
+              action: () => navigate(hasTone ? "/recommendation" : "/photo"),
+            },
+          ].map((item) => (
+            <button
+              key={item.title}
+              type="button"
+              className="flex flex-1 items-start justify-between gap-4 rounded-[24px] border border-[#E8D7B2] px-5 py-5 text-left text-[#3A2527]"
+              onClick={item.action}
+            >
+              <span className="flex items-start gap-3">
+                <item.icon className="mt-0.5 size-5 shrink-0 text-[#C98F7A]" aria-hidden="true" />
+                <span>
+                  <strong className="block text-base font-normal">{item.title}</strong>
+                  <span className="mt-1 block text-sm leading-5 text-[#7A625C]">{item.description}</span>
+                </span>
+              </span>
+              <HiArrowRight className="mt-1 size-4 shrink-0 text-[#7A625C]" aria-hidden="true" />
+            </button>
+          ))}
+        </section>
 
-                {!isLoadingLifeProducts && lifeProducts.length === 0 ? (
-                  <p className="py-8 text-base font-normal leading-7 text-[#7a625c]">
-                    {hasPersonalTone ? `현재 ${result.toneLabel}에 맞는 제품이 없습니다.` : "진단 후 내 톤에 맞는 제품을 확인할 수 있습니다."}
-                  </p>
-                ) : null}
-
-                {!isLoadingLifeProducts
-                  ? lifeProducts.map((product) => (
-                      <article key={product.id} className="w-36 shrink-0 cursor-pointer" onClick={() => setSelectedProduct(product)}>
-                        <div className="relative aspect-square overflow-hidden rounded-3xl bg-cream-50 shadow-md">
-                          {product.productImageUrl ? (
-                            <img src={product.productImageUrl} className="size-full object-cover" alt={product.productName} />
-                          ) : (
-                            <div
-                              className="size-full"
-                              style={{
-                                backgroundColor: product.colorHex ?? "#fff9e6",
-                              }}
-                            />
-                          )}
-                          <button
-                            type="button"
-                            className={`absolute right-2 top-2 flex size-8 items-center justify-center rounded-full shadow-sm transition-colors ${
-                              savedProductIds.has(product.id) ? "bg-[#df7e8b] text-white" : "bg-white/90 text-brown-600"
-                            }`}
-                            aria-label={`${product.productName} 찜하기`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleLike(product.id);
-                            }}
-                          >
-                            <HiHeart className={`size-5 ${savedProductIds.has(product.id) ? "fill-current" : ""}`} />
-                          </button>
-                        </div>
-                        <p className="mt-3 text-sm font-normal leading-5 text-[#df7e8b]">{product.toneType || result.toneLabel}</p>
-                        <h3 className="mt-1 line-clamp-2 text-base font-normal leading-6 text-brown-600">{product.productName}</h3>
-                      </article>
-                    ))
-                  : null}
-              </div>
-            </div>
-          </section>
-
-          <section className="relative mt-16">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-normal leading-7.5 text-brown-600">나와 비슷한 사람들이 사용하는 제품은?</h2>
-              <button
-                type="button"
-                className="flex size-8 items-center justify-center text-[#7a625c]"
-                aria-label="후기 더보기"
-                onClick={() => {
-                  setIsWaitlistSuccess(false);
-                  setIsPreparingModalOpen(true);
-                }}
-              >
-                <HiChevronRight className="size-7" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {reviews.map((review) => (
-                <article key={review.name} className={`rounded-2xl bg-white p-5 shadow-md ${review.layout === "wide" ? "col-span-2 flex gap-4" : ""}`}>
-                  <div className={`shrink-0 overflow-hidden rounded-full bg-cream-100 ${review.layout === "wide" ? "size-16" : "mb-4 size-12"} flex items-center justify-center`}>
-                    <HiMiniUser className="size-8 text-brown-400" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <p className="text-sm font-normal leading-5 text-brown-600">{review.name}</p>
-                      <div className="flex text-cream-600" aria-hidden="true">
-                        {Array.from({ length: 5 }).map((_, index) => (
-                          <HiStar key={index} className="size-3.5" />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="mb-2 text-xs font-normal leading-4 text-[#df7e8b]">{review.tone}</p>
-                    <p className="text-sm font-normal leading-6 text-[#7a625c]">{review.text}</p>
-                  </div>
+        <section className="flex flex-col gap-8 lg:flex-row">
+          <div className="flex flex-1 flex-col">
+            <SectionHeader eyebrow="Preview" title="같은 톤 리뷰 미리보기" actionLabel="더 보기" onAction={() => setIsWaitlistOpen(true)} />
+            <div className="mt-4 flex flex-col gap-3">
+              {communityPreview.map((review) => (
+                <article key={review} className="rounded-[24px] border border-[#E8D7B2] p-5">
+                  <p className="text-base leading-7 text-[#3A2527]">{review}</p>
                 </article>
               ))}
             </div>
-          </section>
-        </div>
-
-        {!isCheckingAuth && !isLoggedIn && (
-          <div className="absolute inset-x-0 top-40 z-10 flex justify-center">
-            <button
-              type="button"
-              className="flex h-16 w-65 items-center justify-center rounded-full bg-[#92766e] text-base font-normal leading-6 text-white shadow-[0_12px_24px_rgb(58_37_39/0.2)]"
-              onClick={() => navigate("/photo")}
-            >
-              퍼스널 컬러 진단하고 확인하기
-            </button>
           </div>
-        )}
-      </div>
 
-      {isLoggedIn && isPreparingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-8 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="preparing-modal-title">
-          <div className="w-full max-w-97.5 rounded-3xl bg-white px-8 pb-8 pt-9 text-center shadow-[0_24px_70px_rgb(0_0_0/0.18)]">
-            <h2 id="preparing-modal-title" className="text-[28px] font-normal leading-9.5 text-[#111]">
-              {isWaitlistSuccess ? "신청 완료!" : "아직 준비 중이에요"}
-            </h2>
-            <p className="mt-7 text-base font-normal leading-6.75 text-[#111]">
-              {isWaitlistSuccess ? (
-                <>
-                  감사합니다!
-                  <br />
-                  서비스가 업데이트 되는대로 알려드리겠습니다!
-                </>
+          <div className="flex flex-1 flex-col">
+            <SectionHeader eyebrow="Next" title="톤 기반 추천 제품" actionLabel="전체 보기" onAction={() => navigate(hasTone ? "/recommendation" : "/photo")} />
+            <div className="mt-4 flex flex-col gap-3">
+              {products.length > 0 ? (
+                products.slice(0, 2).map((product) => (
+                  <article key={product.id} className="flex items-center justify-between gap-4 rounded-[24px] border border-[#E8D7B2] p-5">
+                    <button type="button" className="min-w-0 text-left" onClick={() => setSelectedProduct(product)}>
+                      <p className="truncate text-sm text-[#7A625C]">{product.brandName}</p>
+                      <h3 className="mt-1 truncate text-base text-[#3A2527]">{product.productName}</h3>
+                    </button>
+                    <button type="button" className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#E8D7B2]" onClick={() => handleToggleLike(product.id)}>
+                      {savedProductIds.has(product.id) ? "♥" : "♡"}
+                    </button>
+                  </article>
+                ))
               ) : (
-                <>
-                  윙즈 커뮤니티에서는
-                  <br />
-                  나와 같은 톤의 사용자 리뷰와 추천 제품 정보를 볼 수 있어요.
-                  <br />
-                  서비스가 열리면 바로 알려드릴게요.
-                </>
-              )}
-            </p>
-
-            <div className="mt-8">
-              {isWaitlistSuccess ? (
-                <button type="button" className="flex h-12 w-full items-center justify-center rounded-full bg-[#92766e] text-base font-normal leading-6 text-white" onClick={handleClosePreparingModal}>
-                  확인
-                </button>
-              ) : (
-                <div className="grid grid-cols-2 gap-5">
-                  <button type="button" className="flex h-12 items-center justify-center rounded-full bg-cream-100 text-base font-normal leading-6 text-brown-600" onClick={handleClosePreparingModal}>
-                    취소
-                  </button>
-                  <button
-                    type="button"
-                    className="flex h-12 items-center justify-center rounded-full bg-[#ecad43] text-base font-normal leading-6 text-white shadow-md transition-transform active:scale-95"
-                    disabled={isSubmittingWaitlist}
-                    onClick={handleLaunchWaitlist}
-                  >
-                    {isSubmittingWaitlist ? "신청 중" : "알림 받기"}
-                  </button>
-                </div>
+                <article className="rounded-[24px] border border-dashed border-[#E8D7B2] p-5">
+                  <p className="text-base leading-7 text-[#3A2527]">진단 후 내 톤에 맞는 추천 제품이 여기에 연결됩니다.</p>
+                </article>
               )}
             </div>
           </div>
+        </section>
+
+        <section className="flex flex-col gap-4 rounded-[28px] border border-[#E8D7B2] p-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm text-[#C98F7A]">WINGS News</p>
+            <h2 className="mt-1 text-2xl text-[#3A2527]">뷰티 뉴스와 톤 리포트는 준비 중입니다.</h2>
+            <p className="mt-2 text-sm leading-6 text-[#7A625C]">첫 화면에서는 진단과 커뮤니티 연결을 우선 보여주고, 뉴스는 이후 확장됩니다.</p>
+          </div>
+          <HiNewspaper className="size-7 text-[#C98F7A]" aria-hidden="true" />
+        </section>
+      </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E8D7B2] px-4 py-2 backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-md justify-between text-xs text-[#6B4A3F]">
+          {[
+            { icon: HiHome, label: "홈", action: () => navigate("/home") },
+            { icon: HiUserGroup, label: "후기", action: () => setIsWaitlistOpen(true) },
+            { icon: HiSparkles, label: "진단", action: () => navigate("/photo") },
+            { icon: HiHeart, label: "상품", action: () => navigate("/recommendation") },
+            { icon: HiMiniUser, label: "마이", action: () => navigate("/mypage") },
+          ].map((item) => (
+            <button key={item.label} type="button" className="flex flex-col items-center gap-1 py-1" onClick={item.action}>
+              <span className="flex size-9 items-center justify-center rounded-full border border-[#E8D7B2]">
+                <item.icon className="size-5" aria-hidden="true" />
+              </span>
+              {item.label}
+            </button>
+          ))}
         </div>
-      )}
+      </nav>
+
+      {isWaitlistOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="waitlist-title">
+          <div className="w-full max-w-md rounded-[32px] border border-[#E8D7B2] p-8 shadow-[0_24px_70px_rgb(0_0_0/0.18)]">
+            <h2 id="waitlist-title" className="text-2xl text-[#3A2527]">
+              {isWaitlistSuccess ? "알림 신청 완료" : "뉴스·커뮤니티 오픈 알림"}
+            </h2>
+            <p className="mt-4 leading-7 text-[#7A625C]">{isWaitlistSuccess ? "기능이 열리면 등록된 계정 이메일로 안내드릴게요." : "컬러 뉴스, 톤별 후기, 파우치 공유 기능이 열리면 알려드릴게요."}</p>
+            <div className="mt-8 flex gap-3">
+              <OutlineButton
+                className="flex-1"
+                onClick={() => {
+                  setIsWaitlistOpen(false);
+                  setIsWaitlistSuccess(false);
+                }}
+              >
+                닫기
+              </OutlineButton>
+              <OutlineButton className="flex-1" disabled={waitlistMutation.isPending || isWaitlistSuccess} onClick={() => waitlistMutation.mutate()}>
+                {isWaitlistSuccess ? "완료" : waitlistMutation.isPending ? "신청 중" : "알림 받기"}
+              </OutlineButton>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {selectedProduct ? (
         <ProductDetailModal product={selectedProduct} isLiked={savedProductIds.has(selectedProduct.id)} onClose={() => setSelectedProduct(null)} onToggleLike={handleToggleLike} />

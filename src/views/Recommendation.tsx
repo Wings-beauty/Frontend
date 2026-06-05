@@ -1,38 +1,19 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useNavigate } from "../lib/router";
-import {
-  HiBell,
-  HiHeart,
-  HiHome,
-  HiMiniUser,
-  HiPaintBrush,
-} from "react-icons/hi2";
-import {
-  fetchProfile,
-  getCurrentUser,
-  saveCurrentDiagnosisToUser,
-} from "../api/auth";
-import {
-  fetchRecommendedProducts,
-  fetchSavedProductsForUser,
-  saveSavedProduct,
-  removeSavedProduct,
-} from "../api/products";
-import type { RecommendedProduct } from "../api/products";
-import { addToLaunchWaitlist } from "../api/waitlist";
-import {
-  getStoredPersonalColorSeason,
-  personalColorResults,
-  type PersonalColorSeason,
-} from "../constants/personalColor";
+import { HiArrowRight, HiHome, HiMiniUser, HiPaintBrush, HiShoppingBag } from "react-icons/hi2";
+import { getCurrentUser } from "../api/auth";
+import { fetchHomeDashboard } from "../api/home";
+import { fetchRecommendedProducts, fetchSavedProductsForUser, removeSavedProduct, saveSavedProduct, type RecommendedProduct } from "../api/products";
+import { personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
 import { getProductCategoryLabel } from "../constants/products";
 import ProductDetailModal from "../components/ProductDetailModal";
-
-type ProfileView = {
-  profileImageUrl: string | null;
-};
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 
 function formatPrice(price: number | null) {
   if (typeof price !== "number") {
@@ -45,411 +26,267 @@ function formatPrice(price: number | null) {
 function ProductCard({
   product,
   isLiked,
-  onToggleLike,
   onOpenDetails,
+  onToggleLike,
 }: {
   product: RecommendedProduct;
   isLiked: boolean;
-  onToggleLike: (productId: number) => void;
   onOpenDetails: (product: RecommendedProduct) => void;
+  onToggleLike: (productId: number) => void;
 }) {
-  const handleProductClick = () => {
-    onOpenDetails(product);
-  };
-
-  const handleProductKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
-    }
-
-    event.preventDefault();
-    handleProductClick();
-  };
-
   return (
     <article
-      onClick={handleProductClick}
-      onKeyDown={handleProductKeyDown}
+      className="group grid cursor-pointer grid-cols-[7.5rem_1fr] gap-4 rounded-3xl border border-cream-200/80 bg-white p-4 shadow-[0_10px_28px_rgb(58_37_39/0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgb(58_37_39/0.08)]"
       role="button"
       tabIndex={0}
-      className="cursor-pointer overflow-hidden rounded-2xl border border-cream-200 bg-white p-3 shadow-sm transition active:scale-[0.99]"
+      onClick={() => onOpenDetails(product)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenDetails(product);
+        }
+      }}
     >
-      <div className="relative aspect-square overflow-hidden rounded-xl bg-cream-50">
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-cream-50">
         {product.productImageUrl ? (
-          <img
-            src={product.productImageUrl}
-            className="size-full object-cover"
-            alt={product.productName}
-          />
+          <img src={product.productImageUrl} className="size-full object-cover" alt={product.productName} />
         ) : (
-          <div
-            className="size-full"
-            style={{ backgroundColor: product.colorHex ?? "#fff9e6" }}
-          />
+          <div className="size-full" style={{ backgroundColor: product.colorHex ?? "#fff9e6" }} />
         )}
 
         <button
           type="button"
-          className={`absolute right-2 top-2 flex size-10 items-center justify-center rounded-full shadow-sm transition-colors ${isLiked ? "bg-[#df7e8b] text-white" : "bg-white/90 text-brown-600 hover:text-[#df7e8b]"
-            }`}
-          aria-label={`${product.productName} 찜하기`}
+          className={`absolute right-2 top-1 flex items-center justify-center text-xl transition ${isLiked ? "text-[#df7e8b]" : "text-white hover:text-[#df7e8b]"}`}
+          aria-label={isLiked ? `${product.productName} 찜 해제` : `${product.productName} 찜하기`}
           onClick={(event) => {
             event.stopPropagation();
             onToggleLike(product.id);
           }}
         >
-          <HiHeart className={`size-6 ${isLiked ? "fill-current" : ""}`} aria-hidden="true" />
+          {isLiked ? "♥" : "♡"}
         </button>
       </div>
 
-      <div className="pt-5">
-        <p className="text-base font-normal leading-6 text-[#7a625c]">
-          {product.brandName}
-        </p>
-
-        <h3 className="mt-3 min-h-12 text-base font-normal leading-6 text-brown-600">
-          {product.productName}
-        </h3>
-
-        <p className="mt-4 text-sm font-normal leading-6 text-[#7a625c]">
-          {product.productColor ||
-            getProductCategoryLabel(product.category) ||
-            product.toneType}
-        </p>
-        {product.price ? (
-          <p className="mt-2 text-sm font-normal leading-6 text-brown-600">
-            {formatPrice(product.price)}
-          </p>
-        ) : null}
+      <div className="min-w-0 py-1 pr-1">
+        <p className="truncate text-sm leading-5 text-[#7a625c]">{product.brandName}</p>
+        <h3 className="mt-2 line-clamp-2 text-lg leading-7 text-brown-600">{product.productName}</h3>
+        <p className="mt-2 truncate text-sm leading-5 text-brown-300">{product.productColor || getProductCategoryLabel(product.category) || product.toneType}</p>
+        {product.price ? <p className="mt-3 text-base leading-6 text-brown-600">{formatPrice(product.price)}</p> : null}
       </div>
     </article>
   );
 }
 
+function ProductSkeletonGrid() {
+  return (
+    <div className="grid gap-4 xl:grid-cols-2">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="grid grid-cols-[7.5rem_1fr] gap-4 rounded-3xl border border-[#e5e7eb] bg-white p-4">
+          <div className="aspect-square rounded-2xl bg-[#e5e7eb]" />
+          <div className="space-y-3 py-2">
+            <div className="h-4 w-24 rounded-full bg-[#e5e7eb]" />
+            <div className="h-6 rounded-full bg-[#e5e7eb]" />
+            <div className="h-6 w-4/5 rounded-full bg-[#e5e7eb]" />
+            <div className="h-5 w-20 rounded-full bg-[#e5e7eb]" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Recommendation() {
   const navigate = useNavigate();
-  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>(
-    getStoredPersonalColorSeason(),
-  );
-  const result = personalColorResults[personalSeason];
-  const [recommendedProducts, setRecommendedProducts] = useState<
-    RecommendedProduct[]
-  >([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>("summer");
+  const [recommendedProducts, setRecommendedProducts] = useState<RecommendedProduct[]>([]);
   const [savedProductIds, setSavedProductIds] = useState<Set<number>>(new Set());
-  const [isSavingResult, setIsSavingResult] = useState(false);
-  const [resultSaveError, setResultSaveError] = useState("");
-  const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
-  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
-  const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
-  const [profile, setProfile] = useState<ProfileView | null>(null);
-  const [selectedProduct, setSelectedProduct] =
-    useState<RecommendedProduct | null>(null);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [likeError, setLikeError] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<RecommendedProduct | null>(null);
+  const result = personalColorResults[personalSeason];
+  const homeQuery = useQuery({
+    queryKey: ["home-dashboard"],
+    queryFn: fetchHomeDashboard,
+  });
 
   useEffect(() => {
     let isMounted = true;
+    const season = homeQuery.data?.profile.skinTone ?? homeQuery.data?.latestDiagnosis?.season;
 
-    getCurrentUser().then((user) => {
-      if (!user) {
-        navigate("/login");
+    if (!season) {
+      if (homeQuery.isFetched) {
+        setIsLoadingProducts(false);
       }
-    });
+      return;
+    }
 
-    const loadData = async () => {
-      try {
-        const user = await getCurrentUser();
+    setPersonalSeason(season);
+    setIsLoadingProducts(true);
 
-        if (!isMounted) return;
+    const loadRecommendation = async () => {
+      const user = await getCurrentUser();
 
-        setIsLoggedIn(Boolean(user));
+      if (isMounted) {
+        setUserId(user?.id ?? null);
+      }
 
-        if (user) {
-          setUserId(user.id);
-          const profileFromDb = await fetchProfile(user);
-          const profileSeason = profileFromDb.skinTone;
+      const [products, savedProducts] = await Promise.all([fetchRecommendedProducts(season), user ? fetchSavedProductsForUser(user.id) : Promise.resolve([])]);
 
-          if (!profileSeason) {
-            setRecommendedProducts([]);
-            setProfile({ profileImageUrl: profileFromDb.profileImageUrl });
-            return;
-          }
+      if (isMounted) {
+        setRecommendedProducts(products);
+        setSavedProductIds(new Set(savedProducts.map((product) => product.id)));
+      }
+    };
 
-          setPersonalSeason(profileSeason);
-
-          const [productsFromDb, savedProducts] = await Promise.all([
-            fetchRecommendedProducts(profileSeason),
-            fetchSavedProductsForUser(user.id),
-          ]);
-          if (isMounted) {
-            setRecommendedProducts(productsFromDb);
-            setSavedProductIds(new Set(savedProducts.map((p) => p.id)));
-            setProfile({ profileImageUrl: profileFromDb.profileImageUrl });
-          }
-        } else {
-          setProfile(null);
+    void loadRecommendation()
+      .catch(() => {
+        if (isMounted) {
+          setRecommendedProducts([]);
+          setSavedProductIds(new Set());
         }
-      } catch (error) {
-        console.error("Failed to load recommendation data:", error);
-      } finally {
+      })
+      .finally(() => {
         if (isMounted) {
           setIsLoadingProducts(false);
         }
-      }
-    };
-
-    void loadData();
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [navigate]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const saveDiagnosisForCurrentUser = async () => {
-      try {
-        const user = await getCurrentUser();
-
-        if (!isMounted) {
-          return;
-        }
-
-        setIsLoggedIn(Boolean(user));
-
-        if (!user) {
-          return;
-        }
-
-        setIsSavingResult(true);
-
-        await saveCurrentDiagnosisToUser(user);
-
-        if (isMounted) {
-          setResultSaveError("");
-        }
-      } catch {
-        if (isMounted) {
-          setResultSaveError("진단 결과 자동 저장에 실패했습니다. 잠시 후 다시 확인해주세요.");
-        }
-      } finally {
-        if (isMounted) {
-          setIsSavingResult(false);
-        }
-      }
-    };
-
-    void saveDiagnosisForCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const handleWaitlistSubmit = async () => {
-    setIsSubmittingWaitlist(true);
-
-    try {
-      await addToLaunchWaitlist("recommendation_special_offer");
-      setIsWaitlistSuccess(true);
-      setIsWaitlistModalOpen(true);
-    } catch (error) {
-      console.error("Failed to add to waitlist:", error);
-    } finally {
-      setIsSubmittingWaitlist(false);
-    }
-  };
-
-  const handleCloseWaitlistModal = () => {
-    setIsWaitlistModalOpen(false);
-    setIsWaitlistSuccess(false);
-  };
+  }, [homeQuery.data?.latestDiagnosis?.season, homeQuery.data?.profile.skinTone, homeQuery.isFetched]);
 
   const handleToggleLike = async (productId: number) => {
-    if (!isLoggedIn || !userId) {
+    if (!userId) {
       navigate("/login");
       return;
     }
 
-    const isLiked = savedProductIds.has(productId);
+    const wasLiked = savedProductIds.has(productId);
+    setLikeError("");
+    setSavedProductIds((currentIds) => {
+      const nextIds = new Set(currentIds);
+
+      if (wasLiked) {
+        nextIds.delete(productId);
+      } else {
+        nextIds.add(productId);
+      }
+
+      return nextIds;
+    });
 
     try {
-      if (isLiked) {
+      if (wasLiked) {
         await removeSavedProduct(userId, productId);
-        setSavedProductIds((prev) => {
-          const next = new Set(prev);
-          next.delete(productId);
-          return next;
-        });
       } else {
         await saveSavedProduct(userId, productId);
-        setSavedProductIds((prev) => {
-          const next = new Set(prev);
-          next.add(productId);
-          return next;
-        });
       }
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
+    } catch {
+      setSavedProductIds((currentIds) => {
+        const nextIds = new Set(currentIds);
+
+        if (wasLiked) {
+          nextIds.add(productId);
+        } else {
+          nextIds.delete(productId);
+        }
+
+        return nextIds;
+      });
+      setLikeError("찜 상태를 저장하지 못했어요. 잠시 후 다시 시도해주세요.");
     }
   };
 
   return (
-    <main className="relative min-h-dvh w-full bg-white px-5 pb-28 pt-6">
-      <header className="relative flex items-center justify-between">
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center text-brown-600"
-          aria-label="홈으로 이동"
-          onClick={() => navigate("/home")}
-        >
-          <HiHome className="size-7" aria-hidden="true" />
-        </button>
+    <main className="min-h-dvh bg-cream-50 px-5 py-5 lg:px-8 lg:py-7">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <header className="flex items-center justify-between rounded-3xl border border-cream-200/80 bg-white px-4 py-3 shadow-[0_10px_30px_rgb(58_37_39/0.05)] lg:px-6">
+          <Button type="button" variant="ghost" size="icon" aria-label="홈으로 이동" onClick={() => navigate("/home")}>
+            <HiHome className="size-6" aria-hidden="true" />
+          </Button>
 
-        <h1 className="text-2xl font-normal leading-7.5 text-[#1f1b1b]">
-          WINGS
-        </h1>
+          <h1 className="text-2xl leading-7 text-[#1f1b1b]">WINGS</h1>
 
-        <div className="flex size-10 items-center justify-center overflow-hidden rounded-full border-2 border-cream-200 bg-cream-50 shadow-sm">
-          {profile?.profileImageUrl ? (
-            <img
-              src={profile.profileImageUrl}
-              className="size-full object-cover"
-              alt="프로필"
-            />
-          ) : (
-            <HiMiniUser className="size-7 text-brown-400" aria-hidden="true" />
-          )}
+          <Avatar className="size-10 shadow-[0_4px_14px_rgb(58_37_39/0.12)]">
+            <AvatarFallback>
+              <HiMiniUser className="size-7" aria-hidden="true" />
+            </AvatarFallback>
+          </Avatar>
+        </header>
+
+        <div className="grid gap-6 lg:grid-cols-[22rem_1fr] xl:grid-cols-[24rem_1fr]">
+          <aside className="lg:sticky lg:top-7 lg:self-start">
+            <Card className="border-none bg-white">
+              <CardHeader className="p-7">
+                <Badge className={`mb-4 w-fit ${result.accentClassName}`}>
+                  <HiPaintBrush className="size-4" aria-hidden="true" />
+                  {result.toneLabel}
+                </Badge>
+                <CardTitle className="text-3xl leading-10 text-brown-600">내 톤에 맞는 추천 상품</CardTitle>
+                <CardDescription className="mt-3 text-base leading-7">진단 결과를 기준으로 현재 등록된 상품 중 어울리는 컬러를 모았습니다.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-7 pt-0">
+                <div className="rounded-3xl bg-cream-50 p-5">
+                  <p className="text-sm leading-6 text-brown-300">추천 기준</p>
+                  <p className="mt-2 text-xl leading-7 text-brown-600">{result.detailTitle}</p>
+                  <div className="mt-5 grid grid-cols-5 gap-2">
+                    {result.bestColors.map((color) => (
+                      <div key={color} className="aspect-square rounded-full ring-1 ring-brown-600/5" style={{ backgroundColor: color }} />
+                    ))}
+                  </div>
+                </div>
+
+                <Button type="button" variant="outline" className="mt-5 w-full rounded-full" onClick={() => navigate("/result")}>
+                  진단 결과 다시 보기
+                </Button>
+              </CardContent>
+            </Card>
+          </aside>
+
+          <section className="min-w-0">
+            <div className="mb-5 flex flex-col justify-between gap-3 rounded-3xl border border-cream-200/80 bg-white px-6 py-5 shadow-[0_10px_30px_rgb(58_37_39/0.05)] md:flex-row md:items-center">
+              <div>
+                <div className="flex items-center gap-2 text-sm leading-5 text-brown-300">
+                  <HiShoppingBag className="size-5" aria-hidden="true" />
+                  추천 상품
+                </div>
+                <h2 className="mt-2 text-2xl leading-8 text-brown-600">
+                  {result.toneLabel} 상품 {recommendedProducts.length}개
+                </h2>
+                {likeError ? <p className="mt-2 text-sm leading-5 text-red">{likeError}</p> : null}
+              </div>
+              <Button type="button" className="rounded-full" onClick={() => navigate("/tone-products")}>
+                전체 상품 보기
+                <HiArrowRight className="size-5" aria-hidden="true" />
+              </Button>
+            </div>
+
+            {isLoadingProducts ? <ProductSkeletonGrid /> : null}
+
+            {!isLoadingProducts && recommendedProducts.length === 0 ? (
+              <Card className="border-none bg-white shadow-none">
+                <CardContent className="flex min-h-80 flex-col items-center justify-center p-8 text-center">
+                  <p className="text-lg leading-7 text-brown-600">현재 이 톤과 일치하는 상품이 없습니다.</p>
+                  <p className="mt-3 text-sm leading-6 text-[#7a625c]">상품 데이터가 추가되면 이 화면에 자동으로 표시됩니다.</p>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {!isLoadingProducts && recommendedProducts.length > 0 ? (
+              <div className="grid gap-4 xl:grid-cols-2">
+                {recommendedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} isLiked={savedProductIds.has(product.id)} onOpenDetails={setSelectedProduct} onToggleLike={handleToggleLike} />
+                ))}
+              </div>
+            ) : null}
+          </section>
         </div>
-      </header>
-
-      <section className="mt-16">
-        <div
-          className={`mb-5 inline-flex h-11 items-center gap-2 rounded-full px-5 text-base font-normal leading-6 text-brown-600 ${result.accentClassName}`}
-        >
-          <HiPaintBrush className="size-5" aria-hidden="true" />
-          {result.toneLabel}
-        </div>
-
-        <h2 className="text-3xl font-normal leading-10 tracking-tight text-brown-600">
-          {result.toneLabel} 톤에 어울리는
-          <br />
-          추천 상품입니다
-        </h2>
-      </section>
-
-      <section className="mt-8 rounded-3xl bg-cream-50 px-5 py-5 text-center">
-        <p className="text-base font-normal leading-[25.6px] text-[#7a625c]">
-          {isSavingResult
-            ? "진단 결과를 계정에 자동으로 저장하는 중입니다."
-            : resultSaveError
-              ? resultSaveError
-              : isLoggedIn
-                ? "진단 결과가 계정에 자동으로 저장되었습니다."
-                : "로그인하면 진단 결과와 추천 상품을 다시 확인할 수 있습니다."}
-        </p>
-        <button
-          type="button"
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-brown-600 text-lg font-normal leading-7 text-white drop-shadow-[0_8px_12px_rgb(58_37_39/0.15)]"
-          onClick={() => navigate("/home")}
-        >
-          홈으로 이동
-          <HiHome className="size-5" aria-hidden="true" />
-        </button>
-      </section>
-
-      {isLoadingProducts ? (
-        <section className="mt-8 rounded-3xl border border-cream-200 bg-white px-5 py-8 text-center shadow-sm">
-          <p className="text-base leading-7 text-[#7a625c]">추천 상품을 불러오는 중입니다.</p>
-        </section>
-      ) : null}
-
-      {!isLoadingProducts && recommendedProducts.length === 0 ? (
-        <section className="mt-8 rounded-3xl border border-cream-200 bg-white px-5 py-8 text-center shadow-sm">
-          <p className="text-base leading-7 text-[#7a625c]">
-            현재 톤과 일치하는 상품이 존재하지 않습니다.
-          </p>
-        </section>
-      ) : null}
-
-      {!isLoadingProducts && recommendedProducts.length > 0 ? (
-        <section className="mt-8 grid grid-cols-2 gap-4">
-          {recommendedProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              isLiked={savedProductIds.has(product.id)}
-              onToggleLike={handleToggleLike}
-              onOpenDetails={setSelectedProduct}
-            />
-          ))}
-        </section>
-      ) : null}
-
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 mx-auto w-full max-w-120 bg-linear-to-t from-white via-white/95 to-white/0 px-5 pb-5 pt-10">
-        <button
-          type="button"
-          className="pointer-events-auto flex h-14 w-full items-center justify-center gap-3 rounded-full bg-brown-600 text-lg font-normal leading-7 text-white drop-shadow-[0_8px_12px_rgb(58_37_39/0.15)] transition-transform active:scale-95"
-          disabled={isSubmittingWaitlist}
-          onClick={handleWaitlistSubmit}
-        >
-          <HiBell className="size-6" aria-hidden="true" />
-          {isSubmittingWaitlist ? "신청 중" : "WINGS 특가 알림 받기"}
-        </button>
       </div>
 
-      {isWaitlistModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-8 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="waitlist-modal-title"
-        >
-          <div className="w-full max-w-97.5 rounded-3xl bg-white px-8 pb-8 pt-9 text-center shadow-[0_24px_70px_rgb(0_0_0/0.18)]">
-            <h2
-              id="waitlist-modal-title"
-              className="text-[28px] font-normal leading-9.5 text-[#111]"
-            >
-              {isWaitlistSuccess ? "신청 완료!" : "신청 실패"}
-            </h2>
-            <p className="mt-7 text-base font-normal leading-6.75 text-[#111]">
-              {isWaitlistSuccess ? (
-                <>
-                  감사합니다!
-                  <br />
-                  서비스가 업데이트 되는대로 알려드리겠습니다!
-                </>
-              ) : (
-                <>
-                  알림 신청 중 오류가 발생했습니다.
-                  <br />
-                  잠시 후 다시 시도해주세요.
-                </>
-              )}
-            </p>
-
-            <div className="mt-8">
-              <button
-                type="button"
-                className="flex h-12 w-full items-center justify-center rounded-full bg-[#92766e] text-base font-normal leading-6 text-white"
-                onClick={handleCloseWaitlistModal}
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {selectedProduct ? (
-        <ProductDetailModal
-          product={selectedProduct}
-          isLiked={savedProductIds.has(selectedProduct.id)}
-          onClose={() => setSelectedProduct(null)}
-          onToggleLike={handleToggleLike}
-        />
+        <ProductDetailModal product={selectedProduct} isLiked={savedProductIds.has(selectedProduct.id)} onClose={() => setSelectedProduct(null)} onToggleLike={handleToggleLike} />
       ) : null}
     </main>
   );

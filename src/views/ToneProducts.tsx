@@ -6,7 +6,7 @@ import { HiChevronLeft, HiHome, HiHeart } from "react-icons/hi2";
 import { getCurrentUser } from "../api/auth";
 import { fetchLatestDiagnosisSeasonForUser } from "../api/diagnosis";
 import { fetchRecommendedProducts, fetchSavedProductsForUser, saveSavedProduct, removeSavedProduct, type RecommendedProduct } from "../api/products";
-import { getStoredPersonalColorSeason, personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
+import { personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
 import ProductDetailModal from "../components/ProductDetailModal";
 
 function ProductCard({
@@ -62,7 +62,7 @@ function ProductCard({
 
 export default function ToneProducts() {
   const navigate = useNavigate();
-  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>(getStoredPersonalColorSeason());
+  const [personalSeason, setPersonalSeason] = useState<PersonalColorSeason>("summer");
   const [products, setProducts] = useState<RecommendedProduct[]>([]);
   const [savedProductIds, setSavedProductIds] = useState<Set<number>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);

@@ -96,8 +96,3 @@ export function getPersonalColorSeasonFromValue(value: string | null | undefined
   return "summer";
 }
 
-export function getStoredPersonalColorSeason(): PersonalColorSeason {
-  const storedResult = sessionStorage.getItem("wings_personal_color_season") ?? sessionStorage.getItem("wings_personal_color_result") ?? "";
-
-  return getPersonalColorSeasonFromValue(storedResult);
-}

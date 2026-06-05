@@ -9,19 +9,11 @@ export default function Welcome() {
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem("wings_has_seen_welcome") === "true";
-
-    if (hasSeenWelcome) {
-      navigate("/home", { replace: true });
-      return;
-    }
-
     const fadeTimer = window.setTimeout(() => {
       setIsLeaving(true);
     }, 2400);
 
     const navigateTimer = window.setTimeout(() => {
-      localStorage.setItem("wings_has_seen_welcome", "true");
       navigate("/onboarding", { replace: true });
     }, 3000);
 
