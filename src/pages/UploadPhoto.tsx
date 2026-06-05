@@ -8,6 +8,7 @@ import {
   HiPhoto,
   HiXMark,
 } from "react-icons/hi2";
+<<<<<<< Updated upstream
 import { getCurrentUser, setAuthReturnTo } from "../api/auth";
 import { uploadDiagnosisPhoto } from "../api/diagnosis";
 import {
@@ -18,6 +19,9 @@ import { validateDiagnosisImage } from "../utils/diagnosisImageValidation";
 
 const INVALID_PHOTO_MESSAGE =
   "정확한 진단이 어려운 사진이에요. 정면 얼굴이 잘 보이는 사진을 다시 업로드해주세요.";
+=======
+import { uploadDiagnosisPhoto } from "../api/diagnosis";
+>>>>>>> Stashed changes
 
 export default function UploadPhoto() {
   const navigate = useNavigate();
@@ -28,6 +32,7 @@ export default function UploadPhoto() {
   const [fileName, setFileName] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+<<<<<<< Updated upstream
   const [isInvalidPhotoModalOpen, setIsInvalidPhotoModalOpen] = useState(false);
 
   useEffect(() => {
@@ -37,12 +42,20 @@ export default function UploadPhoto() {
       }
     });
 
+=======
+
+  useEffect(() => {
+>>>>>>> Stashed changes
     return () => {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
     };
+<<<<<<< Updated upstream
   }, [navigate, previewUrl]);
+=======
+  }, [previewUrl]);
+>>>>>>> Stashed changes
 
   const uploadAndNavigate = async (file: File) => {
     if (isUploading) {
@@ -51,6 +64,7 @@ export default function UploadPhoto() {
 
     setIsUploading(true);
     setUploadError("");
+<<<<<<< Updated upstream
     clearStoredDiagnosis();
 
     const user = await getCurrentUser();
@@ -73,6 +87,16 @@ export default function UploadPhoto() {
       const uploadResult = await uploadDiagnosisPhoto(file);
 
       setStoredDiagnosisUpload(uploadResult);
+=======
+
+    try {
+      const uploadResult = await uploadDiagnosisPhoto(file);
+
+      sessionStorage.setItem(
+        "wings_uploaded_photo",
+        JSON.stringify(uploadResult),
+      );
+>>>>>>> Stashed changes
       navigate("/analyzing", { state: uploadResult });
     } catch (error) {
       setUploadError(
@@ -116,7 +140,10 @@ export default function UploadPhoto() {
     setSelectedFile(null);
     setFileName("");
     setUploadError("");
+<<<<<<< Updated upstream
     setIsInvalidPhotoModalOpen(false);
+=======
+>>>>>>> Stashed changes
 
     if (cameraInputRef.current) {
       cameraInputRef.current.value = "";
@@ -133,6 +160,7 @@ export default function UploadPhoto() {
     }
   };
 
+<<<<<<< Updated upstream
   const closeInvalidPhotoModal = () => {
     setIsInvalidPhotoModalOpen(false);
     resetImage();
@@ -141,37 +169,64 @@ export default function UploadPhoto() {
   return (
     <main className="flex min-h-dvh w-full items-center justify-center bg-white px-8 py-4">
       <section className="relative flex h-[calc(100dvh-32px)] max-h-[100dvh] min-h-96 w-full max-w-md flex-col overflow-hidden rounded-3xl border border-ivory/50 bg-white shadow-lg">
+=======
+  return (
+    <main className="flex min-h-dvh w-full items-center justify-center bg-white px-8 py-4">
+      <section className="relative flex h-[calc(100dvh-32px)] max-h-[900px] min-h-[700px] w-full max-w-[430px] flex-col overflow-hidden rounded-[40px] border border-ivory/50 bg-white shadow-[0_25px_50px_-12px_rgb(107_74_63_/_0.1)]">
+>>>>>>> Stashed changes
         <div
           className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/60 to-white/0"
           aria-hidden="true"
         />
         <div
+<<<<<<< Updated upstream
           className="absolute -right-20 -top-20 size-64 rounded-full bg-[#fff6de] blur-3xl"
           aria-hidden="true"
         />
         <div
           className="absolute -bottom-24 -left-14 size-48 rounded-full bg-[#fff6de] blur-3xl"
+=======
+          className="absolute -right-20 -top-20 size-64 rounded-full bg-[#fff6de] blur-[32px]"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute bottom-[34%] left-[-56px] size-48 rounded-full bg-[#fff6de] blur-[32px]"
+>>>>>>> Stashed changes
           aria-hidden="true"
         />
 
         <header className="relative flex items-center justify-between px-6 pt-8">
           <button
             type="button"
+<<<<<<< Updated upstream
             className="flex size-11 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm"
+=======
+            className="flex size-11 items-center justify-center rounded-full bg-white text-brown-600 shadow-[0_4px_16px_rgb(107_74_63_/_0.08)]"
+>>>>>>> Stashed changes
             aria-label="이전 페이지로 이동"
             onClick={() => navigate(-1)}
           >
             <HiArrowLeft className="size-5" aria-hidden="true" />
           </button>
+<<<<<<< Updated upstream
           <h1 className="text-lg font-normal leading-7 text-brown-600">
+=======
+          <h1 className="text-xl font-normal leading-7 text-brown-600">
+>>>>>>> Stashed changes
             사진 선택
           </h1>
           <div className="size-11" aria-hidden="true" />
         </header>
 
+<<<<<<< Updated upstream
         <div className="relative flex flex-1 h-full flex-col justify-center px-5 ">
           <div className="mx-auto flex w-full h-full max-w-[320px] flex-col items-center text-center">
             <div className="relative mt-4 mb-8 h-full flex-1 flex aspect-video w-full max-w-sm items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-[#fff9e8] shadow-lg">
+=======
+        <div className="relative flex flex-1 flex-col justify-center px-5 pb-4 pt-8">
+          <div className="mx-auto flex w-full max-w-[320px] flex-col items-center text-center">
+            <div className="relative mb-8 flex aspect-[4/5] w-full max-w-[280px] items-center justify-center overflow-hidden rounded-[40px] border-4 border-white bg-[#fff9e8] shadow-[0_18px_40px_rgb(107_74_63_/_0.08)]">
+>>>>>>> Stashed changes
               {previewUrl ? (
                 <>
                   <img
@@ -181,7 +236,11 @@ export default function UploadPhoto() {
                   />
                   <button
                     type="button"
+<<<<<<< Updated upstream
                     className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/90 text-brown-600 shadow-sm backdrop-blur"
+=======
+                    className="absolute right-4 top-4 flex size-10 items-center justify-center rounded-full bg-white/90 text-brown-600 shadow-[0_4px_16px_rgb(58_37_39_/_0.14)] backdrop-blur"
+>>>>>>> Stashed changes
                     aria-label="선택한 사진 삭제"
                     onClick={resetImage}
                   >
@@ -194,29 +253,51 @@ export default function UploadPhoto() {
                 </>
               ) : (
                 <div className="flex flex-col items-center px-8 text-[#7a625c]">
+<<<<<<< Updated upstream
                   <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-white shadow-md">
                     <HiCamera className="size-9 text-brown-600" aria-hidden="true" />
                   </div>
                   <p className="text-base leading-7">
+=======
+                  <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgb(107_74_63_/_0.08)]">
+                    <HiCamera className="size-9 text-brown-600" aria-hidden="true" />
+                  </div>
+                  <p className="text-base leading-[25.6px]">
+>>>>>>> Stashed changes
                     얼굴이 잘 보이는 자연광 사진을 선택해주세요.
                   </p>
                 </div>
               )}
 
+<<<<<<< Updated upstream
               <div className="absolute -right-1 top-12 flex size-12 items-center justify-center rounded-full bg-white shadow-sm">
                 <div className="size-8 rounded-full border border-pink/60 bg-pink/40" />
               </div>
               <div className="absolute bottom-12 -left-0.5 flex size-10 items-center justify-center rounded-full bg-white shadow-sm">
+=======
+              <div className="absolute -right-3 top-12 flex size-12 items-center justify-center rounded-full bg-white drop-shadow-[0_1px_1px_rgb(107_74_63_/_0.1)]">
+                <div className="size-8 rounded-full border border-pink/60 bg-pink/40" />
+              </div>
+              <div className="absolute bottom-12 -left-2 flex size-10 items-center justify-center rounded-full bg-white drop-shadow-[0_1px_1px_rgb(107_74_63_/_0.1)]">
+>>>>>>> Stashed changes
                 <div className="size-6 rounded-full border border-purple/60 bg-purple/40" />
               </div>
             </div>
 
+<<<<<<< Updated upstream
             <h2 className="text-xl font-normal leading-9 text-brown-600">
+=======
+            <h2 className="text-2xl font-normal leading-[30px] text-brown-600">
+>>>>>>> Stashed changes
               분석할 사진을
               <br />
               선택해주세요
             </h2>
+<<<<<<< Updated upstream
             <p className="mt-4 text-base font-normal leading-7 text-[#7a625c]">
+=======
+            <p className="mt-[15px] text-base font-normal leading-[25.6px] text-[#7a625c]">
+>>>>>>> Stashed changes
               카메라로 바로 찍거나
               <br />
               앨범에서 사진을 업로드할 수 있어요.
@@ -281,6 +362,7 @@ export default function UploadPhoto() {
           onChange={handleImageChange}
         />
       </section>
+<<<<<<< Updated upstream
 
       {isInvalidPhotoModalOpen ? (
         <div
@@ -309,6 +391,8 @@ export default function UploadPhoto() {
           </div>
         </div>
       ) : null}
+=======
+>>>>>>> Stashed changes
     </main>
   );
 }

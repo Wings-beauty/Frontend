@@ -1,4 +1,14 @@
+<<<<<<< Updated upstream
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+=======
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+>>>>>>> Stashed changes
 
 export type Database = {
   public: {
@@ -10,11 +20,16 @@ export type Database = {
           image_url: string | null;
           status: "pending" | "success" | "failed" | null;
           requested_at: string | null;
+<<<<<<< Updated upstream
           requested_date: string | null;
           completed_at: string | null;
           error_message: string | null;
           requester_type: "user" | "guest" | null;
           guest_token_hash: string | null;
+=======
+          completed_at: string | null;
+          error_message: string | null;
+>>>>>>> Stashed changes
         };
         Insert: {
           id?: never;
@@ -22,11 +37,16 @@ export type Database = {
           image_url?: string | null;
           status?: "pending" | "success" | "failed" | null;
           requested_at?: string | null;
+<<<<<<< Updated upstream
           requested_date?: string | null;
           completed_at?: string | null;
           error_message?: string | null;
           requester_type?: "user" | "guest" | null;
           guest_token_hash?: string | null;
+=======
+          completed_at?: string | null;
+          error_message?: string | null;
+>>>>>>> Stashed changes
         };
         Update: {
           user_id?: string | null;
@@ -34,10 +54,13 @@ export type Database = {
           status?: "pending" | "success" | "failed" | null;
           completed_at?: string | null;
           error_message?: string | null;
+<<<<<<< Updated upstream
           requester_type?: "user" | "guest" | null;
           guest_token_hash?: string | null;
           requested_date?: string | null;
           requested_at?: string | null;
+=======
+>>>>>>> Stashed changes
         };
         Relationships: [];
       };
@@ -98,6 +121,7 @@ export type Database = {
         };
         Relationships: [];
       };
+<<<<<<< Updated upstream
       feedbacks_result: {
         Row: {
           id: number;
@@ -128,6 +152,11 @@ export type Database = {
         Row: {
           id: number;
           user_id: string | null;
+=======
+      launch_waitlist: {
+        Row: {
+          id: number;
+>>>>>>> Stashed changes
           email: string | null;
           source: string | null;
           tone_code: string | null;
@@ -135,20 +164,27 @@ export type Database = {
         };
         Insert: {
           id?: never;
+<<<<<<< Updated upstream
           user_id?: string | null;
+=======
+>>>>>>> Stashed changes
           email?: string | null;
           source?: string | null;
           tone_code?: string | null;
           created_at?: string | null;
         };
         Update: {
+<<<<<<< Updated upstream
           user_id?: string | null;
+=======
+>>>>>>> Stashed changes
           email?: string | null;
           source?: string | null;
           tone_code?: string | null;
         };
         Relationships: [];
       };
+<<<<<<< Updated upstream
       inquiries: {
         Row: {
           id: string;
@@ -191,6 +227,8 @@ export type Database = {
         };
         Relationships: [];
       };
+=======
+>>>>>>> Stashed changes
       product_tone_tags: {
         Row: {
           id: number;
@@ -283,36 +321,54 @@ export type Database = {
       profiles: {
         Row: {
           id: string;
+<<<<<<< Updated upstream
           email: string | null;
+=======
+>>>>>>> Stashed changes
           nickname: string | null;
           profile_image_url: string | null;
           birth_year: number | null;
           skin_note: string | null;
+<<<<<<< Updated upstream
           skin_tone: "spring" | "summer" | "autumn" | "winter" | null;
           role: string;
+=======
+>>>>>>> Stashed changes
           created_at: string | null;
           updated_at: string | null;
         };
         Insert: {
           id: string;
+<<<<<<< Updated upstream
           email?: string | null;
+=======
+>>>>>>> Stashed changes
           nickname?: string | null;
           profile_image_url?: string | null;
           birth_year?: number | null;
           skin_note?: string | null;
+<<<<<<< Updated upstream
           skin_tone?: "spring" | "summer" | "autumn" | "winter" | null;
           role?: string;
+=======
+>>>>>>> Stashed changes
           created_at?: string | null;
           updated_at?: string | null;
         };
         Update: {
+<<<<<<< Updated upstream
           email?: string | null;
+=======
+>>>>>>> Stashed changes
           nickname?: string | null;
           profile_image_url?: string | null;
           birth_year?: number | null;
           skin_note?: string | null;
+<<<<<<< Updated upstream
           skin_tone?: "spring" | "summer" | "autumn" | "winter" | null;
           role?: string;
+=======
+>>>>>>> Stashed changes
           updated_at?: string | null;
         };
         Relationships: [];
@@ -339,9 +395,13 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
+<<<<<<< Updated upstream
     Enums: {
       skin_tone: "spring" | "summer" | "autumn" | "winter";
     };
+=======
+    Enums: Record<string, never>;
+>>>>>>> Stashed changes
     CompositeTypes: Record<string, never>;
   };
 };

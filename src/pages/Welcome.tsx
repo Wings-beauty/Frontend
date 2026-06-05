@@ -7,10 +7,18 @@ export default function Welcome() {
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
+<<<<<<< Updated upstream
     const hasSeenWelcome = localStorage.getItem("wings_has_seen_welcome") === "true";
 
     if (hasSeenWelcome) {
       navigate("/home", { replace: true });
+=======
+    const hasSeenWelcome =
+      localStorage.getItem("wings_has_seen_welcome") === "true";
+
+    if (hasSeenWelcome) {
+      navigate("/onboarding", { replace: true });
+>>>>>>> Stashed changes
       return;
     }
 
@@ -30,6 +38,7 @@ export default function Welcome() {
   }, [navigate]);
 
   return (
+<<<<<<< Updated upstream
     <main className="relative flex min-h-dvh w-full items-center justify-center md:overflow-visible overflow-hidden bg-white">
       <div className="absolute left-1/2 top-1/2 h-dvh w-dvh -translate-x-1/2 -translate-y-1/2 rounded-full bg-cream-100 blur-3xl" aria-hidden="true" />
 
@@ -41,6 +50,29 @@ export default function Welcome() {
             나에게 맞는 색을 찾는
             <br />
             가장 쉬운 방법
+=======
+    <main className="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-white">
+      <div
+        className="absolute left-1/2 top-[calc(50%-10px)] size-[512px] max-w-[120vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cream-100 blur-3xl"
+        aria-hidden="true"
+      />
+
+      <div className="relative flex min-h-dvh w-full max-w-[430px] flex-col items-center justify-center px-5">
+        <div
+          className={`flex w-[240px] flex-col items-center text-center opacity-80 ${
+            isLeaving ? "welcome-fade-out" : "welcome-fade-in"
+          }`}
+        >
+          <img
+            src={logo}
+            className="h-[116px] w-[118px] object-cover object-center"
+            alt="Wings"
+          />
+          <p className="mt-0 w-[222px] text-center text-base font-normal leading-[25.6px] text-[#6b4a3f]">
+            나에게 맞는 색을 찾는 
+            <br />
+           가장 쉬운 방법
+>>>>>>> Stashed changes
           </p>
         </div>
       </div>

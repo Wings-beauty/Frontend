@@ -1,4 +1,7 @@
+<<<<<<< Updated upstream
 import type { PersonalColorSeason } from "../constants/personalColor";
+=======
+>>>>>>> Stashed changes
 import { supabase } from "../lib/supabase";
 
 export type RecommendedProduct = {
@@ -11,6 +14,7 @@ export type RecommendedProduct = {
   productImageUrl: string | null;
   productUrl: string | null;
   price: number | null;
+<<<<<<< Updated upstream
   toneType: string;
   detailedTone: string;
   lipType: string;
@@ -44,19 +48,48 @@ type ProductRow = {
 
 function mapProduct(product: ProductRow): RecommendedProduct | null {
   if (product.is_active === false) {
+=======
+};
+
+type ProductToneTagRow = {
+  score: number | null;
+  products:
+    | {
+        id: number;
+        brand_name: string | null;
+        product_name: string | null;
+        product_color: string | null;
+        category: string | null;
+        color_hex: string | null;
+        product_image_url: string | null;
+        product_url: string | null;
+        price: number | null;
+        is_active: boolean | null;
+      }
+    | null;
+};
+
+function mapProduct(product: ProductToneTagRow["products"]): RecommendedProduct | null {
+  if (!product || product.is_active === false) {
+>>>>>>> Stashed changes
     return null;
   }
 
   return {
     id: product.id,
     brandName: product.brand_name ?? "WINGS",
+<<<<<<< Updated upstream
     productName: product.product_name ?? "추천 상품",
+=======
+    productName: product.product_name ?? "추천 제품",
+>>>>>>> Stashed changes
     productColor: product.product_color ?? "",
     category: product.category ?? "",
     colorHex: product.color_hex,
     productImageUrl: product.product_image_url,
     productUrl: product.product_url,
     price: product.price,
+<<<<<<< Updated upstream
     toneType: product.tone_type ?? "",
     detailedTone: product.detailed_tone ?? "",
     lipType: product.lip_type ?? "",
@@ -89,12 +122,28 @@ export async function fetchRecommendedProducts(season: PersonalColorSeason) {
     .order("updated_at", { ascending: false })
     .limit(12)
     .returns<ProductRow[]>();
+=======
+  };
+}
+
+export async function fetchRecommendedProducts(toneCode: string) {
+  const { data, error } = await supabase
+    .from("product_tone_tags")
+    .select(
+      "score, products (id, brand_name, product_name, product_color, category, color_hex, product_image_url, product_url, price, is_active)",
+    )
+    .eq("tone_code", toneCode)
+    .order("score", { ascending: false })
+    .limit(12)
+    .returns<ProductToneTagRow[]>();
+>>>>>>> Stashed changes
 
   if (error || !data) {
     return [];
   }
 
   return data
+<<<<<<< Updated upstream
     .map(mapProduct)
     .filter((product): product is RecommendedProduct => Boolean(product));
 }
@@ -166,3 +215,8 @@ export async function saveSavedProduct(userId: string, productId: number) {
     throw new Error(error.message || "제품을 찜하지 못했어요.");
   }
 }
+=======
+    .map((tag) => mapProduct(tag.products))
+    .filter((product): product is RecommendedProduct => Boolean(product));
+}
+>>>>>>> Stashed changes

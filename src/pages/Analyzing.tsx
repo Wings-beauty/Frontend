@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { HiArrowPath, HiCheck, HiSparkles } from "react-icons/hi2";
+<<<<<<< Updated upstream
 import { completeDiagnosis } from "../api/diagnosis";
 import { clearStoredDiagnosis, getStoredAiDiagnosisResult, getStoredDiagnosisUpload, type DiagnosisUpload } from "../api/diagnosisUpload";
 
 const MIN_ANALYSIS_DURATION_MS = 5000;
 const MAX_ANALYSIS_DURATION_MS = 10000;
+=======
+import type { MockUploadResponse } from "../api/mockUploadPhoto";
+import { completeDiagnosis } from "../api/diagnosis";
+>>>>>>> Stashed changes
 
 const timelineSteps = [
   {
     title: "사진 밝기 확인",
+<<<<<<< Updated upstream
     description: "사진의 밝기와 색 균형을 먼저 확인하고 있어요.",
   },
   {
@@ -76,15 +82,57 @@ function moveDot(dot: FloatingDot): FloatingDot {
     duration: 900 + Math.floor(Math.random() * 700),
     delay: Math.floor(Math.random() * 140),
   };
+=======
+    description: "",
+    status: "done",
+  },
+  {
+    title: "피부 영역 분석",
+    description: "",
+    status: "done",
+  },
+  {
+    title: "톤 매칭 중",
+    description: "퍼스널 컬러 데이터를 비교하고 있어요",
+    status: "active",
+  },
+  {
+    title: "맞춤 제품 찾는 중",
+    description: "",
+    status: "pending",
+  },
+] as const;
+
+function getStoredUpload(): MockUploadResponse | null {
+  const storedUpload = sessionStorage.getItem("wings_uploaded_photo");
+
+  if (!storedUpload) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUpload) as MockUploadResponse;
+  } catch {
+    return null;
+  }
+>>>>>>> Stashed changes
 }
 
 export default function Analyzing() {
   const navigate = useNavigate();
   const location = useLocation();
+<<<<<<< Updated upstream
   const upload = useMemo(() => (location.state as DiagnosisUpload | null) ?? getStoredDiagnosisUpload(), [location.state]);
   const [progress, setProgress] = useState(0);
   const [analysisDurationMs] = useState(getRandomDurationMs);
   const [floatingDots, setFloatingDots] = useState<FloatingDot[]>(() => [createRandomDot("dot-1"), createRandomDot("dot-2"), createRandomDot("dot-3")]);
+=======
+  const upload = useMemo(
+    () => (location.state as MockUploadResponse | null) ?? getStoredUpload(),
+    [location.state],
+  );
+  const [activeTextIndex, setActiveTextIndex] = useState(0);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     if (!upload) {
@@ -92,6 +140,7 @@ export default function Analyzing() {
       return;
     }
 
+<<<<<<< Updated upstream
     const startedAt = performance.now();
 
     const progressInterval = window.setInterval(() => {
@@ -133,11 +182,29 @@ export default function Analyzing() {
       window.clearInterval(dotInterval);
     };
   }, []);
+=======
+    const intervalId = window.setInterval(() => {
+      setActiveTextIndex((currentIndex) => (currentIndex + 1) % 3);
+    }, 1200);
+
+    const resultTimer = window.setTimeout(() => {
+      void completeDiagnosis(upload).finally(() => {
+        navigate("/result", { replace: true });
+      });
+    }, 4200);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(resultTimer);
+    };
+  }, [navigate, upload]);
+>>>>>>> Stashed changes
 
   if (!upload) {
     return null;
   }
 
+<<<<<<< Updated upstream
   const activeStepIndex = Math.min(timelineSteps.length - 1, Math.floor((progress / 100) * timelineSteps.length));
 
   return (
@@ -221,6 +288,101 @@ export default function Analyzing() {
                 );
               })}
             </div>
+=======
+  return (
+    <main className="relative flex min-h-dvh w-full overflow-hidden bg-white">
+      <div
+        className="absolute -right-28 top-0 h-[360px] w-[260px] rounded-full bg-purple/20 blur-[80px]"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute -left-24 top-[260px] h-[360px] w-[230px] rounded-full bg-pink/20 blur-[80px]"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute bottom-[-120px] right-[-80px] size-[340px] rounded-full bg-cream-100 blur-[70px]"
+        aria-hidden="true"
+      />
+
+      <section className="relative flex min-h-dvh w-full flex-col items-center px-8 pb-8 pt-[112px]">
+        <div className="relative flex size-32 items-center justify-center rounded-full bg-[#ffefd7] shadow-[0_18px_60px_rgb(255_193_130_/_0.28)]">
+          <div
+            className="absolute inset-3 rounded-full border border-dashed border-[#f6cda9]"
+            aria-hidden="true"
+          />
+          <HiSparkles
+            className="size-14 animate-pulse text-[#ff9f82]"
+            aria-hidden="true"
+          />
+        </div>
+
+        <h1 className="mt-20 text-center text-[22px] font-normal leading-[35.2px] text-[#9a817b]">
+          빛, 색감, 피부 톤 데이터를 확인하는 중 이에요.
+          <br />
+          잠시만 기다려주세요.
+        </h1>
+
+        <div className="mt-20 w-full rounded-[24px] bg-white/90 px-6 py-8 shadow-[0_24px_70px_rgb(107_74_63_/_0.08)] backdrop-blur">
+          <div className="relative flex flex-col gap-8">
+            <div
+              className="absolute bottom-6 left-6 top-6 w-0.5 bg-[#f2d9bf]"
+              aria-hidden="true"
+            />
+            <div
+              className="absolute left-6 top-6 h-[140px] w-0.5 bg-[#f39d86]"
+              aria-hidden="true"
+            />
+
+            {timelineSteps.map((step) => {
+              const isDone = step.status === "done";
+              const isActive = step.status === "active";
+              const isPending = step.status === "pending";
+
+              return (
+                <div key={step.title} className="relative flex min-h-10 gap-6">
+                  <div
+                    className={`z-10 flex size-12 shrink-0 items-center justify-center rounded-full ${
+                      isDone
+                        ? "border-2 border-[#b7ddcb] bg-[#e0f3e9] text-[#6bb594]"
+                        : ""
+                    } ${
+                      isActive
+                        ? "bg-[#ffa58d] text-white shadow-[0_10px_24px_rgb(255_165_141_/_0.45)]"
+                        : ""
+                    } ${isPending ? "bg-[#f1eeee] text-[#c6bebc]" : ""}`}
+                  >
+                    {isDone && <HiCheck className="size-6" aria-hidden="true" />}
+                    {isActive && (
+                      <HiArrowPath
+                        className="size-6 animate-spin"
+                        aria-hidden="true"
+                      />
+                    )}
+                    {isPending && <span className="size-3 rounded-full bg-[#cfc7c5]" />}
+                  </div>
+
+                  <div className="flex min-w-0 flex-col justify-center pt-1">
+                    <p
+                      className={`text-lg font-normal leading-[25.2px] ${
+                        isPending ? "text-[#b9adaa]" : "text-[#3a2527]"
+                      }`}
+                    >
+                      {step.title}
+                    </p>
+                    {step.description && (
+                      <p className="mt-1.5 max-w-[170px] text-base font-normal leading-[25.6px] text-[#7a625c]">
+                        {activeTextIndex === 0
+                          ? step.description
+                          : activeTextIndex === 1
+                            ? "컬러 균형을 세밀하게 맞추고 있어요"
+                            : "피부 톤과 어울림을 확인하고 있어요"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+>>>>>>> Stashed changes
           </div>
         </div>
       </section>

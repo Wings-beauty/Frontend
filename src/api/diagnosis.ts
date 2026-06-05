@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import type { User } from "@supabase/supabase-js";
 import {
   setStoredAiDiagnosisResult,
@@ -35,12 +36,21 @@ const SEASON_KR: Record<Season, string> = {
   autumn: "가을 웜톤",
   winter: "겨울 쿨톤",
 };
+=======
+import type { MockUploadResponse } from "./mockUploadPhoto";
+import { supabase } from "../lib/supabase";
+import type { PersonalColorSeason } from "../constants/personalColor";
+import { personalColorResults } from "../constants/personalColor";
+
+const STORAGE_BUCKET = "diagnosis-images";
+>>>>>>> Stashed changes
 
 type DiagnosisResultRow = {
   id: number;
   tone_code: string | null;
   tone_label: string | null;
   confidence: number | null;
+<<<<<<< Updated upstream
   created_at?: string | null;
 };
 
@@ -457,10 +467,63 @@ export async function fetchDiagnosisHistoryDetailForUser(
 }
 
 export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload> {
+=======
+};
+
+function getSeasonFromToneCode(toneCode: string | null): PersonalColorSeason {
+  if (toneCode?.startsWith("spring")) {
+    return "spring";
+  }
+
+  if (toneCode?.startsWith("autumn")) {
+    return "autumn";
+  }
+
+  if (toneCode?.startsWith("winter")) {
+    return "winter";
+  }
+
+  return "summer";
+}
+
+function getMockSeason(seed: number): PersonalColorSeason {
+  const seasons: PersonalColorSeason[] = ["spring", "summer", "autumn", "winter"];
+
+  return seasons[seed % seasons.length];
+}
+
+async function getCurrentUserId() {
+  const { data } = await supabase.auth.getUser();
+
+  return data.user?.id ?? null;
+}
+
+async function uploadImageToStorage(file: File) {
+  const fileExtension = file.name.split(".").pop() || "jpg";
+  const storagePath = `public/${crypto.randomUUID()}.${fileExtension}`;
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(storagePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (error) {
+    return null;
+  }
+
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
+
+  return data.publicUrl;
+}
+
+export async function uploadDiagnosisPhoto(file: File): Promise<MockUploadResponse> {
+>>>>>>> Stashed changes
   if (!file.type.startsWith("image/")) {
     throw new Error("이미지 파일만 업로드할 수 있어요.");
   }
 
+<<<<<<< Updated upstream
   const user = await getCurrentUser();
 
   if (!user) {
@@ -529,16 +592,61 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
 }
 
 export async function completeDiagnosis(upload: DiagnosisUpload) {
+=======
+  const localImageUrl = URL.createObjectURL(file);
+  const userId = await getCurrentUserId();
+  const uploadedImageUrl = await uploadImageToStorage(file);
+
+  const { data, error } = await supabase
+    .from("diagnosis_requests")
+    .insert({
+      user_id: userId,
+      image_url: uploadedImageUrl,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    URL.revokeObjectURL(localImageUrl);
+    throw new Error(error.message || "진단 요청을 저장하지 못했어요.");
+  }
+
+  if (uploadedImageUrl) {
+    URL.revokeObjectURL(localImageUrl);
+  }
+
+  return {
+    uploadId: String(data.id),
+    fileName: file.name,
+    imageUrl: uploadedImageUrl ?? localImageUrl,
+    uploadedAt: new Date().toISOString(),
+    diagnosisRequestId: data.id,
+  };
+}
+
+export async function completeDiagnosis(upload: MockUploadResponse) {
+>>>>>>> Stashed changes
   if (!upload.diagnosisRequestId) {
     return null;
   }
 
+<<<<<<< Updated upstream
   const { data: result, error } = await supabase
+=======
+  const userId = await getCurrentUserId();
+  const season = getMockSeason(upload.diagnosisRequestId);
+  const result = personalColorResults[season];
+  const toneCode = `${season}_mock`;
+
+  const { data: existingResult } = await supabase
+>>>>>>> Stashed changes
     .from("diagnosis_results")
     .select("id, tone_code, tone_label, confidence")
     .eq("request_id", upload.diagnosisRequestId)
     .maybeSingle<DiagnosisResultRow>();
 
+<<<<<<< Updated upstream
   if (error || !result) {
     return null;
   }
@@ -546,4 +654,60 @@ export async function completeDiagnosis(upload: DiagnosisUpload) {
   storeDiagnosisResult(upload, result);
 
   return result;
+=======
+  const savedResult =
+    existingResult ??
+    (
+      await supabase
+        .from("diagnosis_results")
+        .insert({
+          request_id: upload.diagnosisRequestId,
+          user_id: userId,
+          tone_code: toneCode,
+          tone_label: result.toneLabel,
+          confidence: 0.86,
+          raw_result: {
+            source: "frontend_mock",
+            season,
+            toneCode,
+          },
+        })
+        .select("id, tone_code, tone_label, confidence")
+        .single()
+    ).data;
+
+  if (!savedResult) {
+    await supabase
+      .from("diagnosis_requests")
+      .update({
+        status: "failed",
+        completed_at: new Date().toISOString(),
+        error_message: "진단 결과 저장에 실패했어요.",
+      })
+      .eq("id", upload.diagnosisRequestId);
+
+    return null;
+  }
+
+  await supabase
+    .from("diagnosis_requests")
+    .update({
+      status: "success",
+      completed_at: new Date().toISOString(),
+      error_message: null,
+    })
+    .eq("id", upload.diagnosisRequestId);
+
+  const storedSeason = getSeasonFromToneCode(savedResult.tone_code);
+  const updatedUpload = {
+    ...upload,
+    diagnosisResultId: savedResult.id,
+  };
+
+  sessionStorage.setItem("wings_uploaded_photo", JSON.stringify(updatedUpload));
+  sessionStorage.setItem("wings_personal_color_season", storedSeason);
+  sessionStorage.setItem("wings_personal_color_result", savedResult.tone_label ?? result.toneLabel);
+
+  return savedResult;
+>>>>>>> Stashed changes
 }

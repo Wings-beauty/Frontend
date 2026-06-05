@@ -3,14 +3,19 @@ import Welcome from "./pages/Welcome";
 import Onboarding from "./pages/Onboarding";
 import UploadPhoto from "./pages/UploadPhoto";
 import Analyzing from "./pages/Analyzing";
+<<<<<<< Updated upstream
 import DiagnosisSurvey from "./pages/DiagnosisSurvey";
 import Result from "./pages/Result";
 import DiagnosisHistory from "./pages/DiagnosisHistory";
 import DiagnosisHistoryDetail from "./pages/DiagnosisHistoryDetail";
+=======
+import Result from "./pages/Result";
+>>>>>>> Stashed changes
 import Recommendation from "./pages/Recommendation";
 import Home from "./pages/Home";
 import MyPage from "./pages/MyPage";
 import Login from "./pages/Login";
+<<<<<<< Updated upstream
 import ToneProducts from "./pages/ToneProducts";
 import SavedProducts from "./pages/SavedProducts";
 import Feedback from "./pages/Feedback";
@@ -21,6 +26,8 @@ import AdminInquiries from "./pages/AdminInquiries";
 import AdminInquiryDetail from "./pages/AdminInquiryDetail";
 import AdminUsers from "./pages/AdminUsers";
 import AdminUserDetail from "./pages/AdminUserDetail";
+=======
+>>>>>>> Stashed changes
 
 function App() {
   return (
