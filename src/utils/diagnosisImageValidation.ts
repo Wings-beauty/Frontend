@@ -1,4 +1,4 @@
-import { FaceDetector } from "@mediapipe/tasks-vision";
+import type { FaceDetector } from "@mediapipe/tasks-vision";
 
 const FACE_DETECTOR_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite";
@@ -11,8 +11,11 @@ const BRIGHTNESS_SAMPLE_SIZE = 256;
 
 let faceDetectorPromise: Promise<FaceDetector> | null = null;
 
-function getFaceDetector() {
-  faceDetectorPromise ??= FaceDetector.createFromOptions(
+async function getFaceDetector() {
+  if (!faceDetectorPromise) {
+    const { FaceDetector } = await import("@mediapipe/tasks-vision");
+
+    faceDetectorPromise = FaceDetector.createFromOptions(
     {
       wasmLoaderPath: VISION_WASM_LOADER_PATH,
       wasmBinaryPath: VISION_WASM_BINARY_PATH,
@@ -25,7 +28,8 @@ function getFaceDetector() {
       runningMode: "IMAGE",
       minDetectionConfidence: 0.5,
     },
-  );
+    );
+  }
 
   return faceDetectorPromise;
 }
