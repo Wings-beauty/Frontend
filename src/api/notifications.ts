@@ -52,30 +52,35 @@ export async function fetchNotifications(): Promise<Notification[]> {
 }
 
 export async function getUnreadNotificationCount(): Promise<number> {
-  const { data } = await supabase.rpc("get_unread_notification_count");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase.rpc as any)("get_unread_notification_count");
   return (data as number) ?? 0;
 }
 
 export async function markNotificationRead(notificationId: number): Promise<void> {
-  const { error } = await supabase.rpc("mark_notification_read", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)("mark_notification_read", {
     p_notification_id: notificationId,
   });
   if (error) throw new Error(error.message);
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  const { error } = await supabase.rpc("mark_all_notifications_read");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)("mark_all_notifications_read");
   if (error) throw new Error(error.message);
 }
 
 export async function deleteNotification(notificationId: number): Promise<void> {
-  const { error } = await supabase.rpc("delete_notification", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)("delete_notification", {
     p_notification_id: notificationId,
   });
   if (error) throw new Error(error.message);
 }
 
 export async function deleteAllNotifications(): Promise<void> {
-  const { error } = await supabase.rpc("delete_all_notifications");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)("delete_all_notifications");
   if (error) throw new Error(error.message);
 }

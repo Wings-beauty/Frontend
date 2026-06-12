@@ -432,7 +432,8 @@ export type LikeResult = {
 };
 
 export async function toggleNewsLike(newsId: number): Promise<LikeResult> {
-  const { data, error } = await supabase.rpc("toggle_news_like", { p_news_id: newsId });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("toggle_news_like", { p_news_id: newsId });
   if (error) throw error;
   return data as LikeResult;
 }
@@ -456,7 +457,8 @@ export type ViewResult = {
 };
 
 export async function increaseNewsViewCount(newsId: number, anonymousId: string): Promise<ViewResult> {
-  const { data, error } = await supabase.rpc("increment_news_view", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("increment_news_view", {
     p_news_id: newsId,
     p_anonymous_id: anonymousId,
   });

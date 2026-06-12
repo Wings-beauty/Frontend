@@ -156,7 +156,8 @@ export async function fetchSavedProductsForUser(): Promise<RecommendedProduct[]>
 }
 
 export async function toggleSavedProduct(productId: number): Promise<boolean> {
-  const { data, error } = await supabase.rpc("toggle_saved_product", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("toggle_saved_product", {
     p_product_id: productId,
   });
 

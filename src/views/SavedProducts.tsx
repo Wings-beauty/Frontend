@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "../lib/router";
 import { HiChevronLeft, HiHome, HiHeart } from "react-icons/hi2";
 import { getCurrentUser } from "../api/auth";
-import { fetchSavedProductsForUser, type RecommendedProduct } from "../api/products";
+import { fetchSavedProductsForUser, toggleSavedProduct, type RecommendedProduct } from "../api/products";
 import ProductDetailModal from "../components/ProductDetailModal";
 import { getProductCategoryLabel } from "../constants/products";
 

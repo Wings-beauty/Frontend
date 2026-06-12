@@ -331,7 +331,8 @@ export type LikeResult = {
 };
 
 export async function togglePostLike(postId: number): Promise<LikeResult> {
-  const { data, error } = await supabase.rpc("toggle_post_like", { p_post_id: postId });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("toggle_post_like", { p_post_id: postId });
   if (error) throw error;
   return data as LikeResult;
 }
@@ -346,7 +347,8 @@ export async function getPostLikeStatus(postId: number): Promise<{ liked: boolea
 }
 
 export async function increasePostViewCount(postId: number, anonymousId: string): Promise<ViewResult> {
-  const { data, error } = await supabase.rpc("increment_post_view", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase.rpc as any)("increment_post_view", {
     p_post_id: postId,
     p_anonymous_id: anonymousId,
   });
