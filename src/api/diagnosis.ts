@@ -247,12 +247,16 @@ export async function analyzeDiagnosisPhoto(file: File) {
   }
 
   const data = (await response.json()) as {
+    requestId?: number;
+    resultId?: number;
     finalResult: FinalDiagnosisResult;
   };
   const finalResult = data.finalResult;
   const aiResult = finalResult.aiResult;
 
   return {
+    requestId: data.requestId,
+    resultId: data.resultId,
     aiResult,
     finalResult,
     needsQuestions: shouldAskDiagnosisQuestions(aiResult),
@@ -327,12 +331,18 @@ async function saveDiagnosisResult(
 }
 
 function shouldAskDiagnosisQuestions(result: PredictResponse) {
+  const confidence = normalizeConfidence(result.confidence);
+  const top1Top2Gap =
+    typeof result.top1_top2_gap === "number"
+      ? normalizeConfidence(result.top1_top2_gap)
+      : undefined;
+
   return (
     result.needs_questions ??
-    (result.confidence < 50 ||
-      (typeof result.top1_top2_gap === "number" &&
-        result.top1_top2_gap < 12) ||
-      (result.season === "autumn" && result.confidence < 60))
+    (confidence < 0.5 ||
+      (typeof top1Top2Gap === "number" &&
+        top1Top2Gap < 0.12) ||
+      (result.season === "autumn" && confidence < 0.6))
   );
 }
 

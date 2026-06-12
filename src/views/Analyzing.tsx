@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { HiArrowLeft, HiArrowPath, HiCheck, HiExclamationTriangle, HiSparkles } from "react-icons/hi2";
 import { analyzeDiagnosisPhoto } from "../api/diagnosis";
-import { clearPendingDiagnosisPhoto, getPendingDiagnosisPhoto, type PendingDiagnosisPhoto } from "../api/diagnosisUpload";
+import { clearPendingDiagnosisPhoto, getPendingDiagnosisPhoto, setPendingDiagnosisSurvey, type PendingDiagnosisPhoto } from "../api/diagnosisUpload";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { useNavigate } from "../lib/router";
@@ -81,12 +81,21 @@ export default function Analyzing() {
     }, 220);
 
     void analyzeDiagnosisPhoto(photo.file)
-      .then(() => {
+      .then((diagnosis) => {
         window.clearInterval(progressTimer);
         clearPendingDiagnosisPhoto();
         setProgress(100);
         setStatus("success");
         window.setTimeout(() => {
+          if (diagnosis.needsQuestions) {
+            setPendingDiagnosisSurvey({
+              diagnosisResultId: diagnosis.resultId,
+              aiResult: diagnosis.aiResult,
+            });
+            navigate("/diagnosis-survey", { replace: true });
+            return;
+          }
+
           navigate("/result", { replace: true });
         }, 650);
       })
@@ -121,19 +130,25 @@ export default function Analyzing() {
   }
 
   return (
-    <main className="flex min-h-dvh w-full items-center justify-center bg-cream-50 px-4 py-4 sm:px-8">
-      <section className="flex min-h-[calc(100dvh-32px)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-ivory/60 bg-white shadow-lg lg:min-h-[720px]">
+    <main className="app-page flex min-h-dvh w-full items-center justify-center px-4 py-4 sm:px-8">
+      <section className="app-panel flex min-h-[calc(100dvh-32px)] w-full max-w-5xl flex-col overflow-hidden lg:min-h-[720px]">
         <header className="flex items-center justify-between px-5 pt-6 sm:px-8">
-          <button type="button" className="flex size-11 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm" aria-label="사진 선택으로 돌아가기" onClick={() => navigate("/photo")} disabled={status === "analyzing"}>
+          <button
+            type="button"
+            className="flex size-11 items-center justify-center rounded-full border border-cream-200 bg-white text-brown-600"
+            aria-label="사진 선택으로 돌아가기"
+            onClick={() => navigate("/photo")}
+            disabled={status === "analyzing"}
+          >
             <HiArrowLeft className="size-5" aria-hidden="true" />
           </button>
-          <h1 className="text-base font-medium leading-7 text-brown-600 sm:text-lg">AI 진단</h1>
+          <h1 className="text-base font-medium leading-7 text-brown-600 sm:text-lg">분석 중</h1>
           <div className="size-11" aria-hidden="true" />
         </header>
 
         <div className="grid flex-1 gap-6 px-5 py-6 sm:px-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-10 lg:py-10">
           <div className="mx-auto flex w-full max-w-md flex-col items-center text-center lg:max-w-none">
-            <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-cream-100 shadow-lg lg:max-w-md">
+            <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-2xl border border-cream-200 bg-cream-100 shadow-[0_8px_24px_rgb(43_33_31/0.06)] lg:max-w-md">
               {previewUrl ? <img src={previewUrl} className="size-full object-cover" alt="AI 진단 중인 사진" /> : null}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-brown-600/50 to-transparent px-5 pb-5 pt-16 text-left text-white">
                 <p className="truncate text-sm leading-5">{fileName}</p>
@@ -146,10 +161,22 @@ export default function Analyzing() {
             <Card>
               <CardHeader>
                 <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-cream-100 text-brown-600">
-                  {status === "success" ? <HiCheck className="size-7 text-green" aria-hidden="true" /> : status === "error" ? <HiExclamationTriangle className="size-7 text-red" aria-hidden="true" /> : <HiSparkles className="size-7" aria-hidden="true" />}
+                  {status === "success" ? (
+                    <HiCheck className="size-7 text-green" aria-hidden="true" />
+                  ) : status === "error" ? (
+                    <HiExclamationTriangle className="size-7 text-red" aria-hidden="true" />
+                  ) : (
+                    <HiSparkles className="size-7" aria-hidden="true" />
+                  )}
                 </div>
-                <CardTitle>{status === "success" ? "AI 진단이 완료됐어요" : status === "error" ? "진단을 완료하지 못했어요" : "AI가 퍼스널 컬러를 분석하고 있어요"}</CardTitle>
-                <CardDescription>{status === "success" ? "결과 화면으로 이동합니다." : status === "error" ? "사진은 저장하지 않았습니다. 다시 시도하거나 다른 사진을 선택해주세요." : "진단 결과는 DB에 저장되고 결과 화면에서 조회됩니다."}</CardDescription>
+                <CardTitle>{status === "success" ? "진단이 완료됐어요" : status === "error" ? "진단을 완료하지 못했어요" : "퍼스널 컬러를 분석하고 있어요"}</CardTitle>
+                <CardDescription>
+                  {status === "success"
+                    ? "결과 화면으로 이동합니다."
+                    : status === "error"
+                      ? "사진은 저장하지 않았습니다. 다시 시도하거나 다른 사진을 선택해주세요."
+                      : "사진의 톤과 밝기 정보를 분석해 결과 화면으로 연결합니다."}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-2 overflow-hidden rounded-full bg-cream-200">
@@ -172,14 +199,16 @@ export default function Analyzing() {
 
                       return (
                         <div key={step.title} className={`relative flex gap-4 ${isPending ? "opacity-45" : ""}`}>
-                          <div className={`relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ${isDone ? "bg-green text-white" : ""} ${isActive ? "bg-brown-600 text-white" : ""} ${isPending ? "bg-cream-200 text-brown-300" : ""}`}>
+                          <div
+                            className={`relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ${isDone ? "bg-green text-white" : ""} ${isActive ? "bg-brown-600 text-white" : ""} ${isPending ? "bg-cream-200 text-brown-300" : ""}`}
+                          >
                             {isDone ? <HiCheck className="size-4" aria-hidden="true" /> : null}
                             {isActive ? <HiArrowPath className="size-4 animate-spin" aria-hidden="true" /> : null}
                             {isPending ? <span className="size-2 rounded-full bg-brown-300" /> : null}
                           </div>
                           <div className="min-w-0 pt-0.5">
                             <p className="text-sm font-medium leading-6 text-brown-600">{step.title}</p>
-                            <p className="text-sm leading-6 text-[#7a625c]">{step.description}</p>
+                            <p className="text-sm leading-6 text-[#756861]">{step.description}</p>
                           </div>
                         </div>
                       );
@@ -194,8 +223,12 @@ export default function Analyzing() {
                 <CardContent className="space-y-4 pt-6">
                   <p className="text-sm leading-6 text-red">{errorMessage}</p>
                   <div className="grid grid-cols-2 gap-3">
-                    <Button type="button" variant="outline" onClick={retryAnalysis}>다시 시도</Button>
-                    <Button type="button" onClick={() => navigate("/photo")}>사진 다시 선택</Button>
+                    <Button type="button" variant="outline" onClick={retryAnalysis}>
+                      다시 시도
+                    </Button>
+                    <Button type="button" onClick={() => navigate("/photo")}>
+                      사진 다시 선택
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

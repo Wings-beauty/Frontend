@@ -191,6 +191,38 @@ export type Database = {
         };
         Relationships: [];
       };
+      news: {
+        Row: {
+          id: number;
+          title: string;
+          category: string | null;
+          content: string;
+          author_id: string | null;
+          is_published: boolean | null;
+          published_at: string | null;
+          thumbnail_url: string | null;
+        };
+        Insert: {
+          id?: never;
+          title: string;
+          category?: string | null;
+          content: string;
+          author_id?: string | null;
+          is_published?: boolean | null;
+          published_at?: string | null;
+          thumbnail_url?: string | null;
+        };
+        Update: {
+          title?: string;
+          category?: string | null;
+          content?: string;
+          author_id?: string | null;
+          is_published?: boolean | null;
+          published_at?: string | null;
+          thumbnail_url?: string | null;
+        };
+        Relationships: [];
+      };
       product_tone_tags: {
         Row: {
           id: number;
@@ -333,6 +365,136 @@ export type Database = {
         Update: {
           user_id?: string | null;
           product_id?: number | null;
+        };
+        Relationships: [];
+      };
+      community_posts: {
+        Row: {
+          id: number;
+          user_id: string;
+          title: string;
+          category: string;
+          content: string;
+          thumbnail_url: string | null;
+          view_count: number;
+          like_count: number;
+          comment_count: number;
+          is_deleted: boolean;
+          is_hidden: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          user_id: string;
+          title: string;
+          category?: string;
+          content: string;
+          thumbnail_url?: string | null;
+          view_count?: number;
+          like_count?: number;
+          comment_count?: number;
+          is_deleted?: boolean;
+          is_hidden?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          category?: string;
+          content?: string;
+          thumbnail_url?: string | null;
+          is_deleted?: boolean;
+          is_hidden?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      community_comments: {
+        Row: {
+          id: number;
+          post_id: number;
+          user_id: string;
+          content: string;
+          is_deleted: boolean;
+          is_hidden: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          post_id: number;
+          user_id: string;
+          content: string;
+          is_deleted?: boolean;
+          is_hidden?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          content?: string;
+          is_deleted?: boolean;
+          is_hidden?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      news_comments: {
+        Row: {
+          id: number;
+          news_id: number;
+          user_id: string;
+          content: string;
+          is_deleted: boolean;
+          is_hidden: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          news_id: number;
+          user_id: string;
+          content: string;
+          is_deleted?: boolean;
+          is_hidden?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          content?: string;
+          is_deleted?: boolean;
+          is_hidden?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      news_cards: {
+        Row: {
+          id: number;
+          news_id: number;
+          card_order: number;
+          image_url: string;
+          title: string | null;
+          content: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: never;
+          news_id: number;
+          card_order: number;
+          image_url: string;
+          title?: string | null;
+          content?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          card_order?: number;
+          image_url?: string;
+          title?: string | null;
+          content?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };

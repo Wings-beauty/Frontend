@@ -1,3 +1,5 @@
+import type { PredictResponse } from "../types/diagnosis";
+
 export type DiagnosisUpload = {
   uploadId: string;
   fileName: string;
@@ -16,10 +18,17 @@ export type PendingDiagnosisPhoto = {
   previewUrl?: string;
 };
 
+export type PendingDiagnosisSurvey = {
+  diagnosisResultId?: number;
+  aiResult: PredictResponse;
+};
+
 let pendingDiagnosisPhoto: PendingDiagnosisPhoto | null = null;
+let pendingDiagnosisSurvey: PendingDiagnosisSurvey | null = null;
 
 export function clearStoredDiagnosis() {
   pendingDiagnosisPhoto = null;
+  pendingDiagnosisSurvey = null;
 }
 
 export function setPendingDiagnosisPhoto(photo: PendingDiagnosisPhoto) {
@@ -32,4 +41,16 @@ export function getPendingDiagnosisPhoto() {
 
 export function clearPendingDiagnosisPhoto() {
   pendingDiagnosisPhoto = null;
+}
+
+export function setPendingDiagnosisSurvey(survey: PendingDiagnosisSurvey) {
+  pendingDiagnosisSurvey = survey;
+}
+
+export function getPendingDiagnosisSurvey() {
+  return pendingDiagnosisSurvey;
+}
+
+export function clearPendingDiagnosisSurvey() {
+  pendingDiagnosisSurvey = null;
 }

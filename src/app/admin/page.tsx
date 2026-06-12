@@ -1,3 +1,3 @@
-import AdminUsers from "@/views/AdminUsers";
+import AdminDashboard from "@/views/AdminDashboard";
 
-export default AdminUsers;
+export default AdminDashboard;

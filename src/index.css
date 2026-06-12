@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #fff9e6;
-  --color-cream-50: #fffdf7;
-  --color-cream-100: #fff9ea;
-  --color-cream-200: #ffefc0;
-  --color-cream-300: #f7e4ac;
-  --color-cream-400: #eed898;
-  --color-cream-500: #e0c880;
-  --color-cream-600: #c9b06b;
-  --color-cream-700: #a99254;
-  --color-cream-800: #887541;
-  --color-cream-900: #68582f;
-  --color-cream-950: #3a321a;
+  --color-cream: #fbf5ec;
+  --color-cream-50: #fffdf9;
+  --color-cream-100: #fbf5ec;
+  --color-cream-200: #eadfd2;
+  --color-cream-300: #d8cabb;
+  --color-cream-400: #c7b5a4;
+  --color-cream-500: #ad9784;
+  --color-cream-600: #8e7867;
+  --color-cream-700: #715d50;
+  --color-cream-800: #55443b;
+  --color-cream-900: #3f322d;
+  --color-cream-950: #241d1a;
 
-  --color-brown-200: #bfa995;
-  --color-brown-300: #735a4c;
-  --color-brown-400: #6b4a3f;
-  --color-brown-600: #3a2527;
+  --color-brown-200: #a8958c;
+  --color-brown-300: #725c53;
+  --color-brown-400: #563f39;
+  --color-brown-600: #2b211f;
 
-  --color-ivory: #e8d7b2;
+  --color-ivory: #eadfd2;
 
-  --color-pink: #f7c7a3;
+  --color-pink: #e9b7aa;
 
-  --color-purple: #d8c7f2;
+  --color-purple: #d5c9e8;
 
   --color-tone-spring: #ffb7a1;
   --color-tone-summer: #d7e8fa;
@@ -99,12 +99,17 @@
 
 @layer base {
   :root {
-    --app-font-size: clamp(13px, calc(11px + 0.55vw), 18px);
+    --app-font-size: 15px;
     --app-frame-width: min(100vw, 32rem);
+    --app-page-bg: #ffffff;
+    --app-surface: #ffffff;
+    --app-border: #eadfd2;
+    --app-muted: #756861;
+    --app-ink: #2b211f;
     font-family: "Pretendard";
     font-size: var(--app-font-size);
-    color: #111827;
-    background-color: #ffffff;
+    color: var(--app-ink);
+    background-color: var(--app-page-bg);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -120,32 +125,33 @@
   body {
     min-height: 100dvh;
     margin: 0;
-    color: #111827;
+    color: var(--app-ink);
+    background: #ffffff;
   }
 
   #root {
     width: 100%;
     min-height: 100dvh;
-    background-color: #ffffff;
+    background-color: transparent;
   }
 
   @media (max-width: 360px), (max-height: 720px) {
     :root {
-      --app-font-size: clamp(13px, calc(11px + 0.45vw), 16px);
+      --app-font-size: 14px;
       --app-frame-width: min(100%, 100vw);
     }
   }
 
   @media (min-width: 768px) and (min-height: 900px) {
     :root {
-      --app-font-size: clamp(14px, calc(11px + 0.32vw), 18px);
+      --app-font-size: 15px;
       --app-frame-width: clamp(22rem, 52vw, 34rem);
     }
   }
 
   @media (min-width: 1200px) and (min-height: 800px) {
     :root {
-      --app-font-size: clamp(13px, calc(10px + 0.18vw), 16px);
+      --app-font-size: 15px;
       --app-frame-width: clamp(21rem, 30vw, 30rem);
     }
   }
@@ -179,6 +185,15 @@
     text-decoration: none;
   }
 
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    letter-spacing: 0;
+  }
+
   ul,
   ol {
     list-style: none;
@@ -199,6 +214,56 @@
   .home-hero-image-shell::before,
   .home-hero-image-shell::after {
     content: none;
+  }
+
+  .app-page {
+    min-height: 100dvh;
+    color: var(--app-ink);
+  }
+
+  .app-container {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  .app-panel {
+    border: 1px solid var(--app-border);
+    border-radius: 1rem;
+    background: #ffffff;
+  }
+
+  .app-card {
+    border: 1px solid var(--app-border);
+    border-radius: 0.875rem;
+    background: #ffffff;
+  }
+
+  .app-eyebrow {
+    color: #a66555;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .app-copy {
+    color: var(--app-muted);
+    line-height: 1.75;
+  }
+
+  .app-input {
+    border: 1px solid var(--app-border);
+    border-radius: 0.875rem;
+    background: #ffffff;
+    color: var(--app-ink);
+    outline: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .app-input:focus {
+    border-color: #a8958c;
+    box-shadow: 0 0 0 3px rgba(168, 149, 140, 0.16);
   }
 }
 

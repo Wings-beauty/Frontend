@@ -1,75 +1,39 @@
-# React + TypeScript + Vite
+# WINGS Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+윙즈(WINGS)는 사용자의 얼굴 이미지를 기반으로 AI 퍼스널 컬러를 진단하고, 진단 결과에 맞는 뷰티 제품과 콘텐츠를 추천하는 서비스입니다.
 
-Currently, two official plugins are available:
+프론트엔드는 사용자가 서비스를 실제로 이용하는 화면과 흐름을 담당합니다.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 주요 기능
 
-## React Compiler
+- 회원가입 및 로그인
+- 얼굴 이미지 업로드
+- AI 진단 API 연동
+- 진단 진행 화면 표시
+- 퍼스널 컬러 결과 화면 제공
+- 진단 결과 기반 제품 추천
+- 제품 상세 및 외부 링크 이동
+- 카드뉴스 및 뷰티 콘텐츠 조회
+- 사용자 피드백 수집
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## 기술 스택
 
-Note: This will impact Vite dev & build performances.
+- Next.js
+- TypeScript
+- Supabase
+- Tailwind CSS
+- FastAPI API 연동
+- Vercel
 
-## Expanding the ESLint configuration
+## 프론트엔드 역할
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+프론트엔드는 사용자가 이미지를 업로드하고, AI 진단 결과를 확인하고, 추천 제품과 콘텐츠를 탐색할 수 있도록 전체 사용자 경험을 구성합니다.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+또한 Supabase와 FastAPI 서버를 연동하여 인증, 진단 결과 저장, 제품 조회, 콘텐츠 조회 등의 기능을 화면에 연결합니다.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 실행 방법
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```

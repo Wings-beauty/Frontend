@@ -140,14 +140,14 @@ export default function Result() {
   };
 
   return (
-    <main className="min-h-dvhㅁ px-5 py-5 lg:px-8 lg:py-7">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <header className="flex items-center justify-between rounded-3xl border border-cream-200/80 bg-white px-4 py-3 shadow-[0_10px_30px_rgb(58_37_39/0.05)] lg:px-6">
+    <main className="app-page px-5 py-5 lg:px-8 lg:py-7">
+      <div className="mx-auto flex w-full max-w-360 flex-col gap-6">
+        <header className="app-panel flex items-center justify-between px-4 py-3 lg:px-6">
           <Button type="button" variant="ghost" size="icon" aria-label="홈으로 이동" onClick={() => navigate("/home")}>
             <HiHome className="size-6" aria-hidden="true" />
           </Button>
 
-          <h1 className="text-2xl leading-7 text-[#1f1b1b]">WINGS</h1>
+          <h1 className="text-xl font-medium leading-7 text-brown-600">진단 결과</h1>
 
           <Avatar className="size-10 shadow-[0_4px_14px_rgb(58_37_39/0.12)]">
             <AvatarFallback>
@@ -159,8 +159,8 @@ export default function Result() {
         {diagnosisQuery.isLoading ? (
           <ResultSkeleton />
         ) : !currentSeason || !finalResult ? (
-          <Card className="mx-auto w-full max-w-xl border-none bg-white shadow-none">
-            <CardContent className="space-y-4 p-8 text-center text-[#7a625c]">
+          <Card className="mx-auto w-full max-w-xl shadow-none">
+            <CardContent className="space-y-4 p-8 text-center text-[#756861]">
               <p>진단 결과를 찾지 못했어요.</p>
               <Button type="button" onClick={() => navigate("/photo")}>
                 다시 진단하기
@@ -169,31 +169,31 @@ export default function Result() {
           </Card>
         ) : (
           <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
-            <Card className="overflow-hidden border-none bg-white">
+            <Card className="overflow-hidden">
               <CardHeader className="p-7 pb-4 lg:p-9 lg:pb-5">
                 <Badge className="mb-4 w-fit">분석 완료</Badge>
-                <CardTitle className="text-3xl leading-10 text-brown-600 lg:text-4xl lg:leading-[3rem]">{isAdjusted ? "답변을 반영한 최종 결과" : result.title}</CardTitle>
-                <CardDescription className="mt-3 max-w-2xl text-base leading-7">{isAdjusted ? "사진 분석 결과와 사용자 답변을 반영한 최종 톤입니다." : result.description}</CardDescription>
+                <CardTitle className="text-3xl leading-10 text-brown-600 lg:text-4xl lg:leading-[3rem]">{isAdjusted ? "답변을 반영한 최종 톤" : result.title}</CardTitle>
+                <CardDescription className="mt-3 max-w-2xl text-base leading-7">{isAdjusted ? "사진 분석과 설문 답변을 함께 반영했습니다." : result.description}</CardDescription>
               </CardHeader>
 
               <CardContent className="grid gap-8 p-7 pt-3 lg:grid-cols-[13rem_1fr] lg:p-9 lg:pt-4">
                 <div className="flex flex-col items-center text-center">
-                  <div className={`flex size-40 items-center justify-center rounded-full ${result.accentClassName} p-3 shadow-md`}>
+                  <div className={`flex size-40 items-center justify-center rounded-full ${result.accentClassName} p-3 shadow-[0_6px_18px_rgb(43_33_31/0.05)]`}>
                     <img src={result.imageUrl} className="size-full rounded-full object-cover" alt={`${result.seasonLabel} 퍼스널 컬러`} />
                   </div>
-                  {confidence !== null ? <div className="mt-5 rounded-full bg-cream-50 px-5 py-2 text-sm leading-5 text-brown-300">최종 일치도 {confidence}%</div> : null}
+                  {confidence !== null ? <div className="mt-5 rounded-full border border-cream-200 bg-white px-5 py-2 text-sm leading-5 text-brown-300">최종 일치도 {confidence}%</div> : null}
                 </div>
 
                 <div className="flex flex-col justify-center">
                   <h2 className="text-2xl leading-8 text-brown-600">{result.detailTitle}</h2>
-                  <p className="mt-4 text-base leading-8 text-[#7a625c]">{result.detailDescription}</p>
-                  {finalResult.correctionApplied ? <div className="mt-5 rounded-2xl bg-cream-50 px-4 py-3 text-sm leading-6 text-[#7a625c]">AI 분석 결과에 설문 답변을 반영한 결과입니다.</div> : null}
+                  <p className="mt-4 text-base leading-8 text-[#756861]">{result.detailDescription}</p>
+                  {finalResult.correctionApplied ? <div className="mt-5 rounded-2xl border border-cream-200 bg-cream-50 px-4 py-3 text-sm leading-6 text-[#756861]">AI 분석 결과에 설문 답변을 반영한 결과입니다.</div> : null}
                 </div>
               </CardContent>
             </Card>
 
             <div className="grid gap-5">
-              <Card className="border-none bg-white">
+              <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-xl">베스트 컬러</CardTitle>
                   <CardDescription>{result.toneLabel}에 잘 어울리는 대표 컬러입니다.</CardDescription>
@@ -207,7 +207,7 @@ export default function Result() {
                 </CardContent>
               </Card>
 
-              <Card className="border-none bg-white">
+              <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-xl">결과 피드백</CardTitle>
                   <CardDescription>결과가 체감과 맞는지 선택해주세요.</CardDescription>
@@ -237,7 +237,7 @@ export default function Result() {
 
                   {feedback?.matchStatus === "unclear" || feedback?.matchStatus === "not_match" ? (
                     <div className="mt-5">
-                      <p className="text-sm leading-6 text-[#7a625c]">더 가깝게 느껴지는 톤을 선택해주세요.</p>
+                      <p className="text-sm leading-6 text-[#756861]">더 가깝게 느껴지는 톤을 선택해주세요.</p>
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         {[
                           { value: "spring", label: "봄 웜톤" },
@@ -260,7 +260,7 @@ export default function Result() {
                 </CardContent>
               </Card>
 
-              <Button type="button" size="lg" className="w-full rounded-full" onClick={() => navigate("/recommendation")}>
+              <Button type="button" size="lg" className="w-full rounded-full" onClick={() => navigate("/products")}>
                 내게 맞는 상품 보기
                 <HiArrowRight className="size-5" aria-hidden="true" />
               </Button>

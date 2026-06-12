@@ -2,13 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "../lib/router";
-import {
-  HiChevronRight,
-  HiHome,
-  HiMagnifyingGlass,
-  HiShieldCheck,
-} from "react-icons/hi2";
-import { getCurrentUser, requireAdmin, setAuthReturnTo } from "../api/auth";
+import { HiChevronRight, HiMagnifyingGlass } from "react-icons/hi2";
+import { requireAdmin } from "../api/auth";
 import { fetchAdminInquiries, type Inquiry } from "../api/inquiries";
 import {
   getInquiryCategoryLabel,
@@ -22,240 +17,153 @@ import {
 } from "../constants/inquiries";
 
 function formatDate(value: string | null) {
-  if (!value) {
-    return "-";
-  }
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
+
+const statusBadgeClass: Record<InquiryStatus, string> = {
+  pending: "bg-amber-100 text-amber-700",
+  in_progress: "bg-blue-100 text-blue-700",
+  answered: "bg-green-100 text-green-700",
+  closed: "bg-cream-100 text-brown-400",
+};
 
 export default function AdminInquiries() {
   const navigate = useNavigate();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [statusFilter, setStatusFilter] = useState<InquiryStatus | "all">("all");
-  const [categoryFilter, setCategoryFilter] =
-    useState<InquiryCategory | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<InquiryCategory | "all">("all");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
-
-    const loadAdminInquiries = async () => {
-      setIsLoading(true);
-      setErrorMessage("");
-
-      try {
-        const user = await getCurrentUser();
-
-        if (!user) {
-          setAuthReturnTo("/admin/inquiries");
-          navigate("/login", { replace: true });
-          return;
-        }
-
-        await requireAdmin();
-        const nextInquiries = await fetchAdminInquiries({
-          status: statusFilter,
-          category: categoryFilter,
-          search,
-        });
-
-        if (isMounted) {
-          setInquiries(nextInquiries);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : "관리자 문의 목록을 불러오지 못했어요.",
-          );
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
     const timerId = window.setTimeout(() => {
-      void loadAdminInquiries();
+      const load = async () => {
+        setIsLoading(true);
+        setErrorMessage("");
+        try {
+          await requireAdmin();
+          const data = await fetchAdminInquiries({ status: statusFilter, category: categoryFilter, search });
+          if (isMounted) setInquiries(data);
+        } catch (err) {
+          if (isMounted) setErrorMessage(err instanceof Error ? err.message : "문의 목록을 불러오지 못했어요.");
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      };
+      void load();
     }, 250);
-
-    return () => {
-      isMounted = false;
-      window.clearTimeout(timerId);
-    };
+    return () => { isMounted = false; window.clearTimeout(timerId); };
   }, [categoryFilter, navigate, search, statusFilter]);
 
   return (
-    <main className="min-h-dvh bg-white px-5 pb-12 pt-6">
-      <header className="flex items-center justify-between">
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center text-brown-600"
-          aria-label="홈으로 이동"
-          onClick={() => navigate("/home")}
-        >
-          <HiHome className="size-7" aria-hidden="true" />
-        </button>
-        <h1 className="text-2xl font-normal leading-7.5 text-[#1f1b1b]">
-          관리자
-        </h1>
-        <div className="flex size-10 items-center justify-center rounded-full bg-cream-100 text-brown-600">
-          <HiShieldCheck className="size-6" aria-hidden="true" />
-        </div>
+    <div className="flex flex-col gap-6">
+      <header>
+        <h1 className="text-2xl font-medium text-brown-600">문의 관리</h1>
+        <p className="mt-1 text-sm text-brown-400">총 {isLoading ? "..." : inquiries.length}건 표시 중</p>
       </header>
 
-      <section className="mt-10 rounded-3xl bg-cream-50 px-5 py-5">
-        <h2 className="text-3xl font-normal leading-10 text-brown-600">
-          문의 관리
-        </h2>
-        <div className="mt-5 grid grid-cols-2 gap-2 text-sm font-normal leading-5">
-          <button
-            type="button"
-            className="rounded-full bg-white px-4 py-2 text-brown-600"
-            onClick={() => navigate("/admin/users")}
-          >
-            회원 관리
-          </button>
-          <button
-            type="button"
-            className="rounded-full bg-brown-600 px-4 py-2 text-white"
-          >
-            문의 관리
-          </button>
-          {["제품 관리", "진단 로그", "피드백 관리", "런칭 대기자"].map((item) => (
-            <button
-              key={item}
-              type="button"
-              className="rounded-full bg-white px-4 py-2 text-[#b2a19b]"
-              disabled
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-6 space-y-3">
-        <div className="relative">
-          <HiMagnifyingGlass
-            className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#9b8179]"
-            aria-hidden="true"
-          />
+      {/* 필터 */}
+      <div className="app-panel flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
+          <HiMagnifyingGlass className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-brown-300" />
           <input
-            className="h-13 w-full rounded-2xl border border-cream-200 bg-white pl-12 pr-4 text-base font-normal leading-6 text-brown-600 outline-none placeholder:text-[#b9aaa4]"
+            className="h-10 w-full rounded-xl border border-cream-200 bg-white pl-10 pr-4 text-sm text-brown-600 outline-none placeholder:text-brown-300 focus:ring-2 focus:ring-brown-200"
             value={search}
             placeholder="제목 또는 내용 검색"
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex gap-2">
           <select
-            className="h-13 rounded-2xl border border-cream-200 bg-white px-4 text-base font-normal leading-6 text-brown-600 outline-none"
+            className="h-10 rounded-xl border border-cream-200 bg-white px-3 text-sm text-brown-600 outline-none"
             value={statusFilter}
-            onChange={(event) =>
-              setStatusFilter(event.target.value as InquiryStatus | "all")
-            }
+            onChange={(e) => setStatusFilter(e.target.value as InquiryStatus | "all")}
           >
             <option value="all">상태 전체</option>
-            {inquiryStatuses.map((status) => (
-              <option key={status} value={status}>
-                {inquiryStatusLabels[status]}
-              </option>
-            ))}
+            {inquiryStatuses.map((s) => <option key={s} value={s}>{inquiryStatusLabels[s]}</option>)}
           </select>
-
           <select
-            className="h-13 rounded-2xl border border-cream-200 bg-white px-4 text-base font-normal leading-6 text-brown-600 outline-none"
+            className="h-10 rounded-xl border border-cream-200 bg-white px-3 text-sm text-brown-600 outline-none"
             value={categoryFilter}
-            onChange={(event) =>
-              setCategoryFilter(event.target.value as InquiryCategory | "all")
-            }
+            onChange={(e) => setCategoryFilter(e.target.value as InquiryCategory | "all")}
           >
             <option value="all">카테고리 전체</option>
-            {inquiryCategories.map((category) => (
-              <option key={category} value={category}>
-                {inquiryCategoryLabels[category]}
-              </option>
-            ))}
+            {inquiryCategories.map((c) => <option key={c} value={c}>{inquiryCategoryLabels[c]}</option>)}
           </select>
         </div>
-      </section>
+      </div>
 
-      <section className="mt-6">
-        {isLoading ? (
-          <article className="rounded-3xl bg-cream-50 px-6 py-8">
-            <p className="text-base font-normal leading-7 text-[#7a625c]">
-              문의 목록을 불러오는 중입니다.
-            </p>
-          </article>
-        ) : null}
+      {errorMessage ? <p className="rounded-2xl bg-red/5 px-4 py-3 text-sm text-red">{errorMessage}</p> : null}
 
-        {errorMessage ? (
-          <article className="rounded-3xl bg-cream-50 px-6 py-8">
-            <p className="text-base font-normal leading-7 text-[#c4544a]">
-              {errorMessage}
-            </p>
-          </article>
-        ) : null}
-
-        {!isLoading && !errorMessage && inquiries.length === 0 ? (
-          <article className="rounded-3xl bg-cream-50 px-6 py-8 text-center">
-            <p className="text-base font-normal leading-7 text-[#7a625c]">
-              조건에 맞는 문의가 없습니다.
-            </p>
-          </article>
-        ) : null}
-
-        <div className="space-y-4">
-          {inquiries.map((inquiry) => (
-            <button
-              key={inquiry.id}
-              type="button"
-              className="w-full rounded-3xl bg-white px-5 py-5 text-left shadow-md"
-              onClick={() => navigate(`/admin/inquiries/${inquiry.id}`)}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-sm font-normal leading-5 text-[#df7e8b]">
-                    {getInquiryCategoryLabel(inquiry.category)} ·{" "}
-                    {getInquiryStatusLabel(inquiry.status)}
-                  </p>
-                  <h3 className="mt-2 truncate text-xl font-normal leading-7 text-brown-600">
-                    {inquiry.title}
-                  </h3>
-                  <p className="mt-3 text-sm font-normal leading-5 text-[#7a625c]">
-                    작성자{" "}
-                    {inquiry.authorNickname ??
-                      inquiry.authorEmail ??
-                      inquiry.displayUserId ??
-                      inquiry.userId}
-                  </p>
-                  <p className="mt-1 text-sm font-normal leading-5 text-[#7a625c]">
-                    작성 {formatDate(inquiry.createdAt)} · 답변{" "}
-                    {formatDate(inquiry.repliedAt)} ·{" "}
-                    {inquiry.adminReply ? "답변 있음" : "답변 없음"}
-                  </p>
-                </div>
-                <HiChevronRight
-                  className="mt-2 size-5 shrink-0 text-[#9b8179]"
-                  aria-hidden="true"
-                />
-              </div>
-            </button>
-          ))}
+      <div className="app-panel overflow-hidden">
+        {/* 데스크탑 테이블 헤더 */}
+        <div className="hidden grid-cols-[3fr_1fr_1fr_2fr_40px] gap-4 border-b border-cream-100 px-5 py-3 text-xs font-medium text-brown-400 lg:grid">
+          <span>제목 / 작성자</span>
+          <span>카테고리</span>
+          <span>상태</span>
+          <span>작성일 · 답변일</span>
+          <span />
         </div>
-      </section>
-    </main>
+
+        {isLoading ? (
+          <div className="flex flex-col divide-y divide-cream-100">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex h-16 items-center px-5">
+                <div className="h-4 flex-1 rounded-full bg-cream-100 animate-pulse" />
+              </div>
+            ))}
+          </div>
+        ) : inquiries.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-brown-400">조건에 맞는 문의가 없습니다.</p>
+        ) : (
+          <div className="flex flex-col divide-y divide-cream-100">
+            {inquiries.map((inquiry) => (
+              <button
+                key={inquiry.id}
+                type="button"
+                className="group w-full text-left transition hover:bg-cream-50"
+                onClick={() => navigate(`/admin/inquiries/${inquiry.id}`)}
+              >
+                {/* 데스크탑 행 */}
+                <div className="hidden grid-cols-[3fr_1fr_1fr_2fr_40px] items-center gap-4 px-5 py-3.5 lg:grid">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-brown-600">{inquiry.title}</p>
+                    <p className="text-xs text-brown-400">{inquiry.authorNickname ?? inquiry.authorEmail ?? inquiry.displayUserId ?? "-"}</p>
+                  </div>
+                  <span className="text-xs text-brown-400">{getInquiryCategoryLabel(inquiry.category)}</span>
+                  <span className={`inline-flex w-fit items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass[inquiry.status as InquiryStatus]}`}>
+                    {getInquiryStatusLabel(inquiry.status)}
+                  </span>
+                  <div>
+                    <p className="text-xs text-brown-400">{formatDate(inquiry.createdAt)}</p>
+                    <p className="text-xs text-brown-300">{inquiry.repliedAt ? `답변 ${formatDate(inquiry.repliedAt)}` : "미답변"}</p>
+                  </div>
+                  <HiChevronRight className="size-4 text-brown-300 group-hover:text-brown-500" />
+                </div>
+
+                {/* 모바일 카드 */}
+                <div className="flex items-start justify-between gap-3 px-5 py-4 lg:hidden">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-brown-400">{getInquiryCategoryLabel(inquiry.category)}</span>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs ${statusBadgeClass[inquiry.status as InquiryStatus]}`}>
+                        {getInquiryStatusLabel(inquiry.status)}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 text-base font-medium text-brown-600">{inquiry.title}</p>
+                    <p className="text-sm text-brown-400">{inquiry.authorNickname ?? inquiry.authorEmail ?? "-"}</p>
+                    <p className="mt-1 text-xs text-brown-300">{formatDate(inquiry.createdAt)} · {inquiry.adminReply ? "답변 완료" : "미답변"}</p>
+                  </div>
+                  <HiChevronRight className="mt-1 size-4 shrink-0 text-brown-300" />
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 const AI_DIAGNOSIS_ENDPOINT =
+  process.env.NEXT_PUBLIC_DIAGNOSIS_API_URL ??
   process.env.AI_DIAGNOSIS_ENDPOINT ??
   process.env.AI_DIAGNOSIS_KEY ??
   process.env.NEXT_PUBLIC_AI_DIAGNOSIS_KEY ??

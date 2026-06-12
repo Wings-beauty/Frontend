@@ -46,6 +46,17 @@ export type SavedProductWithProduct = {
   price: number | null;
 };
 
+export type AdminCommunityPost = {
+  id: number;
+  category: string;
+  title: string;
+  content: string;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+};
+
 export type AdminUserDetail = {
   id: string;
   displayId: string;
@@ -62,6 +73,7 @@ export type AdminUserDetail = {
   diagnosisResults: AdminDiagnosisResult[];
   savedProducts: SavedProductWithProduct[];
   inquiries: Inquiry[];
+  communityPosts: AdminCommunityPost[];
 };
 
 type ProfileRow = {
@@ -123,6 +135,20 @@ type InquiryRow = {
   is_deleted: boolean;
   created_at: string;
   updated_at: string;
+};
+
+type CommunityPostRow = {
+  id: number;
+  user_id: string;
+  category: string;
+  title: string;
+  content: string;
+  view_count: number;
+  like_count: number;
+  comment_count: number;
+  is_deleted: boolean;
+  is_hidden: boolean;
+  created_at: string;
 };
 
 function normalizeRole(role: string | null): ProfileRole {
@@ -329,6 +355,7 @@ export async function fetchAdminUserDetail(userId: string) {
     { data: diagnosisRows },
     { data: savedRows },
     { data: inquiryRows },
+    { data: communityPostRows },
     { data: waitlistByUser },
     { data: waitlistByEmail },
   ] = await Promise.all([
@@ -351,6 +378,14 @@ export async function fetchAdminUserDetail(userId: string) {
       .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .returns<InquiryRow[]>(),
+    supabase
+      .from("community_posts")
+      .select("id, user_id, category, title, content, view_count, like_count, comment_count, is_deleted, is_hidden, created_at")
+      .eq("user_id", profileId)
+      .eq("is_deleted", false)
+      .eq("is_hidden", false)
+      .order("created_at", { ascending: false })
+      .returns<CommunityPostRow[]>(),
     supabase
       .from("launch_waitlist")
       .select("user_id, email")
@@ -419,5 +454,15 @@ export async function fetchAdminUserDetail(userId: string) {
       };
     }),
     inquiries: (inquiryRows ?? []).map(mapInquiry),
+    communityPosts: (communityPostRows ?? []).map((row) => ({
+      id: row.id,
+      category: row.category,
+      title: row.title,
+      content: row.content,
+      viewCount: row.view_count,
+      likeCount: row.like_count,
+      commentCount: row.comment_count,
+      createdAt: row.created_at,
+    })),
   } satisfies AdminUserDetail;
 }

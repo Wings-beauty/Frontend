@@ -4,15 +4,8 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "../lib/router";
 import { HiArrowLeft, HiTrash } from "react-icons/hi2";
 import { getCurrentUser, setAuthReturnTo } from "../api/auth";
-import {
-  fetchMyInquiry,
-  softDeleteMyInquiry,
-  type Inquiry,
-} from "../api/inquiries";
-import {
-  getInquiryCategoryLabel,
-  getInquiryStatusLabel,
-} from "../constants/inquiries";
+import { fetchMyInquiry, softDeleteMyInquiry, type Inquiry } from "../api/inquiries";
+import { getInquiryCategoryLabel, getInquiryStatusLabel } from "../constants/inquiries";
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -64,11 +57,7 @@ export default function InquiryDetail() {
         }
       } catch (error) {
         if (isMounted) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : "문의 상세를 불러오지 못했어요.",
-          );
+          setErrorMessage(error instanceof Error ? error.message : "문의 상세를 불러오지 못했어요.");
         }
       } finally {
         if (isMounted) {
@@ -96,105 +85,65 @@ export default function InquiryDetail() {
       await softDeleteMyInquiry(inquiry.id);
       navigate("/inquiries", { replace: true });
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "문의 삭제에 실패했어요.",
-      );
+      setErrorMessage(error instanceof Error ? error.message : "문의 삭제에 실패했어요.");
     } finally {
       setIsDeleting(false);
     }
   };
 
   return (
-    <main className="relative min-h-dvh w-full overflow-hidden bg-white px-5 pb-12 pt-6">
+    <main className="app-page px-5 pb-12 pt-6 lg:px-10 lg:py-8">
+      <div className="mx-auto flex w-full max-w-360 flex-col gap-6">
       <header className="relative flex items-center justify-between">
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center text-brown-600"
-          aria-label="목록으로 이동"
-          onClick={() => navigate("/inquiries")}
-        >
+        <button type="button" className="flex size-10 items-center justify-center text-brown-600" aria-label="목록으로 이동" onClick={() => navigate("/inquiries")}>
           <HiArrowLeft className="size-6" aria-hidden="true" />
         </button>
-        <h1 className="text-2xl font-normal leading-7.5 text-[#1f1b1b]">
-          WINGS
-        </h1>
+        <h1 className="text-2xl font-normal leading-7.5 text-brown-600">WINGS</h1>
         <div className="size-10" aria-hidden="true" />
       </header>
 
       <section className="mt-12">
-        <h2 className="text-3xl font-normal leading-10 text-brown-600">
-          문의 상세
-        </h2>
-        {successMessage ? (
-          <p className="mt-3 text-base font-normal leading-7 text-[#6bb594]">
-            {successMessage}
-          </p>
-        ) : null}
+        <h2 className="text-3xl font-normal leading-10 text-brown-600">문의 상세</h2>
+        {successMessage ? <p className="mt-3 text-base font-normal leading-7 text-[#6bb594]">{successMessage}</p> : null}
       </section>
 
       {isLoading ? (
-        <section className="mt-10 rounded-3xl bg-cream-50 px-6 py-8">
-          <p className="text-base font-normal leading-7 text-[#7a625c]">
-            문의를 불러오는 중입니다.
-          </p>
+        <section className="mt-10 app-card px-6 py-8">
+          <p className="text-base font-normal leading-7 text-[#756861]">문의를 불러오는 중입니다.</p>
         </section>
       ) : null}
 
       {!isLoading && !inquiry ? (
-        <section className="mt-10 rounded-3xl bg-cream-50 px-6 py-8">
-          <p className="text-base font-normal leading-7 text-[#7a625c]">
-            문의를 찾을 수 없습니다.
-          </p>
+        <section className="mt-10 app-card px-6 py-8">
+          <p className="text-base font-normal leading-7 text-[#756861]">문의를 찾을 수 없습니다.</p>
         </section>
       ) : null}
 
       {inquiry ? (
         <section className="mt-10 space-y-6">
-          <article className="rounded-3xl bg-white px-6 py-7 shadow-lg">
+          <article className="app-card px-6 py-7">
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-cream-100 px-4 py-1.5 text-sm font-normal leading-5 text-brown-600">
-                {getInquiryCategoryLabel(inquiry.category)}
-              </span>
-              <span className="rounded-full bg-[#ffe9e2] px-4 py-1.5 text-sm font-normal leading-5 text-brown-600">
-                {getInquiryStatusLabel(inquiry.status)}
-              </span>
+              <span className="rounded-full bg-cream-100 px-4 py-1.5 text-sm font-normal leading-5 text-brown-600">{getInquiryCategoryLabel(inquiry.category)}</span>
+              <span className="rounded-full bg-[#ffe9e2] px-4 py-1.5 text-sm font-normal leading-5 text-brown-600">{getInquiryStatusLabel(inquiry.status)}</span>
             </div>
-            <h3 className="mt-5 text-2xl font-normal leading-8 text-brown-600">
-              {inquiry.title}
-            </h3>
-            <p className="mt-3 text-sm font-normal leading-5 text-[#7a625c]">
-              작성일 {formatDate(inquiry.createdAt)}
-            </p>
-            <p className="mt-7 whitespace-pre-wrap text-base font-normal leading-7 text-[#3a2527]">
-              {inquiry.content}
-            </p>
+            <h3 className="mt-5 text-2xl font-normal leading-8 text-brown-600">{inquiry.title}</h3>
+            <p className="mt-3 text-sm font-normal leading-5 text-[#756861]">작성일 {formatDate(inquiry.createdAt)}</p>
+            <p className="mt-7 whitespace-pre-wrap text-base font-normal leading-7 text-[#3a2527]">{inquiry.content}</p>
           </article>
 
-          <article className="rounded-3xl bg-cream-50 px-6 py-7">
-            <h3 className="text-xl font-normal leading-8 text-brown-600">
-              관리자 답변
-            </h3>
+          <article className="app-card px-6 py-7">
+            <h3 className="text-xl font-normal leading-8 text-brown-600">관리자 답변</h3>
             {inquiry.adminReply ? (
               <>
-                <p className="mt-3 text-sm font-normal leading-5 text-[#7a625c]">
-                  답변일 {formatDate(inquiry.repliedAt)}
-                </p>
-                <p className="mt-5 whitespace-pre-wrap text-base font-normal leading-7 text-[#3a2527]">
-                  {inquiry.adminReply}
-                </p>
+                <p className="mt-3 text-sm font-normal leading-5 text-[#756861]">답변일 {formatDate(inquiry.repliedAt)}</p>
+                <p className="mt-5 whitespace-pre-wrap text-base font-normal leading-7 text-[#3a2527]">{inquiry.adminReply}</p>
               </>
             ) : (
-              <p className="mt-5 text-base font-normal leading-7 text-[#7a625c]">
-                아직 답변 대기 중입니다.
-              </p>
+              <p className="mt-5 text-base font-normal leading-7 text-[#756861]">아직 답변 대기 중입니다.</p>
             )}
           </article>
 
-          {errorMessage ? (
-            <p className="text-center text-sm font-normal leading-5 text-[#c4544a]">
-              {errorMessage}
-            </p>
-          ) : null}
+          {errorMessage ? <p className="text-center text-sm font-normal leading-5 text-[#c4544a]">{errorMessage}</p> : null}
 
           <button
             type="button"
@@ -207,6 +156,7 @@ export default function InquiryDetail() {
           </button>
         </section>
       ) : null}
+      </div>
     </main>
   );
 }

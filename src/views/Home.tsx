@@ -2,9 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { HiArrowRight, HiBell, HiChatBubbleBottomCenterText, HiHeart, HiHome, HiMiniUser, HiNewspaper, HiSparkles, HiUserGroup } from "react-icons/hi2";
-import { fetchHomeDashboard, joinLaunchWaitlist } from "../api/home";
-import { fetchRecommendedProducts, fetchSavedProductsForUser, removeSavedProduct, saveSavedProduct, type RecommendedProduct } from "../api/products";
+import { HiArrowRight, HiChatBubbleBottomCenterText, HiChatBubbleLeftRight, HiEye, HiHeart, HiNewspaper, HiSparkles } from "react-icons/hi2";
+import { fetchHomeDashboard } from "../api/home";
+import { fetchRecommendedProducts, fetchSavedProductsForUser, toggleSavedProduct, type RecommendedProduct } from "../api/products";
+import { fetchCommunityPosts, getBoardMeta, POST_CATEGORY_LABELS } from "../api/community";
+import { fetchPublishedNews } from "../api/news";
 import ProductDetailModal from "../components/ProductDetailModal";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "../components/ui/carousel";
 import { useNavigate } from "../lib/router";
@@ -13,9 +15,9 @@ import Image from "next/image";
 const heroSlides = [
   {
     eyebrow: "AI Personal Color",
-    title: "내 톤을 알면, 리뷰도 제품도 다르게 보입니다.",
-    description: "WINGS는 사진 한 장으로 퍼스널컬러를 진단하고, 같은 톤 사람들이 검증한 리뷰와 추천 제품까지 연결합니다.",
-    cta: "AI 톤 진단 시작하기",
+    title: "내 톤에 맞는 뷰티 선택.",
+    description: "사진 한 장으로 퍼스널 컬러를 확인하고, 같은 톤의 리뷰와 제품을 함께 살펴보세요.",
+    cta: "톤 진단 시작",
     mode: "diagnosis",
     visualTitle: "Tone Scan",
     visualMeta: "AI 진단 결과를 기준으로 리뷰와 추천을 연결합니다.",
@@ -23,9 +25,9 @@ const heroSlides = [
   },
   {
     eyebrow: "Tone Community",
-    title: "나와 같은 톤의 사람들이 고른 이유를 먼저 봅니다.",
-    description: "인기순이 아니라 비슷한 톤 사용자들의 발색 후기, 저장, 실패 경험을 기준으로 선택을 도와줍니다.",
-    cta: "톤별 리뷰 보기",
+    title: "같은 톤의 선택을 먼저 봅니다.",
+    description: "발색 후기, 저장한 제품, 실패 경험까지 톤별로 모아 더 빠르게 비교할 수 있어요.",
+    cta: "리뷰 보기",
     mode: "community",
     visualTitle: "Same Tone Reviews",
     visualMeta: "같은 톤 사용자의 후기와 발색 경험을 먼저 봅니다.",
@@ -33,9 +35,9 @@ const heroSlides = [
   },
   {
     eyebrow: "Tone Based Recommendation",
-    title: "추천은 상품 목록이 아니라, 내 톤에서 시작됩니다.",
-    description: "진단 결과와 커뮤니티 반응을 함께 보고 내 톤에 맞는 제품만 좁혀서 확인하세요.",
-    cta: "추천 흐름 보기",
+    title: "추천은 내 톤에서 시작됩니다.",
+    description: "진단 결과와 커뮤니티 반응을 함께 보고 어울리는 제품만 깔끔하게 좁혀보세요.",
+    cta: "상품 보기",
     mode: "recommendation",
     visualTitle: "Curated For Your Tone",
     visualMeta: "제품은 마지막 단계입니다. 먼저 내 톤과 실제 리뷰를 확인합니다.",
@@ -43,16 +45,15 @@ const heroSlides = [
   },
 ] as const;
 
-const communityPreview = ["여름 쿨 유저들이 저장한 로즈 립 후기", "봄 웜이 실패 적었다고 말한 코랄 블러셔", "가을 웜 파우치에서 자주 언급된 로즈 브라운"];
-const toneCategories = ["AI 진단", "같은 톤 후기", "톤 리포트", "추천 제품"];
+const toneCategories = ["톤 진단", "톤별 후기", "컬러 리포트", "추천 상품"];
 const HERO_CAROUSEL_INTERVAL_MS = 8000;
 
 function HomeSkeleton() {
   return (
     <main className="min-h-dvh px-5 py-5 lg:px-10">
       <div className="mx-auto flex max-w-360 flex-col gap-5">
-        <div className="h-14 rounded-full border border-[#E8D7B2]" />
-        <div className="h-130 rounded-4xl border border-[#E8D7B2]" />
+        <div className="h-14 rounded-2xl border border-cream-200 bg-white" />
+        <div className="h-130 rounded-2xl border border-cream-200 bg-white" />
       </div>
     </main>
   );
@@ -63,7 +64,7 @@ function OutlineButton({ children, onClick, className = "", disabled }: { childr
     <button
       type="button"
       disabled={disabled}
-      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#E8D7B2] px-5 text-sm text-[#3A2527] transition disabled:opacity-50 ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-cream-200 bg-white px-5 text-sm text-brown-600 transition hover:border-cream-400 hover:bg-cream-50 disabled:opacity-50 ${className}`}
       onClick={onClick}
     >
       {children}
@@ -75,10 +76,10 @@ function SectionHeader({ eyebrow, title, actionLabel, onAction }: { eyebrow: str
   return (
     <div className="flex items-end justify-between gap-4">
       <div>
-        <p className="text-sm text-[#C98F7A]">{eyebrow}</p>
-        <h2 className="text-2xl text-[#3A2527]">{title}</h2>
+        <p className="app-eyebrow">{eyebrow}</p>
+        <h2 className="text-2xl font-medium text-brown-600">{title}</h2>
       </div>
-      <button type="button" className="shrink-0 text-sm text-[#6B4A3F]" onClick={onAction}>
+      <button type="button" className="shrink-0 text-sm text-brown-300 transition hover:text-brown-600" onClick={onAction}>
         {actionLabel}
       </button>
     </div>
@@ -93,9 +94,9 @@ function HeroBanner({ slide, onPrimaryAction }: { slide: (typeof heroSlides)[num
       </div>
 
       <div className="flex flex-1 flex-col justify-center px-0 py-8 lg:px-14 lg:py-12">
-        <p className="text-sm uppercase tracking-[0.22em] text-[#C98F7A]">{slide.eyebrow}</p>
-        <h1 className="mt-5 max-w-2xl text-2xl leading-[1.08] text-[#3A2527] md:text-4xl">{slide.title}</h1>
-        <p className="mt-6 max-w-xl text-base leading-7 text-[#7A625C] md:text-lg md:leading-8">{slide.description}</p>
+        <p className="app-eyebrow">{slide.eyebrow}</p>
+        <h1 className="mt-5 max-w-2xl text-3xl font-medium leading-[1.12] text-brown-600 md:text-5xl">{slide.title}</h1>
+        <p className="app-copy mt-6 max-w-xl text-base md:text-lg">{slide.description}</p>
         <div className="mt-7">
           <OutlineButton onClick={onPrimaryAction}>
             {slide.cta}
@@ -113,8 +114,6 @@ export default function Home() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [selectedProduct, setSelectedProduct] = useState<RecommendedProduct | null>(null);
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
-  const [isWaitlistSuccess, setIsWaitlistSuccess] = useState(false);
 
   const homeQuery = useQuery({
     queryKey: ["home-dashboard"],
@@ -133,7 +132,7 @@ export default function Home() {
         return { products: [] as RecommendedProduct[], savedProductIds: [] as number[] };
       }
 
-      const [recommendedProducts, savedProducts] = await Promise.all([fetchRecommendedProducts(season), fetchSavedProductsForUser(userId)]);
+      const [recommendedProducts, savedProducts] = await Promise.all([fetchRecommendedProducts(season), fetchSavedProductsForUser()]);
 
       return {
         products: recommendedProducts.slice(0, 4),
@@ -145,6 +144,22 @@ export default function Home() {
 
   const products = productsQuery.data?.products ?? [];
   const savedProductIds = useMemo(() => new Set(productsQuery.data?.savedProductIds ?? []), [productsQuery.data?.savedProductIds]);
+
+  const communityQuery = useQuery({
+    queryKey: ["home-community"],
+    queryFn: () => fetchCommunityPosts({ pageSize: 3 }),
+    staleTime: 2 * 60_000,
+  });
+
+  const newsQuery = useQuery({
+    queryKey: ["home-news"],
+    queryFn: fetchPublishedNews,
+    staleTime: 5 * 60_000,
+    select: (data) => data.slice(0, 3),
+  });
+
+  const communityPosts = communityQuery.data ?? [];
+  const newsList = newsQuery.data ?? [];
 
   useEffect(() => {
     if (!carouselApi) return;
@@ -182,8 +197,7 @@ export default function Home() {
   const likeMutation = useMutation({
     mutationFn: async ({ productId, wasLiked }: { productId: number; wasLiked: boolean }) => {
       if (!userId) throw new Error("Login required");
-      if (wasLiked) await removeSavedProduct(userId, productId);
-      else await saveSavedProduct(userId, productId);
+      await toggleSavedProduct(productId);
     },
     onMutate: async ({ productId, wasLiked }) => {
       const queryKey = ["home-products", season, userId];
@@ -208,11 +222,6 @@ export default function Home() {
     },
   });
 
-  const waitlistMutation = useMutation({
-    mutationFn: () => joinLaunchWaitlist("home_first_screen"),
-    onSuccess: () => setIsWaitlistSuccess(true),
-  });
-
   const handleToggleLike = (productId: number) => {
     if (!userId) {
       navigate("/login?returnTo=/home");
@@ -227,66 +236,16 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-dvh pb-24 text-[#3A2527] lg:pb-12">
-      <header className="sticky top-0 z-40 border-b border-[#E8D7B2] backdrop-blur">
-        <div className="mx-auto flex max-w-360 items-center justify-between px-5 py-5 lg:px-10">
-          <button type="button" className="text-2xl tracking-[0.26em] text-[#3A2527]" onClick={() => navigate("/home")}>
-            WINGS
-          </button>
-
-          <nav className="hidden items-center gap-16 text-sm uppercase tracking-[0.14em] text-[#6B4A3F] lg:flex">
-            <button type="button" onClick={() => navigate("/photo")}>
-              Diagnose
-            </button>
-            <button type="button" onClick={() => setIsWaitlistOpen(true)}>
-              Community
-            </button>
-            <button type="button" onClick={() => navigate("/recommendation")}>
-              Recommendations
-            </button>
-            <button type="button" onClick={() => setIsWaitlistOpen(true)}>
-              News
-            </button>
-          </nav>
-
-          <nav className="hidden items-center gap-7 text-sm uppercase tracking-[0.14em] text-[#6B4A3F] md:flex">
-            <button type="button" className="flex size-10 items-center justify-center rounded-full border border-[#E8D7B2] text-[#6B4A3F]" aria-label="알림" onClick={() => setIsWaitlistOpen(true)}>
-              <HiBell className="size-5" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className="flex size-10 items-center justify-center overflow-hidden rounded-full border border-[#E8D7B2] text-[#6B4A3F]"
-              aria-label="마이페이지"
-              onClick={() => navigate("/mypage")}
-            >
-              {dashboard?.profile.profileImageUrl ? <img src={dashboard.profile.profileImageUrl} alt="" className="size-full object-cover" /> : <HiMiniUser className="size-5" aria-hidden="true" />}
-            </button>
-          </nav>
-        </div>
-
-        <nav className="mx-auto flex max-w-360 items-center gap-2 overflow-x-auto px-5 pb-4 text-sm md:hidden">
-          {[
-            { label: "AI 진단", action: () => navigate("/photo") },
-            { label: "커뮤니티", action: () => setIsWaitlistOpen(true) },
-            { label: "추천", action: () => navigate("/recommendation") },
-            { label: "뉴스", action: () => setIsWaitlistOpen(true) },
-          ].map((item) => (
-            <button key={item.label} type="button" className="shrink-0 rounded-full border border-[#E8D7B2] px-4 py-2 text-[#6B4A3F]" onClick={item.action}>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </header>
-
+    <main className="app-page pb-24 lg:pb-12">
       <div className="mx-auto flex w-full max-w-360 flex-col gap-10 px-5 pt-5 lg:px-10 lg:pt-8">
-        <section className="relative flex flex-col justify-between overflow-hidden border border-[#E8D7B2] rounded-4xl shadow-[0_18px_60px_rgb(58_37_39/0.08)]">
+        <section className="app-panel relative flex flex-col justify-between overflow-hidden rounded-2xl">
           <Carousel setApi={setCarouselApi} opts={{ align: "start", loop: true, duration: 60 }} className="flex flex-1 flex-col p-4">
             <CarouselPrevious className="absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 lg:flex" aria-label="이전 배너 보기" />
             <CarouselNext className="absolute right-4 top-1/2 z-10 hidden -translate-y-1/2 lg:flex" aria-label="다음 배너 보기" />
             <CarouselContent className="flex-1">
               {heroSlides.map((slide) => (
                 <CarouselItem key={slide.eyebrow}>
-                  <HeroBanner slide={slide} onPrimaryAction={slide.mode === "community" ? () => setIsWaitlistOpen(true) : () => navigate("/photo")} />
+                  <HeroBanner slide={slide} onPrimaryAction={slide.mode === "community" ? () => navigate("/community") : slide.mode === "recommendation" ? () => navigate("/products") : () => navigate("/photo")} />
                 </CarouselItem>
               ))}
             </CarouselContent>
@@ -297,7 +256,7 @@ export default function Home() {
                 <button
                   key={slide.eyebrow}
                   type="button"
-                  className={`h-2 rounded-full border border-[#3A2527] transition-all ${index === activeSlide ? "w-10" : "w-2"}`}
+                  className={`h-2 rounded-full border border-brown-600 transition-all ${index === activeSlide ? "w-10 bg-brown-600" : "w-2 bg-white"}`}
                   aria-label={`${index + 1}번 배너 보기`}
                   onClick={() => selectSlide(index)}
                 />
@@ -307,15 +266,23 @@ export default function Home() {
           </Carousel>
         </section>
 
-        <section className="flex flex-col gap-4 border-y border-[#E8D7B2] py-5 lg:flex-row lg:items-center lg:justify-between">
-          <p className="text-sm uppercase tracking-[0.2em] text-[#C98F7A]">Curated paths</p>
+        <section className="flex flex-col gap-4 border-y border-cream-200 py-5 lg:flex-row lg:items-center lg:justify-between">
+          <p className="app-eyebrow">Curated paths</p>
           <div className="flex flex-wrap gap-3">
             {toneCategories.map((category) => (
               <button
                 key={category}
                 type="button"
-                className="rounded-full border border-[#E8D7B2] px-5 py-2 text-sm text-[#6B4A3F]"
-                onClick={category === "AI 진단" ? () => navigate("/photo") : () => setIsWaitlistOpen(true)}
+                className="rounded-full border border-cream-200 bg-white px-5 py-2 text-sm text-brown-300 transition hover:border-cream-400 hover:text-brown-600"
+                onClick={
+                  category === "톤 진단"
+                    ? () => navigate("/photo")
+                    : category === "톤별 후기"
+                      ? () => navigate("/community")
+                      : category === "컬러 리포트"
+                        ? () => navigate("/news")
+                        : () => navigate("/products")
+                }
               >
                 {category}
               </button>
@@ -335,122 +302,152 @@ export default function Home() {
               icon: HiChatBubbleBottomCenterText,
               title: "같은 톤 리뷰",
               description: "나와 비슷한 톤의 발색 후기 보기",
-              action: () => setIsWaitlistOpen(true),
+              action: () => navigate("/community"),
             },
             {
               icon: HiHeart,
               title: "톤 기반 추천",
               description: "추천 이유가 있는 제품만 확인하기",
-              action: () => navigate(hasTone ? "/recommendation" : "/photo"),
+              action: () => navigate(hasTone ? "/products" : "/photo"),
             },
           ].map((item) => (
             <button
               key={item.title}
               type="button"
-              className="flex flex-1 items-start justify-between gap-4 rounded-[24px] border border-[#E8D7B2] px-5 py-5 text-left text-[#3A2527]"
+              className="app-card flex flex-1 items-start justify-between gap-4 px-5 py-5 text-left text-brown-600 transition hover:-translate-y-0.5"
               onClick={item.action}
             >
               <span className="flex items-start gap-3">
-                <item.icon className="mt-0.5 size-5 shrink-0 text-[#C98F7A]" aria-hidden="true" />
+                <item.icon className="mt-0.5 size-5 shrink-0 text-[#A66555]" aria-hidden="true" />
                 <span>
                   <strong className="block text-base font-normal">{item.title}</strong>
-                  <span className="mt-1 block text-sm leading-5 text-[#7A625C]">{item.description}</span>
+                  <span className="mt-1 block text-sm leading-5 text-[#756861]">{item.description}</span>
                 </span>
               </span>
-              <HiArrowRight className="mt-1 size-4 shrink-0 text-[#7A625C]" aria-hidden="true" />
+              <HiArrowRight className="mt-1 size-4 shrink-0 text-[#756861]" aria-hidden="true" />
             </button>
           ))}
         </section>
 
         <section className="flex flex-col gap-8 lg:flex-row">
           <div className="flex flex-1 flex-col">
-            <SectionHeader eyebrow="Preview" title="같은 톤 리뷰 미리보기" actionLabel="더 보기" onAction={() => setIsWaitlistOpen(true)} />
+            <SectionHeader eyebrow="Community" title="최근 톤 이야기" actionLabel="더 보기" onAction={() => navigate("/community")} />
             <div className="mt-4 flex flex-col gap-3">
-              {communityPreview.map((review) => (
-                <article key={review} className="rounded-[24px] border border-[#E8D7B2] p-5">
-                  <p className="text-base leading-7 text-[#3A2527]">{review}</p>
+              {communityQuery.isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-24 animate-pulse rounded-2xl border border-cream-200 bg-white" />
+                ))
+              ) : communityPosts.length === 0 ? (
+                <article className="rounded-2xl border border-dashed border-cream-200 bg-white p-5">
+                  <p className="text-base leading-7 text-brown-600">아직 게시글이 없어요.</p>
                 </article>
-              ))}
+              ) : (
+                communityPosts.map((post) => {
+                  const board = getBoardMeta(post.category);
+                  return (
+                    <button
+                      key={post.id}
+                      type="button"
+                      className="app-card p-5 text-left transition hover:-translate-y-0.5"
+                      onClick={() => navigate(`/community/${post.id}`)}
+                    >
+                      <span
+                        className="mb-2 inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                        style={{ backgroundColor: board.bgColor, color: board.textColor, border: `1px solid ${board.borderColor}` }}
+                      >
+                        {POST_CATEGORY_LABELS[post.category]}
+                      </span>
+                      <p className="line-clamp-2 text-base leading-7 text-brown-600">{post.title}</p>
+                      <div className="mt-2 flex items-center justify-between text-xs text-brown-300">
+                        <span>{post.authorName}</span>
+                        <span className="flex items-center gap-3">
+                          <span className="flex items-center gap-1"><HiHeart className="size-3.5" />{post.likeCount}</span>
+                          <span className="flex items-center gap-1"><HiChatBubbleLeftRight className="size-3.5" />{post.commentCount}</span>
+                          <span className="flex items-center gap-1"><HiEye className="size-3.5" />{post.viewCount}</span>
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 
           <div className="flex flex-1 flex-col">
-            <SectionHeader eyebrow="Next" title="톤 기반 추천 제품" actionLabel="전체 보기" onAction={() => navigate(hasTone ? "/recommendation" : "/photo")} />
+            <SectionHeader eyebrow="Products" title="톤 기반 상품" actionLabel="전체 보기" onAction={() => navigate(hasTone ? "/products" : "/photo")} />
             <div className="mt-4 flex flex-col gap-3">
               {products.length > 0 ? (
                 products.slice(0, 2).map((product) => (
-                  <article key={product.id} className="flex items-center justify-between gap-4 rounded-[24px] border border-[#E8D7B2] p-5">
+                  <article key={product.id} className="app-card flex items-center justify-between gap-4 p-5">
                     <button type="button" className="min-w-0 text-left" onClick={() => setSelectedProduct(product)}>
-                      <p className="truncate text-sm text-[#7A625C]">{product.brandName}</p>
-                      <h3 className="mt-1 truncate text-base text-[#3A2527]">{product.productName}</h3>
+                      <p className="truncate text-sm text-[#756861]">{product.brandName}</p>
+                      <h3 className="mt-1 truncate text-base text-brown-600">{product.productName}</h3>
                     </button>
-                    <button type="button" className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#E8D7B2]" onClick={() => handleToggleLike(product.id)}>
+                    <button type="button" className="flex size-10 shrink-0 items-center justify-center rounded-full border border-cream-200 bg-white" onClick={() => handleToggleLike(product.id)}>
                       {savedProductIds.has(product.id) ? "♥" : "♡"}
                     </button>
                   </article>
                 ))
               ) : (
-                <article className="rounded-[24px] border border-dashed border-[#E8D7B2] p-5">
-                  <p className="text-base leading-7 text-[#3A2527]">진단 후 내 톤에 맞는 추천 제품이 여기에 연결됩니다.</p>
+                <article className="rounded-2xl border border-dashed border-cream-200 bg-white p-5">
+                  <p className="text-base leading-7 text-brown-600">진단 후 내 톤에 맞는 추천 제품이 여기에 연결됩니다.</p>
                 </article>
               )}
             </div>
           </div>
         </section>
 
-        <section className="flex flex-col gap-4 rounded-[28px] border border-[#E8D7B2] p-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm text-[#C98F7A]">WINGS News</p>
-            <h2 className="mt-1 text-2xl text-[#3A2527]">뷰티 뉴스와 톤 리포트는 준비 중입니다.</h2>
-            <p className="mt-2 text-sm leading-6 text-[#7A625C]">첫 화면에서는 진단과 커뮤니티 연결을 우선 보여주고, 뉴스는 이후 확장됩니다.</p>
-          </div>
-          <HiNewspaper className="size-7 text-[#C98F7A]" aria-hidden="true" />
+        <section className="flex flex-col gap-4">
+          <SectionHeader eyebrow="WINGS News" title="뷰티 뉴스와 톤 리포트" actionLabel="전체 보기" onAction={() => navigate("/news")} />
+          {newsQuery.isLoading ? (
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="overflow-hidden rounded-2xl border border-cream-200 bg-white">
+                  <div className="aspect-[4/5] animate-pulse bg-cream-100" />
+                  <div className="space-y-2 p-3">
+                    <div className="h-3 w-3/4 animate-pulse rounded-full bg-cream-100" />
+                    <div className="h-3 animate-pulse rounded-full bg-cream-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : newsList.length === 0 ? (
+            <div className="app-panel flex items-center justify-between p-6">
+              <div>
+                <p className="app-eyebrow">WINGS News</p>
+                <h2 className="mt-1 text-2xl font-medium text-brown-600">뷰티 뉴스와 톤 리포트</h2>
+                <p className="mt-2 text-sm leading-6 text-[#756861]">컬러와 제품 이야기를 짧은 카드 뉴스로 읽어보세요.</p>
+              </div>
+              <HiNewspaper className="size-7 shrink-0 text-[#A66555]" aria-hidden="true" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {newsList.map((news) => (
+                <button
+                  key={news.id}
+                  type="button"
+                  className="app-card overflow-hidden text-left transition hover:-translate-y-0.5"
+                  onClick={() => navigate(`/news/${news.id}`)}
+                >
+                  <div className="relative aspect-[4/5] bg-cream-100">
+                    {news.thumbnailUrl ? (
+                      <img src={news.thumbnailUrl} alt="" className="size-full object-cover" />
+                    ) : (
+                      <div className="flex size-full items-center justify-center text-brown-200">
+                        <HiNewspaper className="size-8" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="line-clamp-2 text-sm font-medium leading-5 text-brown-600">{news.title}</p>
+                    <p className="mt-1.5 text-xs text-brown-300">{news.authorName}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       </div>
-
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E8D7B2] px-4 py-2 backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-md justify-between text-xs text-[#6B4A3F]">
-          {[
-            { icon: HiHome, label: "홈", action: () => navigate("/home") },
-            { icon: HiUserGroup, label: "후기", action: () => setIsWaitlistOpen(true) },
-            { icon: HiSparkles, label: "진단", action: () => navigate("/photo") },
-            { icon: HiHeart, label: "상품", action: () => navigate("/recommendation") },
-            { icon: HiMiniUser, label: "마이", action: () => navigate("/mypage") },
-          ].map((item) => (
-            <button key={item.label} type="button" className="flex flex-col items-center gap-1 py-1" onClick={item.action}>
-              <span className="flex size-9 items-center justify-center rounded-full border border-[#E8D7B2]">
-                <item.icon className="size-5" aria-hidden="true" />
-              </span>
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      {isWaitlistOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="waitlist-title">
-          <div className="w-full max-w-md rounded-[32px] border border-[#E8D7B2] p-8 shadow-[0_24px_70px_rgb(0_0_0/0.18)]">
-            <h2 id="waitlist-title" className="text-2xl text-[#3A2527]">
-              {isWaitlistSuccess ? "알림 신청 완료" : "뉴스·커뮤니티 오픈 알림"}
-            </h2>
-            <p className="mt-4 leading-7 text-[#7A625C]">{isWaitlistSuccess ? "기능이 열리면 등록된 계정 이메일로 안내드릴게요." : "컬러 뉴스, 톤별 후기, 파우치 공유 기능이 열리면 알려드릴게요."}</p>
-            <div className="mt-8 flex gap-3">
-              <OutlineButton
-                className="flex-1"
-                onClick={() => {
-                  setIsWaitlistOpen(false);
-                  setIsWaitlistSuccess(false);
-                }}
-              >
-                닫기
-              </OutlineButton>
-              <OutlineButton className="flex-1" disabled={waitlistMutation.isPending || isWaitlistSuccess} onClick={() => waitlistMutation.mutate()}>
-                {isWaitlistSuccess ? "완료" : waitlistMutation.isPending ? "신청 중" : "알림 받기"}
-              </OutlineButton>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {selectedProduct ? (
         <ProductDetailModal product={selectedProduct} isLiked={savedProductIds.has(selectedProduct.id)} onClose={() => setSelectedProduct(null)} onToggleLike={handleToggleLike} />

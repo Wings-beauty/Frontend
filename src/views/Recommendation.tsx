@@ -6,7 +6,7 @@ import { useNavigate } from "../lib/router";
 import { HiArrowRight, HiHome, HiMiniUser, HiPaintBrush, HiShoppingBag } from "react-icons/hi2";
 import { getCurrentUser } from "../api/auth";
 import { fetchHomeDashboard } from "../api/home";
-import { fetchRecommendedProducts, fetchSavedProductsForUser, removeSavedProduct, saveSavedProduct, type RecommendedProduct } from "../api/products";
+import { fetchRecommendedProducts, fetchSavedProductsForUser, toggleSavedProduct, type RecommendedProduct } from "../api/products";
 import { personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
 import { getProductCategoryLabel } from "../constants/products";
 import ProductDetailModal from "../components/ProductDetailModal";
@@ -36,7 +36,7 @@ function ProductCard({
 }) {
   return (
     <article
-      className="group grid cursor-pointer grid-cols-[7.5rem_1fr] gap-4 rounded-3xl border border-cream-200/80 bg-white p-4 shadow-[0_10px_28px_rgb(58_37_39/0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgb(58_37_39/0.08)]"
+      className="app-card group grid cursor-pointer grid-cols-[7.5rem_1fr] gap-4 p-4 transition hover:-translate-y-0.5"
       role="button"
       tabIndex={0}
       onClick={() => onOpenDetails(product)}
@@ -47,7 +47,7 @@ function ProductCard({
         }
       }}
     >
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-cream-50">
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
         {product.productImageUrl ? (
           <img src={product.productImageUrl} className="size-full object-cover" alt={product.productName} />
         ) : (
@@ -68,7 +68,7 @@ function ProductCard({
       </div>
 
       <div className="min-w-0 py-1 pr-1">
-        <p className="truncate text-sm leading-5 text-[#7a625c]">{product.brandName}</p>
+        <p className="truncate text-sm leading-5 text-[#756861]">{product.brandName}</p>
         <h3 className="mt-2 line-clamp-2 text-lg leading-7 text-brown-600">{product.productName}</h3>
         <p className="mt-2 truncate text-sm leading-5 text-brown-300">{product.productColor || getProductCategoryLabel(product.category) || product.toneType}</p>
         {product.price ? <p className="mt-3 text-base leading-6 text-brown-600">{formatPrice(product.price)}</p> : null}
@@ -131,7 +131,7 @@ export default function Recommendation() {
         setUserId(user?.id ?? null);
       }
 
-      const [products, savedProducts] = await Promise.all([fetchRecommendedProducts(season), user ? fetchSavedProductsForUser(user.id) : Promise.resolve([])]);
+      const [products, savedProducts] = await Promise.all([fetchRecommendedProducts(season), user ? fetchSavedProductsForUser() : Promise.resolve([])]);
 
       if (isMounted) {
         setRecommendedProducts(products);
@@ -178,10 +178,10 @@ export default function Recommendation() {
     });
 
     try {
-      if (wasLiked) {
-        await removeSavedProduct(userId, productId);
-      } else {
-        await saveSavedProduct(userId, productId);
+      await toggleSavedProduct(productId);
+      if (userId) {
+        const fresh = await fetchSavedProductsForUser();
+        setSavedProductIds(new Set(fresh.map((p) => p.id)));
       }
     } catch {
       setSavedProductIds((currentIds) => {
@@ -200,14 +200,14 @@ export default function Recommendation() {
   };
 
   return (
-    <main className="min-h-dvh bg-cream-50 px-5 py-5 lg:px-8 lg:py-7">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <header className="flex items-center justify-between rounded-3xl border border-cream-200/80 bg-white px-4 py-3 shadow-[0_10px_30px_rgb(58_37_39/0.05)] lg:px-6">
+    <main className="app-page px-5 py-5 lg:px-8 lg:py-7">
+      <div className="mx-auto flex w-full max-w-360 flex-col gap-6">
+        <header className="app-panel flex items-center justify-between px-4 py-3 lg:px-6">
           <Button type="button" variant="ghost" size="icon" aria-label="홈으로 이동" onClick={() => navigate("/home")}>
             <HiHome className="size-6" aria-hidden="true" />
           </Button>
 
-          <h1 className="text-2xl leading-7 text-[#1f1b1b]">WINGS</h1>
+          <h1 className="text-xl font-medium leading-7 text-brown-600">추천</h1>
 
           <Avatar className="size-10 shadow-[0_4px_14px_rgb(58_37_39/0.12)]">
             <AvatarFallback>
@@ -218,17 +218,17 @@ export default function Recommendation() {
 
         <div className="grid gap-6 lg:grid-cols-[22rem_1fr] xl:grid-cols-[24rem_1fr]">
           <aside className="lg:sticky lg:top-7 lg:self-start">
-            <Card className="border-none bg-white">
+            <Card>
               <CardHeader className="p-7">
                 <Badge className={`mb-4 w-fit ${result.accentClassName}`}>
                   <HiPaintBrush className="size-4" aria-hidden="true" />
                   {result.toneLabel}
                 </Badge>
-                <CardTitle className="text-3xl leading-10 text-brown-600">내 톤에 맞는 추천 상품</CardTitle>
-                <CardDescription className="mt-3 text-base leading-7">진단 결과를 기준으로 현재 등록된 상품 중 어울리는 컬러를 모았습니다.</CardDescription>
+                <CardTitle className="text-3xl leading-10 text-brown-600">내 톤에 맞는 상품</CardTitle>
+                <CardDescription className="mt-3 text-base leading-7">진단 결과와 컬러 정보를 기준으로 어울리는 상품만 모았습니다.</CardDescription>
               </CardHeader>
               <CardContent className="p-7 pt-0">
-                <div className="rounded-3xl bg-cream-50 p-5">
+                <div className="rounded-2xl border border-cream-200 bg-cream-50 p-5">
                   <p className="text-sm leading-6 text-brown-300">추천 기준</p>
                   <p className="mt-2 text-xl leading-7 text-brown-600">{result.detailTitle}</p>
                   <div className="mt-5 grid grid-cols-5 gap-2">
@@ -246,7 +246,7 @@ export default function Recommendation() {
           </aside>
 
           <section className="min-w-0">
-            <div className="mb-5 flex flex-col justify-between gap-3 rounded-3xl border border-cream-200/80 bg-white px-6 py-5 shadow-[0_10px_30px_rgb(58_37_39/0.05)] md:flex-row md:items-center">
+            <div className="app-panel mb-5 flex flex-col justify-between gap-3 px-6 py-5 md:flex-row md:items-center">
               <div>
                 <div className="flex items-center gap-2 text-sm leading-5 text-brown-300">
                   <HiShoppingBag className="size-5" aria-hidden="true" />
@@ -266,10 +266,10 @@ export default function Recommendation() {
             {isLoadingProducts ? <ProductSkeletonGrid /> : null}
 
             {!isLoadingProducts && recommendedProducts.length === 0 ? (
-              <Card className="border-none bg-white shadow-none">
+              <Card className="shadow-none">
                 <CardContent className="flex min-h-80 flex-col items-center justify-center p-8 text-center">
                   <p className="text-lg leading-7 text-brown-600">현재 이 톤과 일치하는 상품이 없습니다.</p>
-                  <p className="mt-3 text-sm leading-6 text-[#7a625c]">상품 데이터가 추가되면 이 화면에 자동으로 표시됩니다.</p>
+                  <p className="mt-3 text-sm leading-6 text-[#756861]">상품 데이터가 추가되면 이 화면에 자동으로 표시됩니다.</p>
                 </CardContent>
               </Card>
             ) : null}

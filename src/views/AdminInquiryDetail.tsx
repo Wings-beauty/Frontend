@@ -2,35 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "../lib/router";
-import { HiArrowLeft, HiShieldCheck } from "react-icons/hi2";
-import { getCurrentUser, requireAdmin, setAuthReturnTo } from "../api/auth";
-import {
-  fetchAdminInquiry,
-  saveAdminInquiryReply,
-  updateAdminInquiryStatus,
-  type Inquiry,
-} from "../api/inquiries";
-import {
-  getInquiryCategoryLabel,
-  getInquiryStatusLabel,
-  inquiryStatuses,
-  inquiryStatusLabels,
-  type InquiryStatus,
-} from "../constants/inquiries";
+import { HiArrowLeft, HiCheck } from "react-icons/hi2";
+import { requireAdmin } from "../api/auth";
+import { fetchAdminInquiry, saveAdminInquiryReply, updateAdminInquiryStatus, type Inquiry } from "../api/inquiries";
+import { getInquiryCategoryLabel, getInquiryStatusLabel, inquiryStatuses, inquiryStatusLabels, type InquiryStatus } from "../constants/inquiries";
+import { Button } from "../components/ui/button";
 
 function formatDate(value: string | null) {
-  if (!value) {
-    return "-";
-  }
-
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
+
+const statusBadgeClass: Record<InquiryStatus, string> = {
+  pending: "bg-amber-100 text-amber-700",
+  in_progress: "bg-blue-100 text-blue-700",
+  answered: "bg-green-100 text-green-700",
+  closed: "bg-cream-100 text-brown-400",
+};
 
 export default function AdminInquiryDetail() {
   const navigate = useNavigate();
@@ -44,254 +32,136 @@ export default function AdminInquiryDetail() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const loadInquiry = async () => {
-    if (!id) {
-      setErrorMessage("문의 정보를 찾을 수 없습니다.");
-      setIsLoading(false);
-      return;
-    }
-
+  const load = async () => {
+    if (!id) { setErrorMessage("문의 정보를 찾을 수 없습니다."); setIsLoading(false); return; }
     try {
-      const user = await getCurrentUser();
-
-      if (!user) {
-        setAuthReturnTo(`/admin/inquiries/${id}`);
-        navigate("/login", { replace: true });
-        return;
-      }
-
       await requireAdmin();
-      const nextInquiry = await fetchAdminInquiry(id);
-
-      setInquiry(nextInquiry);
-
-      if (nextInquiry) {
-        setStatus(nextInquiry.status);
-        setReply(nextInquiry.adminReply ?? "");
-      }
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "관리자 문의 상세를 불러오지 못했어요.",
-      );
+      const data = await fetchAdminInquiry(id);
+      setInquiry(data);
+      if (data) { setStatus(data.status); setReply(data.adminReply ?? ""); }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "문의를 불러오지 못했어요.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    void loadInquiry();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  useEffect(() => { void load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveStatus = async () => {
-    if (!id) {
-      return;
-    }
-
-    setIsSavingStatus(true);
-    setErrorMessage("");
-    setSuccessMessage("");
-
+    if (!id) return;
+    setIsSavingStatus(true); setErrorMessage(""); setSuccessMessage("");
     try {
       await updateAdminInquiryStatus(id, status);
-      await loadInquiry();
+      await load();
       setSuccessMessage("상태가 저장되었습니다.");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "상태 저장에 실패했어요.",
-      );
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "상태 저장에 실패했어요.");
     } finally {
       setIsSavingStatus(false);
     }
   };
 
   const handleSaveReply = async () => {
-    if (!id) {
-      return;
-    }
-
-    if (!reply.trim()) {
-      setErrorMessage("답변 내용을 입력해주세요.");
-      return;
-    }
-
-    setIsSavingReply(true);
-    setErrorMessage("");
-    setSuccessMessage("");
-
+    if (!id || !reply.trim()) { setErrorMessage("답변 내용을 입력해주세요."); return; }
+    setIsSavingReply(true); setErrorMessage(""); setSuccessMessage("");
     try {
-      await saveAdminInquiryReply({
-        inquiryId: id,
-        reply,
-        status: "answered",
-      });
-      await loadInquiry();
+      await saveAdminInquiryReply({ inquiryId: id, reply, status: "answered" });
+      await load();
       setSuccessMessage("답변이 저장되었습니다.");
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "답변 저장에 실패했어요.",
-      );
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "답변 저장에 실패했어요.");
     } finally {
       setIsSavingReply(false);
     }
   };
 
   return (
-    <main className="min-h-dvh bg-white px-5 pb-12 pt-6">
-      <header className="flex items-center justify-between">
-        <button
-          type="button"
-          className="flex size-10 items-center justify-center text-brown-600"
-          aria-label="목록으로 이동"
-          onClick={() => navigate("/admin/inquiries")}
-        >
-          <HiArrowLeft className="size-6" aria-hidden="true" />
-        </button>
-        <h1 className="text-2xl font-normal leading-7.5 text-[#1f1b1b]">
-          문의 답변
-        </h1>
-        <div className="flex size-10 items-center justify-center rounded-full bg-cream-100 text-brown-600">
-          <HiShieldCheck className="size-6" aria-hidden="true" />
+    <div className="flex flex-col gap-6">
+      <header className="flex items-center gap-3">
+        <Button type="button" variant="ghost" size="icon" onClick={() => navigate("/admin/inquiries")}>
+          <HiArrowLeft className="size-5" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-medium text-brown-600">문의 답변</h1>
+          {inquiry ? (
+            <p className="mt-0.5 text-sm text-brown-400">
+              {getInquiryCategoryLabel(inquiry.category)} · {formatDate(inquiry.createdAt)}
+            </p>
+          ) : null}
         </div>
       </header>
 
-      {isLoading ? (
-        <section className="mt-10 rounded-3xl bg-cream-50 px-6 py-8">
-          <p className="text-base font-normal leading-7 text-[#7a625c]">
-            문의를 불러오는 중입니다.
-          </p>
-        </section>
-      ) : null}
-
-      {!isLoading && !inquiry ? (
-        <section className="mt-10 rounded-3xl bg-cream-50 px-6 py-8">
-          <p className="text-base font-normal leading-7 text-[#7a625c]">
-            문의를 찾을 수 없습니다.
-          </p>
-        </section>
+      {isLoading ? <div className="h-48 rounded-2xl bg-white animate-pulse" /> : null}
+      {errorMessage ? <p className="rounded-2xl bg-red/5 px-4 py-3 text-sm text-red">{errorMessage}</p> : null}
+      {successMessage ? (
+        <p className="flex items-center gap-2 rounded-2xl bg-green-50 px-4 py-3 text-sm text-green-700">
+          <HiCheck className="size-4" /> {successMessage}
+        </p>
       ) : null}
 
       {inquiry ? (
-        <section className="mt-10 space-y-6">
-          <article className="rounded-3xl bg-white px-6 py-7 shadow-lg">
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-cream-100 px-4 py-1.5 text-sm font-normal leading-5 text-brown-600">
-                {getInquiryCategoryLabel(inquiry.category)}
-              </span>
-              <span className="rounded-full bg-[#ffe9e2] px-4 py-1.5 text-sm font-normal leading-5 text-brown-600">
-                {getInquiryStatusLabel(inquiry.status)}
-              </span>
-            </div>
-            <h2 className="mt-5 text-2xl font-normal leading-8 text-brown-600">
-              {inquiry.title}
-            </h2>
-            <p className="mt-3 text-sm font-normal leading-5 text-[#7a625c]">
-              작성자{" "}
-              {inquiry.authorNickname ?? inquiry.authorEmail ?? inquiry.displayUserId ?? inquiry.userId}
-            </p>
-            <p className="mt-1 text-sm font-normal leading-5 text-[#7a625c]">
-              작성자 ID {inquiry.displayUserId ?? inquiry.userId}
-            </p>
-            <p className="mt-1 text-sm font-normal leading-5 text-[#7a625c]">
-              작성자 이메일 {inquiry.authorEmail ?? "-"}
-            </p>
-            <p className="mt-1 text-sm font-normal leading-5 text-[#7a625c]">
-              작성일 {formatDate(inquiry.createdAt)}
-            </p>
-            <p className="mt-7 whitespace-pre-wrap text-base font-normal leading-7 text-[#3a2527]">
-              {inquiry.content}
-            </p>
-          </article>
+        <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+          {/* 왼쪽: 문의 본문 + 기존 답변 */}
+          <div className="flex flex-col gap-5">
+            <article className="app-panel p-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-cream-100 px-3 py-1 text-xs text-brown-500">{getInquiryCategoryLabel(inquiry.category)}</span>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusBadgeClass[inquiry.status as InquiryStatus]}`}>
+                  {getInquiryStatusLabel(inquiry.status)}
+                </span>
+              </div>
+              <h2 className="mt-4 text-xl font-medium text-brown-600">{inquiry.title}</h2>
+              <div className="mt-3 flex flex-col gap-0.5 text-xs text-brown-400">
+                <p>작성자: {inquiry.authorNickname ?? inquiry.authorEmail ?? inquiry.displayUserId ?? "-"}</p>
+                <p>이메일: {inquiry.authorEmail ?? "-"}</p>
+                <p>작성일: {formatDate(inquiry.createdAt)}</p>
+              </div>
+              <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-brown-600">{inquiry.content}</p>
+            </article>
 
-          <article className="rounded-3xl bg-cream-50 px-6 py-7">
-            <h3 className="text-xl font-normal leading-8 text-brown-600">
-              기존 답변
-            </h3>
             {inquiry.adminReply ? (
-              <>
-                <p className="mt-3 text-sm font-normal leading-5 text-[#7a625c]">
-                  답변일 {formatDate(inquiry.repliedAt)} · 답변자{" "}
-                  {inquiry.repliedBy ?? "-"}
+              <article className="app-panel p-6">
+                <h3 className="text-base font-medium text-brown-600">기존 답변</h3>
+                <p className="mt-1 text-xs text-brown-400">
+                  {formatDate(inquiry.repliedAt)} · {inquiry.repliedBy ?? "-"}
                 </p>
-                <p className="mt-5 whitespace-pre-wrap text-base font-normal leading-7 text-[#3a2527]">
-                  {inquiry.adminReply}
-                </p>
-              </>
-            ) : (
-              <p className="mt-5 text-base font-normal leading-7 text-[#7a625c]">
-                아직 등록된 답변이 없습니다.
-              </p>
-            )}
-          </article>
+                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-brown-600">{inquiry.adminReply}</p>
+              </article>
+            ) : null}
+          </div>
 
-          <article className="rounded-3xl bg-white px-6 py-7 shadow-lg">
-            <label className="block">
-              <span className="text-lg font-normal leading-7 text-brown-600">
-                상태 변경
-              </span>
+          {/* 오른쪽: 상태 변경 + 답변 작성 */}
+          <div className="flex flex-col gap-5">
+            <article className="app-panel p-6">
+              <h3 className="text-base font-medium text-brown-600">상태 변경</h3>
               <select
-                className="mt-4 h-14 w-full rounded-2xl border border-cream-200 bg-cream-50 px-4 text-base font-normal leading-6 text-brown-600 outline-none"
+                className="mt-3 h-10 w-full rounded-xl border border-cream-200 bg-white px-3 text-sm text-brown-600 outline-none"
                 value={status}
-                onChange={(event) =>
-                  setStatus(event.target.value as InquiryStatus)
-                }
+                onChange={(e) => setStatus(e.target.value as InquiryStatus)}
               >
-                {inquiryStatuses.map((item) => (
-                  <option key={item} value={item}>
-                    {inquiryStatusLabels[item]}
-                  </option>
-                ))}
+                {inquiryStatuses.map((s) => <option key={s} value={s}>{inquiryStatusLabels[s]}</option>)}
               </select>
-            </label>
-            <button
-              type="button"
-              className="mt-5 flex h-13 w-full items-center justify-center rounded-full bg-cream-100 text-base font-normal leading-6 text-brown-600 disabled:opacity-60"
-              disabled={isSavingStatus}
-              onClick={handleSaveStatus}
-            >
-              {isSavingStatus ? "상태 저장 중" : "상태만 저장하기"}
-            </button>
-          </article>
+              <Button type="button" variant="outline" className="mt-3 w-full" disabled={isSavingStatus} onClick={handleSaveStatus}>
+                {isSavingStatus ? "저장 중..." : "상태만 저장"}
+              </Button>
+            </article>
 
-          <article className="rounded-3xl bg-white px-6 py-7 shadow-lg">
-            <label
-              htmlFor="admin-reply"
-              className="text-lg font-normal leading-7 text-brown-600"
-            >
-              답변 작성/수정
-            </label>
-            <textarea
-              id="admin-reply"
-              className="mt-4 min-h-48 w-full resize-none rounded-2xl border border-cream-200 bg-cream-50 px-4 py-4 text-base font-normal leading-7 text-brown-600 outline-none placeholder:text-[#b9aaa4]"
-              value={reply}
-              placeholder="사용자에게 전달할 답변을 입력해주세요."
-              onChange={(event) => setReply(event.target.value)}
-            />
-            <button
-              type="button"
-              className="mt-5 flex h-14 w-full items-center justify-center rounded-full bg-brown-600 text-lg font-normal leading-7 text-white shadow-lg disabled:opacity-60"
-              disabled={isSavingReply}
-              onClick={handleSaveReply}
-            >
-              {isSavingReply ? "답변 저장 중" : "답변 저장하고 완료 처리"}
-            </button>
-          </article>
-
-          {successMessage ? (
-            <p className="text-center text-sm font-normal leading-5 text-[#6bb594]">
-              {successMessage}
-            </p>
-          ) : null}
-
-          {errorMessage ? (
-            <p className="text-center text-sm font-normal leading-5 text-[#c4544a]">
-              {errorMessage}
-            </p>
-          ) : null}
-        </section>
+            <article className="app-panel p-6">
+              <h3 className="text-base font-medium text-brown-600">답변 작성</h3>
+              <textarea
+                className="mt-3 min-h-40 w-full resize-none rounded-xl border border-cream-200 bg-cream-50 px-4 py-3 text-sm leading-7 text-brown-600 outline-none placeholder:text-brown-300 focus:ring-2 focus:ring-brown-200"
+                value={reply}
+                placeholder="사용자에게 전달할 답변을 입력하세요."
+                onChange={(e) => setReply(e.target.value)}
+              />
+              <Button type="button" className="mt-3 w-full" disabled={isSavingReply} onClick={handleSaveReply}>
+                {isSavingReply ? "저장 중..." : "답변 저장 및 완료 처리"}
+              </Button>
+            </article>
+          </div>
+        </div>
       ) : null}
-    </main>
+    </div>
   );
 }

@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "../lib/router";
 import { HiArrowLeft, HiMiniUser } from "react-icons/hi2";
 import { fetchProfile, getCurrentUser, setAuthReturnTo } from "../api/auth";
-import {
-  fetchDiagnosisHistoryDetailForUser,
-  type DiagnosisHistoryDetail as DiagnosisHistoryDetailItem,
-} from "../api/diagnosis";
+import { fetchDiagnosisHistoryDetailForUser, type DiagnosisHistoryDetail as DiagnosisHistoryDetailItem } from "../api/diagnosis";
 import { personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
@@ -56,10 +53,7 @@ export default function DiagnosisHistoryDetail() {
         return;
       }
 
-      const [profileFromDb, detailFromDb] = await Promise.all([
-        fetchProfile(user),
-        fetchDiagnosisHistoryDetailForUser(user.id, diagnosisId),
-      ]);
+      const [profileFromDb, detailFromDb] = await Promise.all([fetchProfile(user), fetchDiagnosisHistoryDetailForUser(user.id, diagnosisId)]);
 
       if (!isMounted) {
         return;
@@ -82,25 +76,17 @@ export default function DiagnosisHistoryDetail() {
 
   const season = historyItem?.season ?? profile?.skinTone ?? "summer";
   const result = personalColorResults[season];
-  const confidence =
-    historyItem?.confidence !== null && historyItem?.confidence !== undefined
-      ? Math.round(historyItem.confidence * 100)
-      : null;
+  const confidence = historyItem?.confidence !== null && historyItem?.confidence !== undefined ? Math.round(historyItem.confidence * 100) : null;
 
   return (
-    <main className="min-h-dvh bg-white px-5 pb-6 pt-5">
+    <main className="app-page px-5 pb-6 pt-5 lg:px-10 lg:py-8">
+      <div className="mx-auto flex w-full max-w-360 flex-col gap-6">
       <header className="flex items-center justify-between">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="진단 기록으로 이동"
-          onClick={() => navigate("/diagnosis-history")}
-        >
+        <Button type="button" variant="ghost" size="icon" aria-label="진단 기록으로 이동" onClick={() => navigate("/diagnosis-history")}>
           <HiArrowLeft className="size-6" aria-hidden="true" />
         </Button>
 
-        <h1 className="text-2xl leading-7.5 text-[#1f1b1b]">진단 결과</h1>
+        <h1 className="text-2xl leading-7.5 text-brown-600">진단 결과</h1>
 
         <Avatar className="size-10 shadow-[0_4px_14px_rgb(58_37_39/0.12)]">
           {profile?.profileImageUrl ? (
@@ -115,16 +101,12 @@ export default function DiagnosisHistoryDetail() {
 
       <div className="flex flex-1 flex-col gap-5 pt-8">
         {isLoading ? (
-          <Card className="border-none bg-cream-50 shadow-none">
-            <CardContent className="p-6 text-center text-[#7a625c]">
-              진단 결과를 불러오는 중입니다.
-            </CardContent>
+          <Card className="border-none bg-white shadow-none">
+            <CardContent className="p-6 text-center text-[#756861]">진단 결과를 불러오는 중입니다.</CardContent>
           </Card>
         ) : !historyItem ? (
-          <Card className="border-none bg-cream-50 shadow-none">
-            <CardContent className="p-6 text-center text-[#7a625c]">
-              진단 결과를 찾을 수 없습니다.
-            </CardContent>
+          <Card className="border-none bg-white shadow-none">
+            <CardContent className="p-6 text-center text-[#756861]">진단 결과를 찾을 수 없습니다.</CardContent>
           </Card>
         ) : (
           <>
@@ -135,61 +117,42 @@ export default function DiagnosisHistoryDetail() {
                 <br />
                 {result.title}
               </h2>
-              <p className="mt-3 text-sm leading-6 text-[#7a625c]">
-                {formatDate(historyItem.createdAt)}
-              </p>
+              <p className="mt-3 text-sm leading-6 text-[#756861]">{formatDate(historyItem.createdAt)}</p>
             </section>
 
             <Card className="overflow-hidden border-none">
               <CardHeader className="items-center pb-2 text-center">
-                <div className={`mb-3 flex size-24 items-center justify-center rounded-full ${result.accentClassName} p-2 shadow-md`}>
-                  <img
-                    src={result.imageUrl}
-                    className="size-full rounded-full object-cover"
-                    alt={`${result.seasonLabel} 퍼스널 컬러`}
-                  />
+                <div className={`mb-3 flex size-24 items-center justify-center rounded-full ${result.accentClassName} p-2 shadow-[0_6px_18px_rgb(43_33_31/0.05)]`}>
+                  <img src={result.imageUrl} className="size-full rounded-full object-cover" alt={`${result.seasonLabel} 퍼스널 컬러`} />
                 </div>
                 <CardTitle>{result.detailTitle}</CardTitle>
                 <CardDescription>{result.detailDescription}</CardDescription>
               </CardHeader>
               <CardContent className="pt-3 text-center">
                 <p className="text-lg leading-7 text-brown-600">{historyItem.toneLabel}</p>
-                {confidence !== null ? (
-                  <p className="mt-2 text-sm leading-6 text-brown-300">
-                    진단 신뢰도 {confidence}%
-                  </p>
-                ) : null}
+                {confidence !== null ? <p className="mt-2 text-sm leading-6 text-brown-300">진단 신뢰도 {confidence}%</p> : null}
               </CardContent>
             </Card>
 
-            <Card className="border-none bg-cream-50 shadow-none">
+            <Card className="border-none bg-white shadow-none">
               <CardHeader>
                 <CardTitle className="text-lg">가장 잘 어울리는 베스트 컬러</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between gap-3">
                   {result.bestColors.map((color) => (
-                    <div
-                      key={color}
-                      className="aspect-square flex-1 rounded-full shadow-sm"
-                      style={{ backgroundColor: color }}
-                      aria-label={`${color} 컬러`}
-                    />
+                    <div key={color} className="aspect-square flex-1 rounded-full shadow-sm" style={{ backgroundColor: color }} aria-label={`${color} 컬러`} />
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            <Button
-              type="button"
-              size="lg"
-              className="w-full"
-              onClick={() => navigate("/recommendation")}
-            >
-              추천 상품 보기
+            <Button type="button" size="lg" className="w-full" onClick={() => navigate("/products")}>
+              상품 보기
             </Button>
           </>
         )}
+      </div>
       </div>
     </main>
   );

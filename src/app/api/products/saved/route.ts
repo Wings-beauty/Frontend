@@ -1,5 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-import { supabase } from "../../../../lib/supabase";
+
+// service role 키로 RLS 우회 (서버 전용)
+function getAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.supabase.co";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder";
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
+const supabase = getAdminClient();
 
 type ProductRow = {
   id: number;

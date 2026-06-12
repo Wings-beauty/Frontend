@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AppHeader from "../components/AppHeader";
 import QueryProvider from "../components/QueryProvider";
 import "../index.css";
 
@@ -12,7 +13,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko" data-scroll-behavior="smooth">
       <body>
         <QueryProvider>
-          <div id="root">{children}</div>
+          <div id="root">
+            <AppHeader />
+            <div className="min-h-dvh pt-[104px] pb-20 md:pt-[73px] md:pb-0">{children}</div>
+          </div>
         </QueryProvider>
       </body>
     </html>

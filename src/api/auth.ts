@@ -142,9 +142,10 @@ export function setAuthReturnTo(path: string) {
 }
 
 export async function ensureProfile(user: User) {
-  const { data: existingProfile } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
+  const { data: existingProfile, error: selectError } = await supabase.from("profiles").select("id").eq("id", user.id).maybeSingle();
 
-  if (existingProfile) {
+  // SELECT 에러(RLS 포함) 또는 이미 존재하면 INSERT 하지 않음
+  if (existingProfile || selectError) {
     return;
   }
 
@@ -163,7 +164,13 @@ export async function ensureProfile(user: User) {
 export async function fetchProfile(user: User) {
   await ensureProfile(user);
 
-  const { data } = await supabase.from("profiles").select("nickname, profile_image_url, skin_tone, role").eq("id", user.id).maybeSingle<ProfileToneRow>();
+  const { data, error } = await supabase.from("profiles").select("nickname, profile_image_url, skin_tone, role").eq("id", user.id).maybeSingle<ProfileToneRow>();
+
+  if (error) {
+    console.error("fetchProfile error:", error.message, error.code);
+  }
+
+  console.log("fetchProfile data:", data);
 
   return {
     nickname: data?.nickname ?? user.user_metadata.full_name ?? user.user_metadata.name ?? user.email?.split("@")[0] ?? "WINGS 사용자",
@@ -184,6 +191,32 @@ export async function fetchProfileSkinToneForUser(userId: string) {
   }
 
   return tone;
+}
+
+export async function uploadProfileAvatar(file: File, userId: string) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("이미지 파일만 업로드할 수 있어요.");
+  }
+
+  const extension = file.name.split(".").pop() ?? "jpg";
+  const path = `${userId}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, file, {
+    cacheControl: "31536000",
+    upsert: true,
+  });
+
+  if (error) {
+    throw new Error(error.message || "프로필 사진을 업로드하지 못했어요.");
+  }
+
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+
+  await supabase
+    .from("profiles")
+    .update({ profile_image_url: data.publicUrl, updated_at: new Date().toISOString() })
+    .eq("id", userId);
+
+  return data.publicUrl;
 }
 
 export async function updateProfileNickname(userId: string, nickname: string) {

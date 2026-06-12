@@ -4,16 +4,16 @@ import type { PersonalColorSeason } from "../../../../constants/personalColor";
 import type { Database } from "../../../../types/supabase";
 
 const AI_DIAGNOSIS_ENDPOINT =
+  process.env.NEXT_PUBLIC_DIAGNOSIS_API_URL ??
   process.env.AI_DIAGNOSIS_ENDPOINT ??
   process.env.AI_DIAGNOSIS_KEY ??
   process.env.NEXT_PUBLIC_AI_DIAGNOSIS_KEY ??
   process.env.REACT_APP_AI_DIAGNOSIS_KEY;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.REACT_APP_SUPABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  process.env.REACT_APP_SUPABASE_ANON_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 type SeasonScores = Record<PersonalColorSeason, number>;
 

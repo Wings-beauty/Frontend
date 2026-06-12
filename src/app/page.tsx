@@ -1,3 +1,3 @@
-import Welcome from "@/views/Welcome";
+import Home from "@/views/Home";
 
-export default Welcome;
+export default Home;
