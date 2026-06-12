@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import AppHeader from "../components/AppHeader";
 import QueryProvider from "../components/QueryProvider";
 import "../index.css";
@@ -18,6 +20,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <div className="min-h-dvh pt-[104px] pb-20 md:pt-[73px] md:pb-0">{children}</div>
           </div>
         </QueryProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

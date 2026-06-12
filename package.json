@@ -15,6 +15,8 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.105.3",
     "@tanstack/react-query": "^5.101.0",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "embla-carousel-react": "^8.6.0",
     "next": "^16.0.10",
     "react": "^19.2.5",
