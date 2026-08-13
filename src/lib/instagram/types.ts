@@ -42,4 +42,6 @@ export type InstagramApiError = {
   message?: unknown;
   type?: unknown;
   code?: unknown;
+  error_subcode?: unknown;
+  fbtrace_id?: unknown;
 };

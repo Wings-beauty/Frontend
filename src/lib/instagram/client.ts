@@ -19,6 +19,21 @@ function formatInstagramError(status: number, body: unknown) {
   return parts.join(" | ").slice(0, 1000);
 }
 
+function metaErrorLogFields(status: number, body: unknown) {
+  const error = typeof body === "object" && body !== null && "error" in body ? (body as { error?: InstagramApiError }).error : undefined;
+
+  return {
+    status,
+    error: {
+      message: typeof error?.message === "string" ? error.message : null,
+      type: typeof error?.type === "string" ? error.type : null,
+      code: typeof error?.code === "number" ? error.code : null,
+      error_subcode: typeof error?.error_subcode === "number" ? error.error_subcode : null,
+      fbtrace_id: typeof error?.fbtrace_id === "string" ? error.fbtrace_id : null,
+    },
+  };
+}
+
 export async function sendInstagramPrivateReply(commentId: string, messageText: string): Promise<PrivateReplyResult> {
   const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
   const instagramUserId = process.env.INSTAGRAM_USER_ID;
@@ -69,13 +84,24 @@ export async function fetchInstagramMedia(): Promise<InstagramMedia[]> {
   if (!accessToken || !instagramUserId) throw new Error("Instagram server configuration is incomplete.");
 
   const fields = "id,caption,media_type,permalink,timestamp,thumbnail_url,media_url";
+  console.info("Instagram media request", {
+    apiVersion: INSTAGRAM_GRAPH_API_VERSION,
+    INSTAGRAM_USER_ID: instagramUserId,
+    fields,
+  });
   const response = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_API_VERSION}/${instagramUserId}/media?fields=${encodeURIComponent(fields)}&limit=50`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
 
   if (!response.ok) {
-    console.error("Instagram media request failed", { status: response.status });
+    let body: unknown = null;
+    try {
+      body = await response.json();
+    } catch {
+      // Meta can return a non-JSON response. Do not log response headers or body.
+    }
+    console.error("Instagram media request failed", metaErrorLogFields(response.status, body));
     throw new Error("Instagram media request failed.");
   }
 
