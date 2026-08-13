@@ -25,6 +25,7 @@ dist-ssr
 *.sw?
 <<<<<<< Updated upstream
 .env.*
+!.env.example
 =======
 >>>>>>> Stashed changes
 .env

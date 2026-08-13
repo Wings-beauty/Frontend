@@ -72,6 +72,70 @@ export type Database = {
         };
         Relationships: [];
       };
+      instagram_dm_campaigns: {
+        Row: {
+          id: string;
+          media_id: string;
+          keyword: string;
+          dm_message: string;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          media_id: string;
+          keyword: string;
+          dm_message: string;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          media_id?: string;
+          keyword?: string;
+          dm_message?: string;
+          active?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      instagram_dm_logs: {
+        Row: {
+          id: string;
+          campaign_id: string | null;
+          comment_id: string;
+          media_id: string | null;
+          instagram_user_id: string | null;
+          comment_text: string | null;
+          status: "processing" | "sent" | "failed";
+          error_message: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id?: string | null;
+          comment_id: string;
+          media_id?: string | null;
+          instagram_user_id?: string | null;
+          comment_text?: string | null;
+          status: "processing" | "sent" | "failed";
+          error_message?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          campaign_id?: string | null;
+          media_id?: string | null;
+          instagram_user_id?: string | null;
+          comment_text?: string | null;
+          status?: "processing" | "sent" | "failed";
+          error_message?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       feedbacks: {
         Row: {
           id: number;
