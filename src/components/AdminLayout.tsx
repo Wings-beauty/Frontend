@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { HiChartBar, HiChatBubbleLeftRight, HiHome, HiNewspaper, HiShieldCheck, HiUsers } from "react-icons/hi2";
+import { HiChartBar, HiChatBubbleLeftRight, HiHome, HiNewspaper, HiPaperAirplane, HiShieldCheck, HiUsers } from "react-icons/hi2";
 import { useNavigate } from "../lib/router";
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { label: "회원 관리", href: "/admin/users", icon: HiUsers },
   { label: "문의 관리", href: "/admin/inquiries", icon: HiChatBubbleLeftRight },
   { label: "뉴스 관리", href: "/admin/news", icon: HiNewspaper },
+  { label: "Instagram 자동 DM", href: "/admin/instagram", icon: HiPaperAirplane },
 ];
 
 function isActive(pathname: string, href: string, exact?: boolean) {

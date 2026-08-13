@@ -52,3 +52,44 @@ export async function sendInstagramPrivateReply(commentId: string, messageText: 
 
   return { ok: false, status: response.status, errorMessage: formatInstagramError(response.status, body) };
 }
+
+export type InstagramMedia = {
+  id: string;
+  caption: string | null;
+  mediaType: string | null;
+  permalink: string | null;
+  timestamp: string | null;
+  thumbnailUrl: string | null;
+  mediaUrl: string | null;
+};
+
+export async function fetchInstagramMedia(): Promise<InstagramMedia[]> {
+  const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+  const instagramUserId = process.env.INSTAGRAM_USER_ID;
+  if (!accessToken || !instagramUserId) throw new Error("Instagram server configuration is incomplete.");
+
+  const fields = "id,caption,media_type,permalink,timestamp,thumbnail_url,media_url";
+  const response = await fetch(`https://graph.instagram.com/${INSTAGRAM_GRAPH_API_VERSION}/${instagramUserId}/media?fields=${encodeURIComponent(fields)}&limit=50`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    console.error("Instagram media request failed", { status: response.status });
+    throw new Error("Instagram media request failed.");
+  }
+
+  const body = (await response.json()) as { data?: Array<Record<string, unknown>> };
+  return (body.data ?? []).flatMap((item) => {
+    if (typeof item.id !== "string") return [];
+    return [{
+      id: item.id,
+      caption: typeof item.caption === "string" ? item.caption : null,
+      mediaType: typeof item.media_type === "string" ? item.media_type : null,
+      permalink: typeof item.permalink === "string" ? item.permalink : null,
+      timestamp: typeof item.timestamp === "string" ? item.timestamp : null,
+      thumbnailUrl: typeof item.thumbnail_url === "string" ? item.thumbnail_url : null,
+      mediaUrl: typeof item.media_url === "string" ? item.media_url : null,
+    }];
+  });
+}
