@@ -47,6 +47,18 @@ function ResultSection({ title, children }: { title: string; children: ReactNode
   );
 }
 
+function AnalysisLoading() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-brown-600/95 px-6 text-center text-white" role="status" aria-live="polite">
+      <div>
+        <div className="mx-auto flex size-16 items-center justify-center rounded-full border-4 border-white/25 border-t-cream-200 animate-spin" aria-hidden="true" />
+        <p className="mt-7 text-xl font-semibold">사주 해석을 준비하고 있어요</p>
+        <p className="mt-3 text-sm leading-6 text-white/75">사주 원국과 오행 흐름을 분석하고 있습니다.<br />잠시만 기다려주세요.</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Sazu() {
   const navigate = useNavigate();
   const [form, setForm] = useState<FormState>(initialForm);
@@ -149,7 +161,7 @@ export default function Sazu() {
           <div><label className="text-sm font-semibold" htmlFor="birth-city">출생 도시 <span className="font-normal text-[#7a625c]">(선택)</span></label><input id="birth-city" value={form.birthCity} onChange={(event) => setForm({ ...form, birthCity: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-cream-200 bg-cream-50 px-4 outline-none focus:border-brown-400" placeholder="서울" /></div>
 
           <p className="rounded-2xl bg-cream-50 px-4 py-3 text-xs leading-5 text-[#7a625c]">입력한 출생 정보는 사주 분석 요청에만 사용되며, WINGS는 이 기능에서 저장하지 않습니다.</p>
-          {errorMessage ? <p role="alert" className="text-sm text-[#c4544a]">{errorMessage}</p> : null}
+          {errorMessage ? <p role="alert" className="rounded-2xl bg-[#fff0ee] px-4 py-3 text-sm leading-6 text-[#c4544a]">{errorMessage.endsWith("다시 시도해주세요.") ? errorMessage : `${errorMessage} 다시 시도해주세요.`}</p> : null}
           <Button className="w-full" size="lg" disabled={isSubmitting}>{isSubmitting ? "분석 중..." : "사주 분석하기"}</Button>
         </form>
 
@@ -160,9 +172,10 @@ export default function Sazu() {
           <ResultSection title="신강 · 신약"><div className="grid grid-cols-2 gap-3"><div className="rounded-2xl bg-cream-50 p-4"><p className="text-xs text-[#7a625c]">판정</p><p className="mt-2 text-lg font-semibold">{text(sinStrength?.level)}</p></div><div className="rounded-2xl bg-cream-50 p-4"><p className="text-xs text-[#7a625c]">점수</p><p className="mt-2 text-lg font-semibold">{text(sinStrength?.score)}</p></div></div></ResultSection>
           <ResultSection title="대운"><div className="flex items-center justify-between rounded-2xl bg-cream-50 p-4"><div><p className="text-sm text-[#7a625c]">{text(decadeFortune?.direction)} · 시작 나이</p><p className="mt-1 text-lg font-semibold">{text(decadeFortune?.startAge)}세</p></div><p className="text-sm text-[#7a625c]">{Array.isArray(decadeFortune?.list) ? `${decadeFortune.list.length}개 흐름` : "-"}</p></div></ResultSection>
           <ResultSection title="분석 요약"><p className="text-sm leading-6 text-[#5f4b45]">일간 {text(getRecord(summary, "dayMaster")?.char)} · 강한 오행 {text(getRecord(summary, "elementBalance")?.dominant)} · 부족한 오행 {text(getRecord(summary, "elementBalance")?.lacking)}</p></ResultSection>
-          <ResultSection title="Gemini 해석"><p className="whitespace-pre-line text-sm leading-7 text-[#5f4b45]">{result.interpretation}</p></ResultSection>
+          <ResultSection title="사주 해석"><p className="whitespace-pre-line text-sm leading-7 text-[#5f4b45]">{result.interpretation}</p></ResultSection>
         </div> : null}
       </div>
+      {isSubmitting ? <AnalysisLoading /> : null}
     </main>
   );
 }

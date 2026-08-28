@@ -10,6 +10,7 @@ const ELEMENT_KEYS = ["wood", "fire", "earth", "metal", "water"] as const;
 const CITY_LONGITUDES: Record<string, number> = { 서울: 126.978, 부산: 129.075, 대구: 128.601, 인천: 126.705, 광주: 126.852, 대전: 127.385, 울산: 129.312, 제주: 126.531 };
 
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null; }
+function errorStatus(error: unknown) { return isRecord(error) && typeof error.status === "number" ? error.status : undefined; }
 function isCalendarDate(year: number, month: number, day: number) { const date = new Date(Date.UTC(year, month - 1, day)); return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day; }
 function isValidRequest(body: unknown): body is Required<Pick<SazuRequest, "birthYear" | "birthMonth" | "birthDay" | "isFemale">> & SazuRequest {
   if (!isRecord(body)) return false;
@@ -31,7 +32,7 @@ async function interpretWithGemini(chart: Record<string, unknown>) {
   const gemini = new GoogleGenAI({ apiKey });
   const response = await gemini.models.generateContent({
     model: "gemini-3.1-flash-lite",
-    contents: `당신은 한국 사주 명리 정보를 쉽게 설명하는 안내자입니다. 아래 계산 결과만 근거로, 단정적 예언이나 의료·재정 조언 없이 한국어로 해석하세요. 존댓말을 사용하고, 1) 핵심 성향 2) 오행 균형 3) 대운을 볼 때의 관점 순서로 3개 짧은 문단을 작성하세요. 오락·참고용 해석임을 마지막에 한 문장으로 밝혀주세요.\n\n계산 결과:\n${JSON.stringify(chart)}`,
+    contents: `당신은 한국 사주 명리 정보를 쉽게 설명하는 안내자입니다. 아래 계산 결과만 근거로, 단정적 예언이나 의료·재정 조언 없이 한국어로 해석하세요. 존댓말을 사용하고, 아래 5개 제목을 그대로 사용해 각각 짧은 문단으로 작성하세요.\n\n1) 대운\n2) 성격 기질분석\n3) 올해 운세\n4) 연애운\n5) 직업운\n\n올해 운세는 현재 연도(${new Date().getFullYear()}년)를 기준으로 설명하세요. 제공된 계산 결과에 근거가 부족한 경우에는 가능성을 조심스럽게 표현하고, 구체적인 사건·금액·건강 결과를 단정하지 마세요. 마지막에는 오락·참고용 해석이며 중요한 결정은 본인의 판단이 우선이라는 문장을 덧붙이세요.\n\n계산 결과:\n${JSON.stringify(chart)}`,
   });
   return response.text?.trim() || "해석을 생성하지 못했어요.";
 }
@@ -62,6 +63,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     } });
   } catch (error) {
     console.error("Sazu calculation or Gemini interpretation failed", error instanceof Error ? error.message : "unknown");
+    if (errorStatus(error) === 429 || errorStatus(error) === 503) {
+      return res.status(503).json({ ok: false, message: "사주 해석 요청이 많아요. 잠시 후 다시 시도해주세요." });
+    }
     return res.status(500).json({ ok: false, message: "사주 분석을 완료하지 못했어요. 잠시 후 다시 시도해주세요." });
   }
 }

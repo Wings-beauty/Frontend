@@ -21,12 +21,23 @@ type SazuApiResponse =
   | { ok: false; message?: string };
 
 export async function requestSazuAnalysis(input: SazuInput): Promise<SazuAnalysis> {
-  const response = await fetch("/api/sazu", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  const payload = (await response.json()) as SazuApiResponse;
+  let response: Response;
+  try {
+    response = await fetch("/api/sazu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+  } catch {
+    throw new Error("네트워크 연결을 확인한 뒤 다시 시도해주세요.");
+  }
+
+  let payload: SazuApiResponse;
+  try {
+    payload = (await response.json()) as SazuApiResponse;
+  } catch {
+    throw new Error("사주 해석 서버의 응답을 처리하지 못했어요.");
+  }
 
   if (!response.ok || !payload.ok) {
     throw new Error(
