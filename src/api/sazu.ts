@@ -13,6 +13,7 @@ export type SazuInput = {
 export type SazuAnalysis = {
   modules: Record<string, Record<string, unknown> | undefined>;
   timezone: { city: string; mode: "convention" | "trueSolar" };
+  interpretation: string;
 };
 
 type SazuApiResponse =

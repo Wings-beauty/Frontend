@@ -160,6 +160,7 @@ export default function Sazu() {
           <ResultSection title="신강 · 신약"><div className="grid grid-cols-2 gap-3"><div className="rounded-2xl bg-cream-50 p-4"><p className="text-xs text-[#7a625c]">판정</p><p className="mt-2 text-lg font-semibold">{text(sinStrength?.level)}</p></div><div className="rounded-2xl bg-cream-50 p-4"><p className="text-xs text-[#7a625c]">점수</p><p className="mt-2 text-lg font-semibold">{text(sinStrength?.score)}</p></div></div></ResultSection>
           <ResultSection title="대운"><div className="flex items-center justify-between rounded-2xl bg-cream-50 p-4"><div><p className="text-sm text-[#7a625c]">{text(decadeFortune?.direction)} · 시작 나이</p><p className="mt-1 text-lg font-semibold">{text(decadeFortune?.startAge)}세</p></div><p className="text-sm text-[#7a625c]">{Array.isArray(decadeFortune?.list) ? `${decadeFortune.list.length}개 흐름` : "-"}</p></div></ResultSection>
           <ResultSection title="분석 요약"><p className="text-sm leading-6 text-[#5f4b45]">일간 {text(getRecord(summary, "dayMaster")?.char)} · 강한 오행 {text(getRecord(summary, "elementBalance")?.dominant)} · 부족한 오행 {text(getRecord(summary, "elementBalance")?.lacking)}</p></ResultSection>
+          <ResultSection title="Gemini 해석"><p className="whitespace-pre-line text-sm leading-7 text-[#5f4b45]">{result.interpretation}</p></ResultSection>
         </div> : null}
       </div>
     </main>

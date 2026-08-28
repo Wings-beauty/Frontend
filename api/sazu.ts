@@ -1,147 +1,67 @@
-import {
-  SazuApiError,
-  SazuClient,
-  type CalculateInput,
-} from "@sazuapp/client";
+import { GoogleGenAI } from "@google/genai";
+import { calculateFourPillars } from "manseryeok";
 
-const MODULES = [
-  "fourPillars",
-  "elements",
-  "sinStrength",
-  "decadeFortune",
-  "summary",
-];
-
-type SazuRequest = Partial<CalculateInput>;
 type ApiRequest = { method?: string; body: unknown };
-type ApiResponse = {
-  status: (statusCode: number) => { json: (body: unknown) => void };
-};
+type ApiResponse = { status: (statusCode: number) => { json: (body: unknown) => void } };
+type SazuRequest = { birthYear?: number; birthMonth?: number; birthDay?: number; birthHour?: number | null; birthMinute?: number; isFemale?: boolean; isLunar?: boolean; isLeapMonth?: boolean; birthCity?: string };
 
-function isCalendarDate(year: number, month: number, day: number) {
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-  );
+const KOREAN_ELEMENTS = ["목", "화", "토", "금", "수"] as const;
+const ELEMENT_KEYS = ["wood", "fire", "earth", "metal", "water"] as const;
+const CITY_LONGITUDES: Record<string, number> = { 서울: 126.978, 부산: 129.075, 대구: 128.601, 인천: 126.705, 광주: 126.852, 대전: 127.385, 울산: 129.312, 제주: 126.531 };
+
+function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null; }
+function isCalendarDate(year: number, month: number, day: number) { const date = new Date(Date.UTC(year, month - 1, day)); return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day; }
+function isValidRequest(body: unknown): body is Required<Pick<SazuRequest, "birthYear" | "birthMonth" | "birthDay" | "isFemale">> & SazuRequest {
+  if (!isRecord(body)) return false;
+  const { birthYear, birthMonth, birthDay, birthHour, birthMinute, isFemale } = body as SazuRequest;
+  return Number.isInteger(birthYear) && Number.isInteger(birthMonth) && Number.isInteger(birthDay) && typeof isFemale === "boolean" && (birthYear ?? 0) >= 1900 && (birthYear ?? 0) <= 2100 && (birthMonth ?? 0) >= 1 && (birthMonth ?? 0) <= 12 && isCalendarDate(birthYear!, birthMonth!, birthDay!) && (birthHour === undefined || birthHour === null || (Number.isInteger(birthHour) && birthHour >= 0 && birthHour <= 23)) && (birthMinute === undefined || (Number.isInteger(birthMinute) && birthMinute >= 0 && birthMinute <= 59));
 }
 
-function isValidRequest(body: SazuRequest): body is CalculateInput {
-  const { birthYear, birthMonth, birthDay, birthHour, birthMinute, isFemale } = body;
+function makeElementSummary(elements: readonly string[]) {
+  const counts = Object.fromEntries(KOREAN_ELEMENTS.map((element) => [element, 0])) as Record<(typeof KOREAN_ELEMENTS)[number], number>;
+  elements.forEach((element) => { if (element in counts) counts[element as keyof typeof counts] += 1; });
+  const dominant = KOREAN_ELEMENTS.reduce((best, element) => counts[element] > counts[best] ? element : best, KOREAN_ELEMENTS[0]);
+  const lacking = KOREAN_ELEMENTS.reduce((best, element) => counts[element] < counts[best] ? element : best, KOREAN_ELEMENTS[0]);
+  return { dominant, lacking, modules: Object.fromEntries(ELEMENT_KEYS.map((key, index) => { const element = KOREAN_ELEMENTS[index]; return [key, { name: element, total: { percentage: Math.round((counts[element] / 8) * 100) } }]; })) };
+}
 
-  if (
-    !Number.isInteger(birthYear) ||
-    !Number.isInteger(birthMonth) ||
-    !Number.isInteger(birthDay) ||
-    (birthYear ?? 0) < 1900 ||
-    (birthYear ?? 0) > 2100 ||
-    (birthMonth ?? 0) < 1 ||
-    (birthMonth ?? 0) > 12 ||
-    (birthDay ?? 0) < 1 ||
-    (birthDay ?? 0) > 31 ||
-    typeof isFemale !== "boolean"
-  ) {
-    return false;
-  }
-
-  if (!isCalendarDate(birthYear!, birthMonth!, birthDay!)) {
-    return false;
-  }
-
-  if (
-    birthHour !== undefined &&
-    birthHour !== null &&
-    (!Number.isInteger(birthHour) || birthHour < 0 || birthHour > 23)
-  ) {
-    return false;
-  }
-
-  return (
-    birthMinute === undefined ||
-    (Number.isInteger(birthMinute) && birthMinute >= 0 && birthMinute <= 59)
-  );
+async function interpretWithGemini(chart: Record<string, unknown>) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
+  const gemini = new GoogleGenAI({ apiKey });
+  const response = await gemini.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: `당신은 한국 사주 명리 정보를 쉽게 설명하는 안내자입니다. 아래 계산 결과만 근거로, 단정적 예언이나 의료·재정 조언 없이 한국어로 해석하세요. 존댓말을 사용하고, 1) 핵심 성향 2) 오행 균형 3) 대운을 볼 때의 관점 순서로 3개 짧은 문단을 작성하세요. 오락·참고용 해석임을 마지막에 한 문장으로 밝혀주세요.\n\n계산 결과:\n${JSON.stringify(chart)}`,
+  });
+  return response.text?.trim() || "해석을 생성하지 못했어요.";
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ ok: false, message: "POST 요청만 사용할 수 있어요." });
-  }
+  if (req.method !== "POST") return res.status(405).json({ ok: false, message: "POST 요청만 사용할 수 있어요." });
+  if (!isValidRequest(req.body)) return res.status(400).json({ ok: false, message: "출생일과 시간을 다시 확인해주세요." });
+  if (!process.env.GEMINI_API_KEY) return res.status(503).json({ ok: false, message: "사주 해석 기능을 준비 중이에요. 잠시 후 다시 시도해주세요." });
 
-  if (!process.env.SAZU_API_KEY) {
-    console.error("SAZU_API_KEY is not configured");
-    return res.status(503).json({
-      ok: false,
-      message: "사주 분석 기능을 준비 중이에요. 잠시 후 다시 시도해주세요.",
-    });
-  }
-
-  const input = req.body as SazuRequest;
-  if (!isValidRequest(input)) {
-    return res.status(400).json({
-      ok: false,
-      message: "출생일과 시간을 다시 확인해주세요.",
-    });
-  }
-
+  const input = req.body;
+  const city = input.birthCity?.trim() || "서울";
+  const hourUnknown = input.birthHour === null || input.birthHour === undefined;
   try {
-    const sazu = new SazuClient({ apiKey: process.env.SAZU_API_KEY });
-    const result = await sazu.calculate({
-      ...input,
-      birthCity: input.birthCity?.trim() || "서울",
-      detail: "standard",
-      locale: "ko",
-      modules: MODULES,
-    });
-
-    return res.status(200).json({
-      ok: true,
-      data: {
-        modules: result.modules,
-        timezone: {
-          city: result.timezone.city,
-          mode: result.timezone.mode,
-        },
+    const result = calculateFourPillars({ year: input.birthYear, month: input.birthMonth, day: input.birthDay, hour: hourUnknown ? 12 : input.birthHour ?? 12, minute: hourUnknown ? 0 : input.birthMinute ?? 0, isLunar: input.isLunar ?? false, isLeapMonth: input.isLunar ? input.isLeapMonth ?? false : false, gender: input.isFemale ? "female" : "male", trueSolarTime: { longitude: CITY_LONGITUDES[city] ?? 127.5 } });
+    const elementSummary = makeElementSummary([result.yearElement.stem, result.yearElement.branch, result.monthElement.stem, result.monthElement.branch, result.dayElement.stem, result.dayElement.branch, result.hourElement.stem, result.hourElement.branch]);
+    const chart = { fourPillars: result.toObject(), dayMaster: result.day.heavenlyStem, elements: elementSummary, tenGods: result.tenGods, voidBranches: result.voidBranches, luckPillars: result.luckPillars, hourUnknown };
+    const interpretation = await interpretWithGemini(chart);
+    return res.status(200).json({ ok: true, data: {
+      modules: {
+        fourPillars: Object.fromEntries(Object.entries(result.toObject()).map(([key, full]) => [key, { full }])),
+        elements: elementSummary.modules,
+        sinStrength: { level: "Gemini 해석 참고", score: "-" },
+        decadeFortune: result.luckPillars ? { direction: result.luckPillars.forward ? "순행" : "역행", startAge: result.luckPillars.startAge, list: result.luckPillars.pillars } : undefined,
+        summary: { dayMaster: { char: result.day.heavenlyStem }, elementBalance: { dominant: elementSummary.dominant, lacking: elementSummary.lacking } },
       },
-    });
+      interpretation,
+      timezone: { city, mode: "trueSolar" },
+    } });
   } catch (error) {
-    if (error instanceof SazuApiError) {
-      if (error.isAuthError) {
-        console.error("SAZU authentication error", error.code, error.responseId);
-        return res.status(503).json({
-          ok: false,
-          message: "사주 분석 기능 설정을 확인 중이에요. 잠시 후 다시 시도해주세요.",
-        });
-      }
-
-      if (error.isRateLimited) {
-        return res.status(429).json({
-          ok: false,
-          message: error.retryAfterSec
-            ? `${error.retryAfterSec}초 후 다시 시도해주세요.`
-            : "요청이 많아요. 잠시 후 다시 시도해주세요.",
-        });
-      }
-
-      if (error.isTransient) {
-        console.error("SAZU transient error", error.code, error.responseId);
-        return res.status(503).json({
-          ok: false,
-          message: "분석 서비스 연결이 일시적으로 불안정해요. 잠시 후 다시 시도해주세요.",
-        });
-      }
-
-      console.error("SAZU API error", error.code, error.responseId);
-      return res.status(error.status >= 400 && error.status < 600 ? error.status : 500).json({
-        ok: false,
-        message: "사주 분석을 완료하지 못했어요. 입력 정보를 확인 후 다시 시도해주세요.",
-      });
-    }
-
-    console.error("Unexpected SAZU error");
-    return res.status(500).json({
-      ok: false,
-      message: "사주 분석을 완료하지 못했어요. 잠시 후 다시 시도해주세요.",
-    });
+    console.error("Sazu calculation or Gemini interpretation failed", error instanceof Error ? error.message : "unknown");
+    return res.status(500).json({ ok: false, message: "사주 분석을 완료하지 못했어요. 잠시 후 다시 시도해주세요." });
   }
 }
