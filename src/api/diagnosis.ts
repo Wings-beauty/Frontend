@@ -8,7 +8,11 @@ import {
   type DiagnosisUpload,
 } from "./diagnosisUpload";
 import { isSupabaseConfigured, supabase } from "../lib/supabase";
-import { createGuestDiagnosis, finalizeGuestDiagnosis } from "./boothDiagnosis";
+import {
+  createGuestDiagnosis,
+  finalizeGuestDiagnosis,
+  GuestDiagnosisApiError,
+} from "./boothDiagnosis";
 import type { PersonalColorSeason } from "../constants/personalColor";
 import {
   getPersonalColorSeasonFromValue,
@@ -157,6 +161,27 @@ function getDailyLimitError() {
 
 function getGenericDiagnosisError() {
   return new Error("진단 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+}
+
+function createLocalGuestUpload(
+  file: File,
+  requestedAt: string,
+  aiResult: PredictResponse,
+) {
+  const finalResult = createFinalDiagnosisResult(aiResult);
+  const upload = {
+    uploadId: `guest-${requestedAt}`,
+    fileName: file.name,
+    uploadedAt: requestedAt,
+    needsQuestions: shouldAskDiagnosisQuestions(aiResult),
+    isGuest: true,
+  };
+
+  setStoredAiDiagnosisResult(aiResult);
+  setStoredDiagnosisUpload(upload);
+  setStoredFinalDiagnosisResult(finalResult);
+
+  return upload;
 }
 
 async function requestAiDiagnosis(file: File) {
@@ -477,27 +502,16 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
     if (!isSupabaseConfigured) {
       try {
         const aiResult = await requestAiDiagnosis(file);
-        const finalResult = createFinalDiagnosisResult(aiResult);
-        const upload = {
-          uploadId: `guest-${requestedAt}`,
-          fileName: file.name,
-          uploadedAt: requestedAt,
-          needsQuestions: shouldAskDiagnosisQuestions(aiResult),
-          isGuest: true,
-        };
-
-        setStoredAiDiagnosisResult(aiResult);
-        setStoredDiagnosisUpload(upload);
-        setStoredFinalDiagnosisResult(finalResult);
-
-        return upload;
+        return createLocalGuestUpload(file, requestedAt, aiResult);
       } catch {
         throw getGenericDiagnosisError();
       }
     }
 
+    let aiResult: PredictResponse | undefined;
+
     try {
-      const aiResult = await requestAiDiagnosis(file);
+      aiResult = await requestAiDiagnosis(file);
       const finalResult = createFinalDiagnosisResult(aiResult);
       const ids = await createGuestDiagnosis(aiResult);
       const upload = {
@@ -521,7 +535,14 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
       });
 
       return upload;
-    } catch {
+    } catch (error) {
+      // The browser can have the public Supabase values while a local Vite server
+      // has no server-only service-role values. Do not block a booth demo in that
+      // configuration; production still persists through the server function.
+      if (error instanceof GuestDiagnosisApiError && error.status === 503 && aiResult) {
+        return createLocalGuestUpload(file, requestedAt, aiResult);
+      }
+
       throw getGenericDiagnosisError();
     }
   }

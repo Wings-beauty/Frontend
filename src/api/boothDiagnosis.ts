@@ -5,6 +5,16 @@ const GUEST_TOKEN_STORAGE_KEY = "wings_booth_guest_token";
 type GuestDiagnosisIds = { diagnosisRequestId: number; diagnosisResultId: number };
 type BoothApiResponse = { ok: true; data?: GuestDiagnosisIds } | { ok: false; message?: string };
 
+export class GuestDiagnosisApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "GuestDiagnosisApiError";
+    this.status = status;
+  }
+}
+
 function getGuestToken() {
   let token = sessionStorage.getItem(GUEST_TOKEN_STORAGE_KEY);
   if (!token) {
@@ -22,7 +32,10 @@ async function postGuestDiagnosis(body: Record<string, unknown>) {
   });
   const payload = (await response.json()) as BoothApiResponse;
   if (!response.ok || !payload.ok) {
-    throw new Error("message" in payload && payload.message ? payload.message : "진단 기록을 저장하지 못했어요.");
+    throw new GuestDiagnosisApiError(
+      "message" in payload && payload.message ? payload.message : "진단 기록을 저장하지 못했어요.",
+      response.status,
+    );
   }
   return payload.data;
 }
