@@ -14,7 +14,7 @@ WINGS 방문자가 로그인 없이 자신의 출생 정보를 입력해 실제 
 | --- | --- |
 | 계산 엔진 | 서버 함수의 `manseryeok` v2 |
 | 계산 기준 | KASI 정본 음력·절기, 출생 도시 경도 기반 진태양시 |
-| 해석 | 서버 함수의 Gemini `gemini-2.5-flash` |
+| 해석 | 서버 함수의 Gemini `gemini-3.1-flash-lite` |
 | API 경계 | `POST /api/sazu` Vercel Function |
 | 비밀값 | 서버 환경변수 `GEMINI_API_KEY` |
 | 데이터 보관 | 출생 정보·계산 결과·Gemini 응답 모두 영구 저장하지 않음 |

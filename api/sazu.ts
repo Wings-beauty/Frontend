@@ -30,7 +30,7 @@ async function interpretWithGemini(chart: Record<string, unknown>) {
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
   const gemini = new GoogleGenAI({ apiKey });
   const response = await gemini.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3.1-flash-lite",
     contents: `당신은 한국 사주 명리 정보를 쉽게 설명하는 안내자입니다. 아래 계산 결과만 근거로, 단정적 예언이나 의료·재정 조언 없이 한국어로 해석하세요. 존댓말을 사용하고, 1) 핵심 성향 2) 오행 균형 3) 대운을 볼 때의 관점 순서로 3개 짧은 문단을 작성하세요. 오락·참고용 해석임을 마지막에 한 문장으로 밝혀주세요.\n\n계산 결과:\n${JSON.stringify(chart)}`,
   });
   return response.text?.trim() || "해석을 생성하지 못했어요.";
