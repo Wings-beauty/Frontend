@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { HiArrowLeft, HiSparkles } from "react-icons/hi2";
 import { useNavigate } from "react-router-dom";
+import TimePicker from "react-time-picker";
+import "react-time-picker/dist/TimePicker.css";
+import "react-clock/dist/Clock.css";
 import { requestSazuAnalysis, type SazuAnalysis } from "../api/sazu";
 import { Button } from "../components/ui/button";
 
@@ -173,7 +176,7 @@ export default function Sazu() {
 
           <div>
             <div className="flex items-center justify-between"><label className="text-sm font-semibold" htmlFor="birth-time">태어난 시각</label><label className="flex items-center gap-2 text-sm text-[#7a625c]"><input type="checkbox" checked={form.hourUnknown} onChange={(event) => setForm({ ...form, hourUnknown: event.target.checked })} />모름</label></div>
-            <input id="birth-time" type="time" disabled={form.hourUnknown} value={form.birthTime} onChange={(event) => setForm({ ...form, birthTime: event.target.value })} className="mt-2 h-12 w-full rounded-2xl border border-cream-200 bg-cream-50 px-4 outline-none disabled:opacity-50 focus:border-brown-400" />
+            <TimePicker id="birth-time" value={form.birthTime} onChange={(value) => setForm({ ...form, birthTime: value ?? "" })} disabled={form.hourUnknown} format="HH:mm" locale="ko-KR" clearIcon={null} clockAriaLabel="시간 선택" hourAriaLabel="시" minuteAriaLabel="분" className="sazu-time-picker mt-2" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

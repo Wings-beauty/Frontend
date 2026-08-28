@@ -12,7 +12,7 @@ npm run dev
 
 ## 사주 분석 로컬 실행
 
-사주 계산과 Gemini 해석은 API 키를 보호하기 위해 Vercel Function(`/api/sazu`)에서만 실행합니다.
+사주 계산과 사주 해석은 API 키를 보호하기 위해 Vercel Function(`/api/sazu`)에서만 실행합니다.
 
 1. `.env.example`을 복사해 `.env.local`을 만들고 `GEMINI_API_KEY`를 설정합니다. `VITE_` 또는 `REACT_APP_` 접두사는 사용하지 않습니다.
 2. Vercel에 로그인한 뒤 `npx vercel dev`로 실행합니다. `npm run dev`만 실행하면 서버 함수는 동작하지 않습니다.
