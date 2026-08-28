@@ -245,6 +245,11 @@ export async function saveCurrentDiagnosisToUser(user: User) {
     return;
   }
 
+  // 부스 체험 기록은 운영 통계용 guest 데이터로 남기며 회원 기록으로 전환하지 않는다.
+  if (upload.isGuest) {
+    return;
+  }
+
   await ensureProfile(user);
 
   if (upload.diagnosisRequestId) {

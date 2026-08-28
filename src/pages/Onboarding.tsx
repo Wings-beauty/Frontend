@@ -1,31 +1,38 @@
-import { Link } from "react-router-dom";
-import { HiArrowRight } from "react-icons/hi2";
+import { Link, useLocation } from "react-router-dom";
+import { HiArrowRight, HiSparkles } from "react-icons/hi2";
+import { boothRoute, isBoothPath } from "../utils/booth";
 
 export default function Onboarding() {
+  const { pathname } = useLocation();
+  const booth = isBoothPath(pathname);
   return (
-    <main className="flex min-h-dvh w-full items-center justify-center bg-white px-8 py-4">
-      <section className="relative flex h-[calc(100dvh-32px)] max-h-[100dvh] min-h-96 w-full max-w-md flex-col items-center justify-between overflow-hidden rounded-3xl border border-ivory/50 bg-white shadow-lg">
+    <main className="flex min-h-[100svh] w-full items-center justify-center bg-white sm:px-6 sm:py-6">
+      <section className="relative flex min-h-[100svh] w-full max-w-md flex-col items-center justify-between overflow-hidden bg-white sm:min-h-[46rem] sm:rounded-[2rem] sm:border sm:border-ivory/50 sm:shadow-[0_24px_80px_rgb(80_52_43_/_0.14)]">
         <div
           className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/40 to-white/0"
           aria-hidden="true"
         />
         <div
-          className="absolute -right-20 -top-20 size-64 rounded-full bg-[#fff6de] blur-3xl"
+          className="absolute -right-20 -top-20 size-64 rounded-full bg-slate-100 blur-3xl"
           aria-hidden="true"
         />
         <div
-          className="absolute -left-10 top-1/3 size-48 rounded-full bg-[#fff6de] blur-3xl"
+          className="absolute -left-10 top-1/3 size-48 rounded-full bg-slate-100 blur-3xl"
           aria-hidden="true"
         />
 
-        <header className="relative flex w-full justify-center px-5 pt-12">
-          <h1 className="text-4xl font-normal leading-10 tracking-tight text-brown-600">
+        <header className="relative flex w-full items-center justify-between px-6 pb-2 pt-[calc(1.5rem+env(safe-area-inset-top))]">
+          <p className="inline-flex items-center gap-1.5 rounded-full bg-cream-100 px-3 py-1.5 text-xs font-semibold tracking-[0.08em] text-brown-400">
+            <HiSparkles className="size-3.5" aria-hidden="true" />
+            WINGS POP-UP
+          </p>
+          <h1 className="text-2xl font-semibold tracking-tight text-brown-600">
             WINGS
           </h1>
         </header>
 
-        <div className="relative flex flex-1 flex-col items-center justify-center px-5 pt-10">
-          <div className="relative mb-10 size-64 shrink-0">
+        <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-6">
+          <div className="relative mb-7 size-52 shrink-0 sm:mb-10 sm:size-64">
             <div
               className="absolute -inset-5 -rotate-6 rounded-full bg-white/60 shadow-lg"
               aria-hidden="true"
@@ -35,7 +42,7 @@ export default function Onboarding() {
               aria-hidden="true"
             />
 
-            <div className="relative size-64 overflow-hidden rounded-3xl border-4 border-white bg-white shadow-lg">
+            <div className="relative size-full overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-[0_18px_44px_rgb(107_74_63_/_0.18)]">
               <img
                 src="/illustration.png"
                 className="size-full object-cover"
@@ -55,13 +62,14 @@ export default function Onboarding() {
             </div>
           </div>
 
-          <div className="relative flex max-w-80 flex-col items-center gap-3.5 text-center">
-            <h2 className="text-3xl font-normal leading-9 text-brown-600">
+          <div className="relative flex max-w-80 flex-col items-center gap-3 text-center">
+            <p className="text-sm font-semibold tracking-[0.08em] text-[#c77769]">나만의 컬러 찾기</p>
+            <h2 className="text-[1.8rem] font-semibold leading-[1.25] tracking-[-0.04em] text-brown-600 sm:text-3xl">
               사진 한 장으로
               <br />
               내 퍼스널 톤을 찾아보세요
             </h2>
-            <p className="text-base font-normal leading-7 text-[#7a625c]">
+            <p className="text-[0.95rem] leading-6 text-[#7a625c] sm:text-base sm:leading-7">
               AI가 피부 톤을 분석하고
               <br />
               나에게 어울리는 화장품을 추천해드려요.
@@ -69,10 +77,14 @@ export default function Onboarding() {
           </div>
         </div>
 
-        <footer className="relative w-full px-5 py-4">
+        <footer className="relative w-full px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-6">
+          <div className="mb-3 grid grid-cols-2 gap-2 text-center text-xs text-[#7a625c]">
+            <p className="rounded-xl bg-cream-50 px-2 py-2">로그인 없이 바로 시작</p>
+            <p className="rounded-xl bg-cream-50 px-2 py-2">약 1분이면 결과 확인</p>
+          </div>
           <Link
-            to="/photo"
-            className="flex h-16 w-full items-center justify-center gap-2 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white shadow-lg"
+            to={boothRoute("/photo", booth)}
+            className="flex h-[3.75rem] w-full items-center justify-center gap-2 rounded-2xl bg-brown-600 text-lg font-semibold text-white shadow-[0_12px_24px_rgb(58_37_39_/_0.22)] transition-transform active:scale-[0.98]"
           >
             내 톤 진단하기
             <HiArrowRight className="size-4.5" aria-hidden="true" />

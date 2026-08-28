@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { HiArrowPath, HiCheck, HiSparkles } from "react-icons/hi2";
 import { completeDiagnosis } from "../api/diagnosis";
 import { clearStoredDiagnosis, getStoredAiDiagnosisResult, getStoredDiagnosisUpload, type DiagnosisUpload } from "../api/diagnosisUpload";
+import { boothRoute, isBoothPath } from "../utils/booth";
 
 const MIN_ANALYSIS_DURATION_MS = 5000;
 const MAX_ANALYSIS_DURATION_MS = 10000;
@@ -81,6 +82,7 @@ function moveDot(dot: FloatingDot): FloatingDot {
 export default function Analyzing() {
   const navigate = useNavigate();
   const location = useLocation();
+  const booth = isBoothPath(location.pathname);
   const upload = useMemo(() => (location.state as DiagnosisUpload | null) ?? getStoredDiagnosisUpload(), [location.state]);
   const [progress, setProgress] = useState(0);
   const [analysisDurationMs] = useState(getRandomDurationMs);
@@ -88,7 +90,7 @@ export default function Analyzing() {
 
   useEffect(() => {
     if (!upload) {
-      navigate("/photo", { replace: true });
+      navigate(boothRoute("/photo", booth), { replace: true });
       return;
     }
 
@@ -106,7 +108,7 @@ export default function Analyzing() {
 
       void completeDiagnosis(upload).then((result) => {
         if (result) {
-          navigate(getNeedsQuestions(upload) ? "/diagnosis-survey" : "/result", {
+          navigate(boothRoute(getNeedsQuestions(upload) ? "/survey" : "/result", booth), {
             replace: true,
             state: upload,
           });
@@ -114,7 +116,7 @@ export default function Analyzing() {
         }
 
         clearStoredDiagnosis();
-        navigate("/photo", { replace: true });
+        navigate(boothRoute("/photo", booth), { replace: true });
       });
     }, analysisDurationMs);
 
@@ -122,7 +124,7 @@ export default function Analyzing() {
       window.clearInterval(progressInterval);
       window.clearTimeout(resultTimer);
     };
-  }, [analysisDurationMs, navigate, upload]);
+  }, [analysisDurationMs, booth, navigate, upload]);
 
   useEffect(() => {
     const dotInterval = window.setInterval(() => {
@@ -144,7 +146,7 @@ export default function Analyzing() {
     <main className="relative flex min-h-dvh w-full items-start justify-center md:overflow-visible overflow-hidden bg-white">
       <div className="absolute -right-12 -top-48 h-[25rem] w-[12.5rem] rounded-full bg-purple/20 blur-[40px]" aria-hidden="true" />
       <div className="absolute -left-20 top-48 h-[14.875rem] w-[12.125rem] rounded-[6rem] bg-[#efa48b]/40 blur-[50px]" aria-hidden="true" />
-      <div className="absolute bottom-[-6rem] right-[-5rem] h-[21.875rem] w-[21.875rem] rounded-full bg-[#fff6de] blur-[30px]" aria-hidden="true" />
+      <div className="absolute bottom-[-6rem] right-[-5rem] h-[21.875rem] w-[21.875rem] rounded-full bg-slate-100 blur-[30px]" aria-hidden="true" />
 
       <section className="relative flex min-h-dvh w-full max-w-[26.875rem] flex-col items-center px-5 pb-10 pt-[6.5rem]">
         <div className="relative flex w-full flex-col items-center pb-12">

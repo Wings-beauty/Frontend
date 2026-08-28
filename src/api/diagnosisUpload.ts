@@ -13,6 +13,7 @@ export type DiagnosisUpload = {
   diagnosisRequestId?: number;
   diagnosisResultId?: number;
   needsQuestions?: boolean;
+  isGuest?: boolean;
 };
 
 const UPLOAD_STORAGE_KEY = "wings_uploaded_photo";

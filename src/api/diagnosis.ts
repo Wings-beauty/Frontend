@@ -1,11 +1,14 @@
 import type { User } from "@supabase/supabase-js";
 import {
+  getStoredAiDiagnosisResult,
+  getStoredDiagnosisUpload,
   setStoredAiDiagnosisResult,
   setStoredDiagnosisUpload,
   setStoredFinalDiagnosisResult,
   type DiagnosisUpload,
 } from "./diagnosisUpload";
-import { supabase } from "../lib/supabase";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
+import { createGuestDiagnosis, finalizeGuestDiagnosis } from "./boothDiagnosis";
 import type { PersonalColorSeason } from "../constants/personalColor";
 import {
   getPersonalColorSeasonFromValue,
@@ -148,10 +151,6 @@ function isUniqueConstraintError(error: unknown) {
   );
 }
 
-function getLoginRequiredError() {
-  return new Error("AI 진단은 로그인 후 이용할 수 있어요.");
-}
-
 function getDailyLimitError() {
   return new Error("오늘의 진단 기회를 이미 사용했어요. 내일 다시 이용해주세요.");
 }
@@ -196,9 +195,11 @@ function storeDiagnosisResult(upload: DiagnosisUpload, result: DiagnosisResultRo
 }
 
 type DiagnosisRequestInsertPayload = {
-  user_id: string;
+  user_id: string | null;
   image_url: null;
   status: "pending";
+  requester_type: "user" | "guest";
+  guest_token_hash: string | null;
 };
 
 async function createDiagnosisRequest(user: User) {
@@ -206,6 +207,8 @@ async function createDiagnosisRequest(user: User) {
     user_id: user.id,
     image_url: null,
     status: "pending",
+    requester_type: "user",
+    guest_token_hash: null,
   };
 
   const { data: request, error } = await supabase
@@ -330,7 +333,13 @@ export async function finalizeDiagnosisWithSurvey(
   setStoredFinalDiagnosisResult(finalResult);
 
   if (diagnosisResultId) {
-    await updateSavedDiagnosisWithFinalResult(diagnosisResultId, finalResult);
+    const upload = getStoredDiagnosisUpload();
+
+    if (upload?.isGuest) {
+      await finalizeGuestDiagnosis(diagnosisResultId, finalResult);
+    } else {
+      await updateSavedDiagnosisWithFinalResult(diagnosisResultId, finalResult);
+    }
   }
 
   const user = await getCurrentUser();
@@ -462,12 +471,60 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
   }
 
   const user = await getCurrentUser();
+  const requestedAt = new Date().toISOString();
 
   if (!user) {
-    throw getLoginRequiredError();
-  }
+    if (!isSupabaseConfigured) {
+      try {
+        const aiResult = await requestAiDiagnosis(file);
+        const finalResult = createFinalDiagnosisResult(aiResult);
+        const upload = {
+          uploadId: `guest-${requestedAt}`,
+          fileName: file.name,
+          uploadedAt: requestedAt,
+          needsQuestions: shouldAskDiagnosisQuestions(aiResult),
+          isGuest: true,
+        };
 
-  const requestedAt = new Date().toISOString();
+        setStoredAiDiagnosisResult(aiResult);
+        setStoredDiagnosisUpload(upload);
+        setStoredFinalDiagnosisResult(finalResult);
+
+        return upload;
+      } catch {
+        throw getGenericDiagnosisError();
+      }
+    }
+
+    try {
+      const aiResult = await requestAiDiagnosis(file);
+      const finalResult = createFinalDiagnosisResult(aiResult);
+      const ids = await createGuestDiagnosis(aiResult);
+      const upload = {
+        uploadId: String(ids.diagnosisRequestId),
+        fileName: file.name,
+        uploadedAt: requestedAt,
+        diagnosisRequestId: ids.diagnosisRequestId,
+        diagnosisResultId: ids.diagnosisResultId,
+        needsQuestions: shouldAskDiagnosisQuestions(aiResult),
+        isGuest: true,
+      };
+
+      setStoredAiDiagnosisResult(aiResult);
+      setStoredDiagnosisUpload(upload);
+      setStoredFinalDiagnosisResult(finalResult);
+      storeDiagnosisResult(upload, {
+        id: ids.diagnosisResultId,
+        tone_code: aiResult.season,
+        tone_label: aiResult.season_kr,
+        confidence: normalizeConfidence(aiResult.confidence),
+      });
+
+      return upload;
+    } catch {
+      throw getGenericDiagnosisError();
+    }
+  }
 
   await ensureUserProfile(user);
   let requestId: number | null = null;
@@ -512,7 +569,6 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
 
     if (error instanceof Error) {
       const knownMessages = [
-        getLoginRequiredError().message,
         getDailyLimitError().message,
         getGenericDiagnosisError().message,
         "이미지를 먼저 선택해주세요.",
@@ -529,8 +585,19 @@ export async function uploadDiagnosisPhoto(file: File): Promise<DiagnosisUpload>
 }
 
 export async function completeDiagnosis(upload: DiagnosisUpload) {
-  if (!upload.diagnosisRequestId) {
-    return null;
+  if (!upload.diagnosisRequestId || upload.isGuest) {
+    const aiResult = getStoredAiDiagnosisResult();
+
+    if (!aiResult) {
+      return null;
+    }
+
+    return {
+      id: 0,
+      tone_code: aiResult.season,
+      tone_label: aiResult.season_kr,
+      confidence: normalizeConfidence(aiResult.confidence),
+    } satisfies DiagnosisResultRow;
   }
 
   const { data: result, error } = await supabase

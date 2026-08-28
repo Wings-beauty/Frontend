@@ -312,7 +312,7 @@ export default function Home() {
                             <div
                               className="size-full"
                               style={{
-                                backgroundColor: product.colorHex ?? "#fff9e6",
+                                backgroundColor: product.colorHex ?? "#f3f4f6",
                               }}
                             />
                           )}

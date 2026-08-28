@@ -69,7 +69,7 @@ export default function ProductDetailModal({
           ) : (
             <div
               className="size-full"
-              style={{ backgroundColor: product.colorHex ?? "#fff9e6" }}
+              style={{ backgroundColor: product.colorHex ?? "#f3f4f6" }}
             />
           )}
           {onToggleLike ? (
@@ -106,7 +106,7 @@ export default function ProductDetailModal({
           <CardContent className="flex items-center gap-3 p-4">
             <div
               className="flex size-12 shrink-0 items-center justify-center rounded-full border border-ivory bg-white"
-              style={{ backgroundColor: product.colorHex ?? "#fff9e6" }}
+              style={{ backgroundColor: product.colorHex ?? "#f3f4f6" }}
               aria-hidden="true"
             />
             <div className="min-w-0">

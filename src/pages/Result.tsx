@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { HiArrowRight, HiCheck, HiHome, HiMiniUser } from "react-icons/hi2";
-import { fetchProfile, getCurrentUser, setAuthReturnTo, updateProfileSkinTone } from "../api/auth";
+import { fetchProfile, getCurrentUser, updateProfileSkinTone } from "../api/auth";
 import { getStoredDiagnosisFeedback, getStoredDiagnosisUpload, getStoredFinalDiagnosisResult, setStoredDiagnosisFeedback } from "../api/diagnosisUpload";
 import { saveResultPageFeedback } from "../api/feedback";
 import { personalColorResults, type PersonalColorSeason } from "../constants/personalColor";
@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { boothRoute, isBoothPath } from "../utils/booth";
 
 type ProfileView = {
   profileImageUrl: string | null;
@@ -18,12 +19,15 @@ type ProfileView = {
 
 export default function Result() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const booth = isBoothPath(pathname);
   const [profile, setProfile] = useState<ProfileView | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [feedback, setFeedback] = useState<DiagnosisFeedback | null>(getStoredDiagnosisFeedback());
   const [feedbackSaveError, setFeedbackSaveError] = useState("");
   const [currentSeason, setCurrentSeason] = useState<PersonalColorSeason | null>(null);
   const finalResult = getStoredFinalDiagnosisResult();
+  const finalSeason = finalResult?.finalSeason ?? null;
   const diagnosisUpload = getStoredDiagnosisUpload();
   const season = currentSeason ?? "summer";
   const sessionResultMatchesProfile = finalResult?.finalSeason === currentSeason;
@@ -38,7 +42,11 @@ export default function Result() {
       const user = await getCurrentUser();
 
       if (!user) {
-        navigate("/login");
+        if (isMounted) {
+          setIsLoggedIn(false);
+          setProfile(null);
+          setCurrentSeason(finalSeason);
+        }
         return;
       }
 
@@ -50,7 +58,7 @@ export default function Result() {
           profileImageUrl: profileFromDb.profileImageUrl,
           skinTone: profileFromDb.skinTone,
         });
-        setCurrentSeason(profileFromDb.skinTone);
+        setCurrentSeason(profileFromDb.skinTone ?? finalSeason);
       }
     };
 
@@ -59,17 +67,11 @@ export default function Result() {
     return () => {
       isMounted = false;
     };
-  }, [navigate]);
-
-  const goToLoginForSave = () => {
-    setAuthReturnTo("/recommendation");
-    navigate("/login");
-  };
+  }, [finalSeason]);
 
   const handleHomeClick = () => {
     if (!isLoggedIn) {
-      setAuthReturnTo("/home");
-      navigate("/login");
+      navigate("/");
       return;
     }
 
@@ -145,8 +147,8 @@ export default function Result() {
   };
 
   return (
-    <main className="min-h-dvh bg-white px-5 pb-6 pt-5">
-      <header className="flex items-center justify-between">
+    <main className="min-h-[100svh] bg-white px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6">
+      {!booth ? <header className="flex items-center justify-between">
         <Button type="button" variant="ghost" size="icon" aria-label="홈으로 이동" onClick={handleHomeClick}>
           <HiHome className="size-7" aria-hidden="true" />
         </Button>
@@ -162,16 +164,16 @@ export default function Result() {
             </AvatarFallback>
           )}
         </Avatar>
-      </header>
+      </header> : null}
 
-      <div className="flex flex-1 flex-col gap-5 pt-8">
+      <div className={`flex flex-1 flex-col gap-4 ${booth ? "pt-8" : "pt-7"}`}>
         {!currentSeason ? (
           <Card className="border-none bg-cream-50 shadow-none">
             <CardContent className="p-6 text-center text-[#7a625c]">저장된 톤 정보를 불러오는 중입니다.</CardContent>
           </Card>
         ) : (
           <>
-            <section className="text-center">
+            <section className="rounded-[2rem] bg-white px-5 py-7 text-center shadow-[0_12px_32px_rgb(107_74_63_/_0.08)]">
               <Badge className="mx-auto mb-4 w-fit">분석 완료</Badge>
               <h2 className="text-3xl leading-10 text-brown-600">
                 {isAdjusted ? "답변을 반영한" : "AI 퍼스널컬러 진단 결과"}
@@ -210,7 +212,7 @@ export default function Result() {
               </CardContent>
             </Card>
 
-            <Card>
+            {!booth ? <Card>
               <CardHeader>
                 <CardTitle className="text-lg">결과가 잘 맞는 편인가요?</CardTitle>
               </CardHeader>
@@ -268,10 +270,10 @@ export default function Result() {
 
                 {feedbackSaveError ? <p className="mt-4 text-sm leading-5 text-red">{feedbackSaveError}</p> : null}
               </CardContent>
-            </Card>
+            </Card> : null}
 
-            <Button type="button" size="lg" className="w-full" onClick={isLoggedIn ? () => navigate("/recommendation") : goToLoginForSave}>
-              {isLoggedIn ? "내게 맞는 상품 보기" : "로그인하고 진단결과 저장하기"}
+            <Button type="button" size="lg" className="min-h-15 w-full rounded-2xl text-lg font-semibold shadow-[0_12px_24px_rgb(58_37_39_/_0.18)]" onClick={() => navigate(boothRoute("/recommendation", booth))}>
+              내게 맞는 상품 보기
               <HiArrowRight className="size-5" aria-hidden="true" />
             </Button>
           </>

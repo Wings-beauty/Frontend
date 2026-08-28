@@ -21,23 +21,31 @@ import AdminInquiries from "./pages/AdminInquiries";
 import AdminInquiryDetail from "./pages/AdminInquiryDetail";
 import AdminUsers from "./pages/AdminUsers";
 import AdminUserDetail from "./pages/AdminUserDetail";
+import Sazu from "./pages/Sazu";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Welcome />} />
+        <Route path="/sazu" element={<Sazu />} />
         <Route path="/home" element={<Home />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/booth" element={<Onboarding />} />
         <Route path="/photo" element={<UploadPhoto />} />
+        <Route path="/booth/photo" element={<UploadPhoto />} />
         <Route path="/analyzing" element={<Analyzing />} />
+        <Route path="/booth/analyzing" element={<Analyzing />} />
         <Route path="/diagnosis-survey" element={<DiagnosisSurvey />} />
+        <Route path="/booth/survey" element={<DiagnosisSurvey />} />
         <Route path="/result" element={<Result />} />
+        <Route path="/booth/result" element={<Result />} />
         <Route path="/diagnosis-history" element={<DiagnosisHistory />} />
         <Route path="/diagnosis-history/:id" element={<DiagnosisHistoryDetail />} />
         <Route path="/recommendation" element={<Recommendation />} />
+        <Route path="/booth/recommendation" element={<Recommendation />} />
         <Route path="/tone-products" element={<ToneProducts />} />
         <Route path="/saved-products" element={<SavedProducts />} />
         <Route path="/feedback" element={<Feedback />} />

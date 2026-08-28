@@ -1,18 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #fff9e6;
-  --color-cream-50: #fffdf7;
-  --color-cream-100: #fff9ea;
-  --color-cream-200: #ffefc0;
-  --color-cream-300: #f7e4ac;
-  --color-cream-400: #eed898;
-  --color-cream-500: #e0c880;
-  --color-cream-600: #c9b06b;
-  --color-cream-700: #a99254;
-  --color-cream-800: #887541;
-  --color-cream-900: #68582f;
-  --color-cream-950: #3a321a;
+  /* Neutral surface scale: the previous cream scale made every screen look yellow. */
+  --color-cream: #ffffff;
+  --color-cream-50: #ffffff;
+  --color-cream-100: #f8fafc;
+  --color-cream-200: #e5e7eb;
+  --color-cream-300: #cbd5e1;
+  --color-cream-400: #94a3b8;
+  --color-cream-500: #64748b;
+  --color-cream-600: #475569;
+  --color-cream-700: #334155;
+  --color-cream-800: #1f2937;
+  --color-cream-900: #111827;
+  --color-cream-950: #030712;
 
   --color-brown-200: #bfa995;
   --color-brown-300: #735a4c;
@@ -123,6 +124,8 @@
     min-height: 100dvh;
     margin: 0;
     color: #111827;
+    background: #ffffff;
+    overscroll-behavior-y: none;
   }
 
   #root {
@@ -159,6 +162,11 @@
 
   button:disabled {
     cursor: not-allowed;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
   }
 
   img,

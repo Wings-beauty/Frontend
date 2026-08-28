@@ -38,7 +38,7 @@ function ProductCard({
         ) : (
           <div
             className="size-full"
-            style={{ backgroundColor: product.colorHex ?? "#fff9e6" }}
+            style={{ backgroundColor: product.colorHex ?? "#f3f4f6" }}
           />
         )}
         <button
