@@ -10,7 +10,6 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-.next
 *.local
 
 # Editor directories and files
@@ -25,4 +24,3 @@ dist-ssr
 *.sw?
 .env.*
 .env
-!.env.example

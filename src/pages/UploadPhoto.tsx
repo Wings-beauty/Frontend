@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   HiArrowLeft,
   HiArrowRight,
@@ -8,21 +8,19 @@ import {
   HiPhoto,
   HiXMark,
 } from "react-icons/hi2";
+import { getCurrentUser, setAuthReturnTo } from "../api/auth";
 import { uploadDiagnosisPhoto } from "../api/diagnosis";
 import {
   clearStoredDiagnosis,
   setStoredDiagnosisUpload,
 } from "../api/diagnosisUpload";
 import { validateDiagnosisImage } from "../utils/diagnosisImageValidation";
-import { boothRoute, isBoothPath } from "../utils/booth";
 
 const INVALID_PHOTO_MESSAGE =
   "정확한 진단이 어려운 사진이에요. 정면 얼굴이 잘 보이는 사진을 다시 업로드해주세요.";
 
 export default function UploadPhoto() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const booth = isBoothPath(pathname);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -33,6 +31,12 @@ export default function UploadPhoto() {
   const [isInvalidPhotoModalOpen, setIsInvalidPhotoModalOpen] = useState(false);
 
   useEffect(() => {
+    getCurrentUser().then((user) => {
+      if (!user) {
+        navigate("/login");
+      }
+    });
+
     return () => {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
@@ -49,6 +53,15 @@ export default function UploadPhoto() {
     setUploadError("");
     clearStoredDiagnosis();
 
+    const user = await getCurrentUser();
+
+    if (!user) {
+      setAuthReturnTo("/photo");
+      navigate("/login");
+      setIsUploading(false);
+      return;
+    }
+
     try {
       const isValidImage = await validateDiagnosisImage(file);
 
@@ -60,7 +73,7 @@ export default function UploadPhoto() {
       const uploadResult = await uploadDiagnosisPhoto(file);
 
       setStoredDiagnosisUpload(uploadResult);
-      navigate(boothRoute("/analyzing", booth), { state: uploadResult });
+      navigate("/analyzing", { state: uploadResult });
     } catch (error) {
       setUploadError(
         error instanceof Error
@@ -126,22 +139,22 @@ export default function UploadPhoto() {
   };
 
   return (
-    <main className="flex min-h-[100svh] w-full items-center justify-center bg-white sm:px-6 sm:py-6">
-      <section className="relative flex min-h-[100svh] w-full max-w-md flex-col overflow-hidden bg-white sm:min-h-[46rem] sm:rounded-[2rem] sm:border sm:border-ivory/50 sm:shadow-[0_24px_80px_rgb(80_52_43_/_0.14)]">
+    <main className="flex min-h-dvh w-full items-center justify-center bg-white px-8 py-4">
+      <section className="relative flex h-[calc(100dvh-32px)] max-h-[100dvh] min-h-96 w-full max-w-md flex-col overflow-hidden rounded-3xl border border-ivory/50 bg-white shadow-lg">
         <div
           className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/60 to-white/0"
           aria-hidden="true"
         />
         <div
-          className="absolute -right-20 -top-20 size-64 rounded-full bg-slate-100 blur-3xl"
+          className="absolute -right-20 -top-20 size-64 rounded-full bg-[#fff6de] blur-3xl"
           aria-hidden="true"
         />
         <div
-          className="absolute -bottom-24 -left-14 size-48 rounded-full bg-slate-100 blur-3xl"
+          className="absolute -bottom-24 -left-14 size-48 rounded-full bg-[#fff6de] blur-3xl"
           aria-hidden="true"
         />
 
-        <header className="relative flex items-center justify-between px-5 pb-2 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 sm:pt-7">
+        <header className="relative flex items-center justify-between px-6 pt-8">
           <button
             type="button"
             className="flex size-11 items-center justify-center rounded-full bg-white text-brown-600 shadow-sm"
@@ -150,18 +163,15 @@ export default function UploadPhoto() {
           >
             <HiArrowLeft className="size-5" aria-hidden="true" />
           </button>
-          <div className="text-center">
-            <p className="text-[0.68rem] font-semibold tracking-[0.1em] text-[#c77769]">WINGS POP-UP</p>
-            <h1 className="mt-0.5 text-lg font-semibold leading-7 text-brown-600">
+          <h1 className="text-lg font-normal leading-7 text-brown-600">
             사진 선택
-            </h1>
-          </div>
+          </h1>
           <div className="size-11" aria-hidden="true" />
         </header>
 
-        <div className="relative flex flex-1 flex-col justify-center px-5 sm:px-6">
-          <div className="mx-auto flex w-full max-w-[360px] flex-col items-center text-center">
-            <div className="relative mb-6 mt-3 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-[0_16px_36px_rgb(107_74_63_/_0.14)] sm:mb-8">
+        <div className="relative flex flex-1 h-full flex-col justify-center px-5 ">
+          <div className="mx-auto flex w-full h-full max-w-[320px] flex-col items-center text-center">
+            <div className="relative mt-4 mb-8 h-full flex-1 flex aspect-video w-full max-w-sm items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-[#fff9e8] shadow-lg">
               {previewUrl ? (
                 <>
                   <img
@@ -201,18 +211,15 @@ export default function UploadPhoto() {
               </div>
             </div>
 
-            <h2 className="text-[1.4rem] font-semibold leading-8 tracking-[-0.03em] text-brown-600">
+            <h2 className="text-xl font-normal leading-9 text-brown-600">
               분석할 사진을
               <br />
               선택해주세요
             </h2>
-            <p className="mt-3 text-[0.95rem] leading-6 text-[#7a625c]">
+            <p className="mt-4 text-base font-normal leading-7 text-[#7a625c]">
               카메라로 바로 찍거나
               <br />
               앨범에서 사진을 업로드할 수 있어요.
-            </p>
-            <p className="mt-3 rounded-xl bg-cream-50 px-4 py-2 text-sm leading-5 text-brown-400">
-              로그인 없이 결과까지 확인 · 사진은 진단에만 사용돼요
             </p>
             {fileName && (
               <p className="mt-3 max-w-full truncate text-sm leading-5 text-[#9b8179]">
@@ -227,11 +234,11 @@ export default function UploadPhoto() {
           </div>
         </div>
 
-        <footer className="relative flex w-full flex-col gap-3 px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-6">
+        <footer className="relative flex w-full flex-col gap-3 px-5 py-4">
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-ivory/80 bg-white text-base font-semibold text-brown-600 shadow-[0_8px_20px_rgb(107_74_63_/_0.06)] transition active:scale-[0.98]"
+              className="flex h-14 items-center justify-center gap-2 rounded-full border border-ivory/80 bg-white text-base font-normal leading-6 text-brown-600 shadow-[0_8px_20px_rgb(107_74_63_/_0.06)]"
               onClick={() => cameraInputRef.current?.click()}
             >
               <HiCamera className="size-5" aria-hidden="true" />
@@ -239,7 +246,7 @@ export default function UploadPhoto() {
             </button>
             <button
               type="button"
-              className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-ivory/80 bg-white text-base font-semibold text-brown-600 shadow-[0_8px_20px_rgb(107_74_63_/_0.06)] transition active:scale-[0.98]"
+              className="flex h-14 items-center justify-center gap-2 rounded-full border border-ivory/80 bg-white text-base font-normal leading-6 text-brown-600 shadow-[0_8px_20px_rgb(107_74_63_/_0.06)]"
               onClick={() => galleryInputRef.current?.click()}
             >
               <HiPhoto className="size-5" aria-hidden="true" />
@@ -249,7 +256,7 @@ export default function UploadPhoto() {
 
           <button
             type="button"
-            className="flex h-[3.75rem] w-full items-center justify-center gap-2 rounded-2xl bg-brown-600 text-lg font-semibold text-white shadow-[0_12px_24px_rgb(58_37_39_/_0.22)] transition active:scale-[0.98] disabled:bg-brown-600/30 disabled:shadow-none"
+            className="flex h-[60px] w-full items-center justify-center gap-2 rounded-full bg-brown-600 text-xl font-normal leading-7 text-white drop-shadow-[0_8px_12px_rgb(58_37_39_/_0.15)] disabled:bg-brown-600/30 disabled:drop-shadow-none"
             disabled={!selectedFile || isUploading}
             onClick={retryUpload}
           >

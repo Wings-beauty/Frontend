@@ -18,7 +18,6 @@ import {
   type DiagnosisUpload,
 } from "../api/diagnosisUpload";
 import type { SurveyAnswers } from "../types/diagnosis";
-import { boothRoute, isBoothPath } from "../utils/booth";
 
 type SurveyQuestion = {
   id: keyof SurveyAnswers;
@@ -65,7 +64,6 @@ const emptyAnswers: Partial<SurveyAnswers> = {};
 export default function DiagnosisSurvey() {
   const navigate = useNavigate();
   const location = useLocation();
-  const booth = isBoothPath(location.pathname);
   const upload = useMemo(
     () =>
       (location.state as DiagnosisUpload | null) ?? getStoredDiagnosisUpload(),
@@ -86,7 +84,7 @@ export default function DiagnosisSurvey() {
       setStoredFinalDiagnosisResult(createFinalDiagnosisResult(aiResult));
     }
 
-    navigate(boothRoute("/result", booth), { replace: true });
+    navigate("/result", { replace: true });
   };
 
   const submitAnswers = async (nextAnswers: SurveyAnswers) => {
@@ -104,7 +102,7 @@ export default function DiagnosisSurvey() {
         aiResult,
         nextAnswers,
       );
-      navigate(boothRoute("/result", booth), { replace: true });
+      navigate("/result", { replace: true });
     } catch {
       setSaveError("결과를 정리하는 중 문제가 생겼어요. 다시 시도해주세요.");
     } finally {
@@ -142,7 +140,7 @@ export default function DiagnosisSurvey() {
   };
 
   if (!aiResult) {
-    navigate(boothRoute("/photo", booth), { replace: true });
+    navigate("/photo", { replace: true });
     return null;
   }
 
