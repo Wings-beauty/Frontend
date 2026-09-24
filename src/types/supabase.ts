@@ -336,6 +336,154 @@ export type Database = {
         };
         Relationships: [];
       };
+      popup_visitors: {
+        Row: {
+          event_key: string;
+          user_id: string;
+          utm_source: string | null;
+          utm_medium: string | null;
+          utm_campaign: string | null;
+          utm_content: string | null;
+          utm_term: string | null;
+          referrer: string | null;
+          landing_path: string | null;
+          created_at: string;
+        };
+        Insert: {
+          event_key: string;
+          user_id?: string;
+          utm_source?: string | null;
+          utm_medium?: string | null;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_term?: string | null;
+          referrer?: string | null;
+          landing_path?: string | null;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      popup_quiz_responses: {
+        Row: {
+          event_key: string;
+          user_id: string;
+          category: "skincare" | "makeup" | "hair" | "fragrance";
+          criteria: "ingredient" | "price" | "brand" | "review";
+          texture: "light" | "rich" | "matte";
+          budget: "under_15000" | "15000_25000" | "over_25000";
+          info_need: "ingredients_list" | "reviews" | "price_compare" | "try_in_person";
+          recommended_keys: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          event_key: string;
+          user_id?: string;
+          category: "skincare" | "makeup" | "hair" | "fragrance";
+          criteria: "ingredient" | "price" | "brand" | "review";
+          texture: "light" | "rich" | "matte";
+          budget: "under_15000" | "15000_25000" | "over_25000";
+          info_need: "ingredients_list" | "reviews" | "price_compare" | "try_in_person";
+          recommended_keys?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: "skincare" | "makeup" | "hair" | "fragrance";
+          criteria?: "ingredient" | "price" | "brand" | "review";
+          texture?: "light" | "rich" | "matte";
+          budget?: "under_15000" | "15000_25000" | "over_25000";
+          info_need?: "ingredients_list" | "reviews" | "price_compare" | "try_in_person";
+          recommended_keys?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      popup_product_events: {
+        Row: {
+          id: number;
+          event_key: string;
+          user_id: string;
+          product_key: string;
+          event_type: "recommend" | "view" | "like" | "unlike";
+          created_at: string;
+        };
+        Insert: {
+          id?: never;
+          event_key: string;
+          user_id?: string;
+          product_key: string;
+          event_type: "recommend" | "view" | "like" | "unlike";
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      popup_wishlist: {
+        Row: {
+          event_key: string;
+          user_id: string;
+          product_key: string;
+          created_at: string;
+        };
+        Insert: {
+          event_key: string;
+          user_id?: string;
+          product_key: string;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      popup_visit_slots: {
+        Row: {
+          event_key: string;
+          user_id: string;
+          time_slot: "10-12" | "12-14" | "14-16";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          event_key: string;
+          user_id?: string;
+          time_slot: "10-12" | "12-14" | "14-16";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          time_slot?: "10-12" | "12-14" | "14-16";
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      popup_purchase_surveys: {
+        Row: {
+          event_key: string;
+          user_id: string;
+          product_keys: string[];
+          reasons: string[];
+          comment: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          event_key: string;
+          user_id?: string;
+          product_keys?: string[];
+          reasons?: string[];
+          comment?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          product_keys?: string[];
+          reasons?: string[];
+          comment?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

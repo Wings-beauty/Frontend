@@ -21,6 +21,9 @@ import AdminInquiries from "./pages/AdminInquiries";
 import AdminInquiryDetail from "./pages/AdminInquiryDetail";
 import AdminUsers from "./pages/AdminUsers";
 import AdminUserDetail from "./pages/AdminUserDetail";
+import Popup from "./pages/Popup";
+import PopupSurvey from "./pages/PopupSurvey";
+import AdminPopup from "./pages/AdminPopup";
 
 function App() {
   return (
@@ -31,6 +34,8 @@ function App() {
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/popup" element={<Popup />} />
+        <Route path="/popup/survey" element={<PopupSurvey />} />
         <Route path="/photo" element={<UploadPhoto />} />
         <Route path="/analyzing" element={<Analyzing />} />
         <Route path="/diagnosis-survey" element={<DiagnosisSurvey />} />
@@ -47,6 +52,7 @@ function App() {
         <Route path="/admin" element={<AdminUsers />} />
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/users/:id" element={<AdminUserDetail />} />
+        <Route path="/admin/popup" element={<AdminPopup />} />
         <Route path="/admin/inquiries" element={<AdminInquiries />} />
         <Route path="/admin/inquiries/:id" element={<AdminInquiryDetail />} />
       </Routes>
